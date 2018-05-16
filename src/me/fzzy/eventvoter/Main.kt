@@ -82,8 +82,6 @@ class Sound constructor(userVoiceChannel: IVoiceChannel, audioP: AudioPlayer, au
     }
 
     override fun run() {
-        cli.ourUser.getVoiceStateForGuild(guild).channel?.leave()
-        Thread.sleep(100)
         userVoiceChannel.join()
         Thread.sleep(100)
         audioP.clear()

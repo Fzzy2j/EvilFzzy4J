@@ -45,16 +45,16 @@ class Events {
                         event.message.author.orCreatePMChannel.sendMessage(all)
                         return
                     }
-                    val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel ?: return
+                    if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
+                        val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel ?: return
+                        val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
+                        val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
 
-                    val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
+                        if (audioDir == null || audioDir.isEmpty())
+                            return
 
-                    val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
-
-                    if (audioDir == null || audioDir.isEmpty())
-                        return
-
-                    Sound(userVoiceChannel, audioP, audioDir[0], event.guild).start()
+                        Sound(userVoiceChannel, audioP, audioDir[0], event.guild).start()
+                    }
                 }
             }
         }
