@@ -8,14 +8,28 @@ import sx.blah.discord.util.audio.AudioPlayer
 import java.io.File
 import java.io.IOException
 import javax.sound.sampled.UnsupportedAudioFileException
+import twitter4j.auth.AccessToken
+import twitter4j.TwitterStreamFactory
+import twitter4j.TwitterFactory
+import org.eclipse.jetty.websocket.common.events.annotated.InvalidSignatureException.build
+import twitter4j.conf.ConfigurationBuilder
+import twitter4j.TwitterStream
+
+
+
+
 
 lateinit var cli: IDiscordClient
 lateinit var guilds: ArrayList<Leaderboard>
 
-lateinit private var CONSUMER_KEY: String
-lateinit private var CONSUMER_KEY_SECRET: String
-lateinit private var ACCESS_TOKEN: String
-lateinit private var ACCESS_TOKEN_SECRET: String
+lateinit var twitter: TwitterFactory
+lateinit var stream: TwitterStream
+lateinit var streamFactory: TwitterStreamFactory
+
+private lateinit var CONSUMER_KEY: String
+private lateinit var CONSUMER_KEY_SECRET: String
+private lateinit var ACCESS_TOKEN: String
+private lateinit var ACCESS_TOKEN_SECRET: String
 
 fun main(args: Array<String>) {
     if (args.size != 5) {
@@ -27,6 +41,19 @@ fun main(args: Array<String>) {
     CONSUMER_KEY_SECRET = args[2]
     ACCESS_TOKEN = args[3]
     ACCESS_TOKEN_SECRET = args[4]
+
+    val cb = ConfigurationBuilder()
+    cb.setDebugEnabled(true)
+            .setOAuthConsumerKey(CONSUMER_KEY)
+            .setOAuthConsumerSecret(CONSUMER_KEY_SECRET)
+            .setOAuthAccessToken(ACCESS_TOKEN)
+            .setOAuthAccessTokenSecret(ACCESS_TOKEN_SECRET)
+    val config = cb.build()
+    twitter = TwitterFactory(config)
+    streamFactory = TwitterStreamFactory(config)
+    stream = streamFactory.getInstance(AccessToken(ACCESS_TOKEN, ACCESS_TOKEN_SECRET))
+    T4JCompat.addStatusListener(stream, StatusUpdateListener())
+    stream.user("OverwatchEU")
 
     guilds = ArrayList()
 
