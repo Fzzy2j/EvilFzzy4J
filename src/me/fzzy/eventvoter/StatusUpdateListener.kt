@@ -11,7 +11,7 @@ class StatusUpdateListener : UserStreamListener {
             if (status.getUser().getScreenName().equals("OverwatchEU")) {
                 val url = "https://twitter.com/" + status.getUser().getScreenName() + "/status/" + status.getId()
                 for (guild in guilds) {
-                    val channel: MutableList<IChannel> = cli.getGuildByID(guild.getGuildId()).getChannelsByName("overwatch-news")
+                    val channel: MutableList<IChannel> = cli.getGuildByID(guild.leaderboardGuildId).getChannelsByName("overwatch-news")
                     if (channel.size > 0) {
                         RequestBuffer.request { channel[0].sendMessage(url) }
                     }

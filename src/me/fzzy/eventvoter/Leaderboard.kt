@@ -16,9 +16,7 @@ class Leaderboard constructor(private var guildId: Long) {
         scores = hashMapOf()
     }
 
-    fun getGuildId(): Long {
-        return guildId
-    }
+    val leaderboardGuildId: Long get() = this.guildId
 
     fun addToScore(id: Long, amt: Int) {
         scores[id] = scores.getOrDefault(id, 0) + amt

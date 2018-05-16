@@ -11,13 +11,8 @@ import javax.sound.sampled.UnsupportedAudioFileException
 import twitter4j.auth.AccessToken
 import twitter4j.TwitterStreamFactory
 import twitter4j.TwitterFactory
-import org.eclipse.jetty.websocket.common.events.annotated.InvalidSignatureException.build
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j.TwitterStream
-
-
-
-
 
 lateinit var cli: IDiscordClient
 lateinit var guilds: ArrayList<Leaderboard>
@@ -66,7 +61,7 @@ fun main(args: Array<String>) {
 
 fun getLeaderboard(guildId: Long): Leaderboard? {
     for (leaderboard in guilds) {
-        if (leaderboard.getGuildId() == guildId)
+        if (leaderboard.leaderboardGuildId == guildId)
             return leaderboard
     }
     return null
