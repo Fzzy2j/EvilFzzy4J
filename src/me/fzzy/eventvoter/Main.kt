@@ -12,16 +12,21 @@ import javax.sound.sampled.UnsupportedAudioFileException
 lateinit var cli: IDiscordClient
 lateinit var guilds: ArrayList<Leaderboard>
 
-private val CONSUMER_KEY = "6NZh2Vg6hpmBTOxsThxwAKpXG"
-private val CONSUMER_KEY_SECRET = "j0vNhPVb08q9Frl4728OsXG1RmlsytGLuylHEbQB2voSxCShdS"
-private val ACCESS_TOKEN = "983742933860929536-clmkeNujEHoA67K95Hm97pa2a12pRDs"
-private val ACCESS_TOKEN_SECRET = "fHqRa1m7JAhtGXaWGZUeSddmxL04oh4KoJlSUyYzNbcKg"
+lateinit private var CONSUMER_KEY: String
+lateinit private var CONSUMER_KEY_SECRET: String
+lateinit private var ACCESS_TOKEN: String
+lateinit private var ACCESS_TOKEN_SECRET: String
 
 fun main(args: Array<String>) {
-    if (args.size != 1) {
-        println("Please enter the bots token as the first argument e.g. java -jar thisjar.jar tokenhere")
+    if (args.size != 5) {
+        println("Please enter the bots tokens e.g. java -jar thisjar.jar tokenhere consumerkey consumerkeysecret accecsstoken accesstokensecret")
         return
     }
+
+    CONSUMER_KEY = args[1]
+    CONSUMER_KEY_SECRET = args[2]
+    ACCESS_TOKEN = args[3]
+    ACCESS_TOKEN_SECRET = args[4]
 
     guilds = ArrayList()
 
