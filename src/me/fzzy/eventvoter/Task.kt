@@ -6,10 +6,11 @@ class Task : Thread() {
     private var autoSaveCount = 0
 
     override fun run() {
-        while (true) {
+        while (running) {
             Thread.sleep(1000)
             if (++autoSaveCount >= autoSave) {
                 autoSaveCount = 0
+                println("auto-save for ${guilds.size}")
                 for (leaderboard in guilds) {
                     leaderboard.saveLeaderboard()
                 }

@@ -18,6 +18,11 @@ import java.io.File
 
 class Events {
 
+    var cooldowns: HashMap<Long, Long> = hashMapOf()
+
+    val FZZY_ID = 66104132028604416L
+    val MEMES_ID = 214250278466224128L
+
     @EventSubscriber
     fun onMessageReceived(event: MessageReceivedEvent) {
         if (!event.message.author.isBot) {
@@ -34,9 +39,22 @@ class Events {
                 }.execute()
             }
 
-            // Commands for memes server
+            // Commands for memes server and stop command
+            val soundCooldown = 30
             if (event.message.content.startsWith("-") && event.message.content.length > 1) {
-                if (event.guild.longID == 214250278466224128) {
+
+                // Stop the bot
+                if (event.message.content.equals("-stop", true)) {
+                    if (event.author.longID == FZZY_ID) {
+                        for (leaderboard in guilds) {
+                            leaderboard.saveLeaderboard()
+                        }
+                        cli.logout()
+                        running = false
+                        System.exit(0)
+                    }
+                }
+                if (event.guild.longID == MEMES_ID) {
                     if (event.message.content.equals("-all", true)) {
                         var all = ""
                         for (file in File("sounds").listFiles()) {
@@ -46,14 +64,20 @@ class Events {
                         return
                     }
                     if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
-                        val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel ?: return
-                        val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
-                        val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
+                        if (System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, 0) > soundCooldown * 1000) {
+                            val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel ?: return
+                            val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
+                            val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
 
-                        if (audioDir == null || audioDir.isEmpty())
-                            return
+                            if (audioDir == null || audioDir.isEmpty())
+                                return
 
-                        Sound(userVoiceChannel, audioP, audioDir[0], event.guild).start()
+                            Sound(userVoiceChannel, audioP, audioDir[0], event.guild).start()
+                            cooldowns[event.author.longID] = System.currentTimeMillis()
+                        } else {
+                            val timeLeft = soundCooldown - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())) / 1000)
+                            RequestBuffer.request { event.channel.sendMessage("${event.author.getDisplayName(event.guild)}! you are still on cooldown for $timeLeft seconds") }
+                        }
                     }
                 }
             }

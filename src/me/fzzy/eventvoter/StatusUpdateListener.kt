@@ -7,8 +7,8 @@ import twitter4j.*
 class StatusUpdateListener : UserStreamListener {
 
     override fun onStatus(status: Status) {
-        if (!status.isRetweet()) {
-            if (status.getUser().getScreenName().equals("OverwatchEU")) {
+        if (!status.isRetweet) {
+            if (status.user.screenName == "PlayOverwatch") {
                 val url = "https://twitter.com/" + status.getUser().getScreenName() + "/status/" + status.getId()
                 for (guild in guilds) {
                     val channel: MutableList<IChannel> = cli.getGuildByID(guild.leaderboardGuildId).getChannelsByName("overwatch-news")

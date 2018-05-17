@@ -26,11 +26,14 @@ private lateinit var CONSUMER_KEY_SECRET: String
 private lateinit var ACCESS_TOKEN: String
 private lateinit var ACCESS_TOKEN_SECRET: String
 
+var running = false
+
 fun main(args: Array<String>) {
     if (args.size != 5) {
         println("Please enter the bots tokens e.g. java -jar thisjar.jar tokenhere consumerkey consumerkeysecret accecsstoken accesstokensecret")
         return
     }
+    running = true
 
     CONSUMER_KEY = args[1]
     CONSUMER_KEY_SECRET = args[2]
@@ -48,7 +51,7 @@ fun main(args: Array<String>) {
     streamFactory = TwitterStreamFactory(config)
     stream = streamFactory.getInstance(AccessToken(ACCESS_TOKEN, ACCESS_TOKEN_SECRET))
     T4JCompat.addStatusListener(stream, StatusUpdateListener())
-    stream.user("OverwatchEU")
+    stream.user("PlayOverwatch")
 
     guilds = ArrayList()
 
