@@ -15,13 +15,12 @@ import java.util.regex.Pattern
 import sx.blah.discord.util.audio.AudioPlayer
 import java.io.File
 
+const val FZZY_ID = 66104132028604416L
+const val MEMES_ID = 214250278466224128L
 
 class Events {
 
-    var cooldowns: HashMap<Long, Long> = hashMapOf()
-
-    val FZZY_ID = 66104132028604416L
-    val MEMES_ID = 214250278466224128L
+    private var cooldowns: HashMap<Long, Long> = hashMapOf()
 
     @EventSubscriber
     fun onMessageReceived(event: MessageReceivedEvent) {
@@ -76,7 +75,8 @@ class Events {
                             cooldowns[event.author.longID] = System.currentTimeMillis()
                         } else {
                             val timeLeft = soundCooldown - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())) / 1000)
-                            RequestBuffer.request { event.channel.sendMessage("${event.author.getDisplayName(event.guild)}! you are still on cooldown for $timeLeft seconds") }
+                            val message = "${event.author.getDisplayName(event.guild)}! you are still on cooldown for $timeLeft second${if (timeLeft == 1L) "" else "s"}"
+                            RequestBuffer.request { event.channel.sendMessage(message) }
                         }
                     }
                 }
@@ -88,13 +88,14 @@ class Events {
     fun onReactionAdd(event: ReactionAddEvent) {
         val leaderboard = getLeaderboard(event.guild.longID)
         if (leaderboard != null) {
-            if (event.reaction.getUserReacted(cli.ourUser)) {
-                if (event.message.author.longID != event.user.longID) {
-                    when (event.reaction.emoji.name) {
-                        "upvote" -> leaderboard.addToScore(event.author.longID, 1)
-                        "downvote" -> leaderboard.addToScore(event.author.longID, -1)
+            if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 60 * 24) {
+                if (event.reaction.getUserReacted(cli.ourUser)) {
+                    if (event.message.author.longID != event.user.longID) {
+                        when (event.reaction.emoji.name) {
+                            "upvote" -> leaderboard.addToScore(event.author.longID, 1)
+                            "downvote" -> leaderboard.addToScore(event.author.longID, -1)
+                        }
                     }
-                    leaderboard.updateLeaderboard()
                 }
             }
         }
@@ -104,13 +105,14 @@ class Events {
     fun onReactionRemove(event: ReactionRemoveEvent) {
         val leaderboard = getLeaderboard(event.guild.longID)
         if (leaderboard != null) {
-            if (event.reaction.getUserReacted(cli.ourUser)) {
-                if (event.message.author.longID != event.user.longID) {
-                    when (event.reaction.emoji.name) {
-                        "upvote" -> leaderboard.addToScore(event.author.longID, -1)
-                        "downvote" -> leaderboard.addToScore(event.author.longID, 1)
+            if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 60 * 24) {
+                if (event.reaction.getUserReacted(cli.ourUser)) {
+                    if (event.message.author.longID != event.user.longID) {
+                        when (event.reaction.emoji.name) {
+                            "upvote" -> leaderboard.addToScore(event.author.longID, -1)
+                            "downvote" -> leaderboard.addToScore(event.author.longID, 1)
+                        }
                     }
-                    leaderboard.updateLeaderboard()
                 }
             }
         }

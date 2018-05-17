@@ -10,13 +10,15 @@ import java.util.LinkedHashMap
 
 class Leaderboard constructor(private var guildId: Long) {
 
-    var scores: HashMap<Long, Int>
+    private var scores: HashMap<Long, Int>
+    var weekWinner: Winner? = null
 
     init {
         scores = hashMapOf()
     }
 
     val leaderboardGuildId: Long get() = this.guildId
+    private val file: File = File("$guildId.txt")
 
     fun addToScore(id: Long, amt: Int) {
         scores[id] = scores.getOrDefault(id, 0) + amt
@@ -25,21 +27,37 @@ class Leaderboard constructor(private var guildId: Long) {
     fun saveLeaderboard() {
         if (scores.size > 0) {
             var serial = ""
+
             for ((key, value) in scores) {
                 serial += ";$key,$value,"
             }
-            File("$guildId.txt").printWriter().use { out -> out.println(serial.substring(1)) }
+
+            serial += "%"
+            if (weekWinner != null) {
+                serial += "${weekWinner?.id},${weekWinner?.score},${weekWinner?.timestamp},"
+            }
+
+            file.printWriter().use { out -> out.println(serial.substring(1)) }
         }
     }
 
     fun loadLeaderboard() {
         scores = hashMapOf()
-        if (File("$guildId.txt").exists()) {
-            val serial = File("$guildId.txt").readText()
-            for (score in serial.split(";")) {
+        if (file.exists()) {
+            val serial = file.readText()
+            for (score in serial.split("%")[0].split(";")) {
                 val id = score.split(",")[0].toLong()
                 val value = score.split(",")[1].toInt()
                 scores[id] = value
+            }
+            if (serial.split("%").size > 1) {
+                val weekWinnerSerial = serial.split("%")[1]
+                if (weekWinnerSerial.contains(",")) {
+                    val id = weekWinnerSerial.split(",")[0].toLong()
+                    val score = weekWinnerSerial.split(",")[1].toInt()
+                    val timestamp = weekWinnerSerial.split(",")[2].toLong()
+                    weekWinner = Winner(id, score, timestamp)
+                }
             }
         }
     }
@@ -53,7 +71,11 @@ class Leaderboard constructor(private var guildId: Long) {
             for ((key, value) in getSortedLeaderboard()) {
                 if (++count > 25)
                     break
-                builder.appendField(cli.getUserByID(key).getDisplayName(cli.getGuildByID(guildId)), "$value", false)
+                builder.appendField("#$count - ${cli.getUserByID(key).getDisplayName(cli.getGuildByID(guildId))}", "$value points", false)
+            }
+            if (weekWinner != null) {
+                builder.withTitle(":zap: ${cli.getUserByID(weekWinner!!.id).getDisplayName(cli.getGuildByID(guildId))} had the most points last week! :zap:")
+                builder.withDescription(":zap: They had ${weekWinner!!.score} points! :zap:")
             }
 
             builder.withAuthorName("LEADERBOARD")
@@ -73,6 +95,13 @@ class Leaderboard constructor(private var guildId: Long) {
                     }
                 }
         }
+    }
+
+    fun getCurrentWinner(): Winner? {
+        for((key, value) in getSortedLeaderboard()) {
+            return Winner(key, value, System.currentTimeMillis())
+        }
+        return null
     }
 
     fun getSortedLeaderboard(): LinkedHashMap<Long, Int> {
@@ -100,5 +129,17 @@ class Leaderboard constructor(private var guildId: Long) {
             }
         }
         return sortedMap
+    }
+}
+
+class Winner constructor(id: Long, score: Int, timestamp: Long) {
+    var id: Long
+    var score: Int
+    var timestamp: Long
+
+    init {
+        this.id = id
+        this.score = score
+        this.timestamp = timestamp
     }
 }

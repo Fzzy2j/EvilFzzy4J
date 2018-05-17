@@ -8,50 +8,18 @@ import sx.blah.discord.util.audio.AudioPlayer
 import java.io.File
 import java.io.IOException
 import javax.sound.sampled.UnsupportedAudioFileException
-import twitter4j.auth.AccessToken
-import twitter4j.TwitterStreamFactory
-import twitter4j.TwitterFactory
-import twitter4j.conf.ConfigurationBuilder
-import twitter4j.TwitterStream
 
 lateinit var cli: IDiscordClient
 lateinit var guilds: ArrayList<Leaderboard>
 
-lateinit var twitter: TwitterFactory
-lateinit var stream: TwitterStream
-lateinit var streamFactory: TwitterStreamFactory
-
-private lateinit var CONSUMER_KEY: String
-private lateinit var CONSUMER_KEY_SECRET: String
-private lateinit var ACCESS_TOKEN: String
-private lateinit var ACCESS_TOKEN_SECRET: String
-
 var running = false
 
 fun main(args: Array<String>) {
-    if (args.size != 5) {
-        println("Please enter the bots tokens e.g. java -jar thisjar.jar tokenhere consumerkey consumerkeysecret accecsstoken accesstokensecret")
+    if (args.size != 1) {
+        println("Please enter the bots tokens e.g. java -jar thisjar.jar tokenhere")
         return
     }
     running = true
-
-    CONSUMER_KEY = args[1]
-    CONSUMER_KEY_SECRET = args[2]
-    ACCESS_TOKEN = args[3]
-    ACCESS_TOKEN_SECRET = args[4]
-
-    val cb = ConfigurationBuilder()
-    cb.setDebugEnabled(true)
-            .setOAuthConsumerKey(CONSUMER_KEY)
-            .setOAuthConsumerSecret(CONSUMER_KEY_SECRET)
-            .setOAuthAccessToken(ACCESS_TOKEN)
-            .setOAuthAccessTokenSecret(ACCESS_TOKEN_SECRET)
-    val config = cb.build()
-    twitter = TwitterFactory(config)
-    streamFactory = TwitterStreamFactory(config)
-    stream = streamFactory.getInstance(AccessToken(ACCESS_TOKEN, ACCESS_TOKEN_SECRET))
-    T4JCompat.addStatusListener(stream, StatusUpdateListener())
-    stream.user("PlayOverwatch")
 
     guilds = ArrayList()
 
@@ -70,19 +38,7 @@ fun getLeaderboard(guildId: Long): Leaderboard? {
     return null
 }
 
-class Sound constructor(userVoiceChannel: IVoiceChannel, audioP: AudioPlayer, audioDir: File, guild: IGuild) : Thread() {
-
-    private var userVoiceChannel: IVoiceChannel
-    private var audioP: AudioPlayer
-    private var audioDir: File
-    private var guild: IGuild
-
-    init {
-        this.userVoiceChannel = userVoiceChannel
-        this.audioP = audioP
-        this.audioDir = audioDir
-        this.guild = guild
-    }
+class Sound constructor(private var userVoiceChannel: IVoiceChannel, private var audioP: AudioPlayer, private var audioDir: File, private var guild: IGuild) : Thread() {
 
     override fun run() {
         userVoiceChannel.join()
