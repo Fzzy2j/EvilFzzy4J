@@ -120,7 +120,6 @@ class Events {
 
     @EventSubscriber
     fun onReady(event: ReadyEvent) {
-        RequestBuffer.request { cli.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain") }
         for (guild in cli.guilds) {
             val leaderboard = Leaderboard(guild.longID)
             guilds.add(leaderboard)

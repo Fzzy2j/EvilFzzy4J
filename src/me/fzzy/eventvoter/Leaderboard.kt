@@ -24,6 +24,10 @@ class Leaderboard constructor(private var guildId: Long) {
         scores[id] = scores.getOrDefault(id, 0) + amt
     }
 
+    fun clearLeaderboard() {
+        scores = hashMapOf()
+    }
+
     fun saveLeaderboard() {
         if (scores.size > 0) {
             var serial = ""
@@ -71,7 +75,9 @@ class Leaderboard constructor(private var guildId: Long) {
             for ((key, value) in getSortedLeaderboard()) {
                 if (++count > 25)
                     break
-                builder.appendField("#$count - ${cli.getUserByID(key).getDisplayName(cli.getGuildByID(guildId))}", "$value points", false)
+                val title = "#$count - ${cli.getUserByID(key).getDisplayName(cli.getGuildByID(guildId))}"
+                val description = "$value points"
+                builder.appendField(title, description, false)
             }
             if (weekWinner != null) {
                 builder.withTitle(":zap: ${cli.getUserByID(weekWinner!!.id).getDisplayName(cli.getGuildByID(guildId))} had the most points last week! :zap:")
