@@ -7,6 +7,8 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.Reactio
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.ActivityType
+import sx.blah.discord.handle.obj.IChannel
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.RequestBuilder
@@ -63,6 +65,7 @@ class Events {
                         return
                     }
                     if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
+                        event.message.delete()
                         if (System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, 0) > soundCooldown * 1000) {
                             val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel ?: return
                             val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
@@ -76,7 +79,7 @@ class Events {
                         } else {
                             val timeLeft = soundCooldown - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())) / 1000)
                             val message = "${event.author.getDisplayName(event.guild)}! you are still on cooldown for $timeLeft second${if (timeLeft == 1L) "" else "s"}"
-                            RequestBuffer.request { event.channel.sendMessage(message) }
+                            TempMessage(5000, event.channel, message).start()
                         }
                     }
                 }
@@ -126,5 +129,15 @@ class Events {
             leaderboard.loadLeaderboard()
             leaderboard.updateLeaderboard()
         }
+        RequestBuffer.request { cli.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain") }
+    }
+}
+
+class TempMessage constructor(private var delay: Long, private var channel: IChannel, private var message: String): Thread() {
+    override fun run() {
+        var mes: IMessage? = null
+        RequestBuffer.request { mes = channel.sendMessage(message) }
+        Thread.sleep(delay)
+        mes?.delete()
     }
 }

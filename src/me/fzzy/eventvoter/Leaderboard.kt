@@ -42,17 +42,20 @@ class Leaderboard constructor(private var guildId: Long) {
             }
 
             file.printWriter().use { out -> out.println(serial.substring(1)) }
-        }
+        } else
+            file.printWriter().use { out -> out.println() }
     }
 
     fun loadLeaderboard() {
         scores = hashMapOf()
         if (file.exists()) {
             val serial = file.readText()
-            for (score in serial.split("%")[0].split(";")) {
-                val id = score.split(",")[0].toLong()
-                val value = score.split(",")[1].toInt()
-                scores[id] = value
+            if (serial.split("%")[0].split(";")[0].length > 2) {
+                for (score in serial.split("%")[0].split(";")) {
+                    val id = score.split(",")[0].toLong()
+                    val value = score.split(",")[1].toInt()
+                    scores[id] = value
+                }
             }
             if (serial.split("%").size > 1) {
                 val weekWinnerSerial = serial.split("%")[1]
@@ -104,7 +107,7 @@ class Leaderboard constructor(private var guildId: Long) {
     }
 
     fun getCurrentWinner(): Winner? {
-        for((key, value) in getSortedLeaderboard()) {
+        for ((key, value) in getSortedLeaderboard()) {
             return Winner(key, value, System.currentTimeMillis())
         }
         return null
