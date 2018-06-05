@@ -1,5 +1,6 @@
 package me.fzzy.eventvoter
 
+import me.fzzy.eventvoter.commands.Fzzy
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
 import sx.blah.discord.handle.obj.IGuild
@@ -21,12 +22,16 @@ fun main(args: Array<String>) {
     }
     running = true
 
+    val commandHandler = CommandHandler("-")
+    commandHandler.registerCommand("fzzy", Fzzy())
+
     guilds = ArrayList()
 
     Task().start()
 
     cli = ClientBuilder().withToken(args[0]).build()
     cli.dispatcher.registerListener(Events())
+    cli.dispatcher.registerListener(commandHandler)
     cli.login()
 }
 
@@ -52,10 +57,8 @@ class Sound constructor(private var userVoiceChannel: IVoiceChannel, private var
         } catch (e: UnsupportedAudioFileException) {
             e.printStackTrace()
         }
-        while (true) {
+        while (audioP.currentTrack != null) {
             Thread.sleep(100)
-            if (audioP.currentTrack == null)
-                break
         }
         cli.ourUser.getVoiceStateForGuild(guild).channel?.leave()
     }
