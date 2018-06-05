@@ -3,6 +3,7 @@ package me.fzzy.eventvoter.commands
 import magick.ImageInfo
 import magick.MagickImage
 import me.fzzy.eventvoter.Command
+import me.fzzy.eventvoter.blend.Rescaler
 import me.fzzy.eventvoter.imageQueues
 import me.fzzy.eventvoter.seam.BufferedImagePicture
 import me.fzzy.eventvoter.seam.SeamCarver
@@ -17,14 +18,12 @@ import java.net.URL
 import java.util.regex.Pattern
 import javax.imageio.ImageIO
 
-lateinit var carver: SeamCarver
-
-class Fzzy : Command {
+class Blend : Command {
 
     override val cooldownMillis: Long = 6 * 1000
     override val attemptDelete: Boolean = false
-    override val description = "Downsizes the last image sent in the channel using a seam carving algorithm"
-    override val usageText: String = "-fzzy [imageUrl]"
+    override val description = "Downsizes the last image sent in the channel using a broken seam carving algorithm"
+    override val usageText: String = "-blend [imageUrl]"
     override val allowDM: Boolean = true
 
     init {
@@ -60,12 +59,12 @@ class Fzzy : Command {
         if (url == null) {
             RequestBuffer.request { event.channel.sendMessage("Couldn't find an image in the last 10 messages sent in this channel!") }
         } else {
-            ProcessImageSeamCarve(url, event).start()
+            ProcessImageBlend(url, event).start()
         }
     }
 }
 
-private class ProcessImageSeamCarve constructor(private var url: URL, private var event: MessageReceivedEvent) : Thread() {
+private class ProcessImageBlend constructor(private var url: URL, private var event: MessageReceivedEvent) : Thread() {
 
     override fun run() {
         val fileName = "${imageQueues++}.jpg"
@@ -102,13 +101,10 @@ private class ProcessImageSeamCarve constructor(private var url: URL, private va
             magickImage.fileName = file.absolutePath
             magickImage.writeImage(info)
         }
-        var image = BufferedImagePicture.readFromFile(file.name)
-        val scale = carver.resize(image, image.width / 3, image.height / 3)
-
-        //blend
-        //image = Rescaler.rescaleImageWidth(image, image.width / 3)
-        //image = Rescaler.rescaleImageHeight(image, image.width / 3)
-        ImageIO.write(scale.image, "jpg", file)
+        var image = ImageIO.read(file)
+        image = Rescaler.rescaleImageWidth(image, image.width / 3)
+        image = Rescaler.rescaleImageHeight(image, image.width / 3)
+        ImageIO.write(image, "jpg", file)
 
         RequestBuffer.request {
             processingMessage?.delete()

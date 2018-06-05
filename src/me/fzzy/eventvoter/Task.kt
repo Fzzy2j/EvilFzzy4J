@@ -27,7 +27,6 @@ class Task : Thread() {
             if (presenceActivityType != null && presenceStatusType != null && presenceText != null)
                 RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
 
-            println("auto-save for ${guilds.size} guilds")
             for (leaderboard in guilds) {
                 if (Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY) {
                     if (leaderboard.weekWinner == null)
