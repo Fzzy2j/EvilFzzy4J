@@ -17,12 +17,15 @@ const val OWNER_ID = 66104132028604416L
 
 var imageQueues = 0
 
+lateinit var azureToken: String
+
 fun main(args: Array<String>) {
-    if (args.size != 1) {
-        println("Please enter the bots tokens e.g. java -jar thisjar.jar tokenhere")
+    if (args.size != 2) {
+        println("Please enter the bots tokens e.g. java -jar thisjar.jar discordtokenhere azuretokenhere")
         return
     }
     running = true
+    azureToken = args[1]
 
     val sounds = Sounds()
 
@@ -30,6 +33,7 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("fzzy", Fzzy())
     commandHandler.registerCommand("eyes", Eyes())
     commandHandler.registerCommand("emotion", Emotion())
+    commandHandler.registerCommand("deepfry", Deepfry())
 
     commandHandler.registerCommand("help", Help())
     commandHandler.registerCommand("pfp", Pfp())
