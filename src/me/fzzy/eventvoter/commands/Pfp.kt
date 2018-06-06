@@ -2,6 +2,7 @@ package me.fzzy.eventvoter.commands
 
 import me.fzzy.eventvoter.Command
 import me.fzzy.eventvoter.TempMessage
+import me.fzzy.eventvoter.sendMessage
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IUser
 import sx.blah.discord.util.RequestBuffer
@@ -15,17 +16,22 @@ class Pfp : Command {
     override val allowDM: Boolean = false
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
-        if (args.size == 1) {
+        if (args.isNotEmpty()) {
+            var toCheck: String = ""
+            for (text in args) {
+                toCheck += " $text"
+            }
+            toCheck = toCheck.substring(1)
             var finalUser: IUser? = null
             for (user in event.guild.users) {
-                if (args[0].toLowerCase() == user.getDisplayName(event.guild).toLowerCase()){
+                if (toCheck.toLowerCase() == user.getDisplayName(event.guild).toLowerCase()) {
                     finalUser = user
                     break
                 }
             }
             if (finalUser == null) {
                 for (user in event.guild.users) {
-                    if (args[0].toLowerCase() == user.name.toLowerCase()){
+                    if (toCheck.toLowerCase() == user.name.toLowerCase()) {
                         finalUser = user
                         break
                     }
@@ -33,10 +39,12 @@ class Pfp : Command {
             }
             if (finalUser == null) {
                 RequestBuffer.request {
-                    TempMessage(7 * 1000, event.channel.sendMessage("User not found!")).start()
+                    val msg = sendMessage(event.channel, "User not found!")
+                    if (msg != null)
+                        TempMessage(7 * 1000, msg).start()
                 }
             } else {
-                RequestBuffer.request { event.channel.sendMessage(finalUser.avatarURL) }
+                RequestBuffer.request { sendMessage(event.channel, finalUser.avatarURL) }
             }
         }
     }

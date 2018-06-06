@@ -6,8 +6,10 @@ import me.fzzy.eventvoter.Command
 import me.fzzy.eventvoter.imageQueues
 import me.fzzy.eventvoter.seam.BufferedImagePicture
 import me.fzzy.eventvoter.seam.SeamCarver
+import me.fzzy.eventvoter.sendMessage
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
+import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -58,7 +60,7 @@ class Fzzy : Command {
             }
         }
         if (url == null) {
-            RequestBuffer.request { event.channel.sendMessage("Couldn't find an image in the last 10 messages sent in this channel!") }
+            RequestBuffer.request { sendMessage(event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
         } else {
             ProcessImageSeamCarve(url, event).start()
         }
@@ -70,7 +72,7 @@ private class ProcessImageSeamCarve constructor(private var url: URL, private va
     override fun run() {
         val fileName = "${imageQueues++}.jpg"
         var processingMessage: IMessage? = null
-        RequestBuffer.request { processingMessage = event.channel.sendMessage("processing...") }
+        RequestBuffer.request { processingMessage = sendMessage(event.channel, "processing...") }
         val openConnection = url.openConnection()
         openConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11")
         openConnection.connect()
@@ -105,14 +107,14 @@ private class ProcessImageSeamCarve constructor(private var url: URL, private va
         var image = BufferedImagePicture.readFromFile(file.name)
         val scale = carver.resize(image, image.width / 3, image.height / 3)
 
-        //blend
-        //image = Rescaler.rescaleImageWidth(image, image.width / 3)
-        //image = Rescaler.rescaleImageHeight(image, image.width / 3)
         ImageIO.write(scale.image, "jpg", file)
 
         RequestBuffer.request {
             processingMessage?.delete()
-            event.channel.sendFile(file)
+            try {
+                event.channel.sendFile(file)
+            } catch (e: MissingPermissionsException) {
+            }
             file.delete()
         }
         if (imageQueues > 1000000)

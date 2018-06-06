@@ -94,7 +94,11 @@ class CommandHandler constructor(prefix: String) {
             } else {
                 val timeLeft = (commandCooldown - timePassedCommand) / 1000
                 val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft seconds."
-                RequestBuffer.request { CooldownMessage(timeLeft.toInt(), event.channel, event.author.getDisplayName(event.guild), event.channel.sendMessage(message)).start() }
+                RequestBuffer.request {
+                    val msg = sendMessage(event.channel, message)
+                    if (msg != null)
+                        CooldownMessage(timeLeft.toInt(), event.channel, event.author.getDisplayName(event.guild), msg).start()
+                }
             }
         }
     }
