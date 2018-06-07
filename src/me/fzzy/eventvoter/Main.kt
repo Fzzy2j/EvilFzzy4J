@@ -3,6 +3,7 @@ package me.fzzy.eventvoter
 import me.fzzy.eventvoter.commands.*
 import me.fzzy.eventvoter.commands.help.Eyetypes
 import me.fzzy.eventvoter.commands.help.Help
+import me.fzzy.eventvoter.commands.help.Picturetypes
 import me.fzzy.eventvoter.commands.help.Sounds
 import me.fzzy.eventvoter.thread.ImageProcessQueue
 import me.fzzy.eventvoter.thread.IndividualTask
@@ -40,8 +41,10 @@ fun changeStatus(statusType: StatusType, activityType: ActivityType, text: Strin
     RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
 }
 
-lateinit var scheduler: Task
 lateinit var messageScheduler: MessageScheduler
+
+// Threads
+lateinit var scheduler: Task
 lateinit var imageProcessQueue: ImageProcessQueue
 
 fun main(args: Array<String>) {
@@ -57,15 +60,18 @@ fun main(args: Array<String>) {
     commandHandler = CommandHandler(BOT_PREFIX)
     commandHandler.registerCommand("fzzy", Fzzy())
     commandHandler.registerCommand("eyes", Eyes())
+    commandHandler.registerCommand("picture", Picture())
     commandHandler.registerCommand("emotion", Emotion())
     commandHandler.registerCommand("deepfry", Deepfry())
     commandHandler.registerCommand("mc", Mc())
 
     commandHandler.registerCommand("pfp", Pfp())
+    commandHandler.registerCommand("keep", Keep())
 
     commandHandler.registerCommand("help", Help())
     commandHandler.registerCommand("sounds", sounds)
     commandHandler.registerCommand("eyetypes", Eyetypes())
+    commandHandler.registerCommand("picturetypes", Picturetypes())
 
     guilds = ArrayList()
 

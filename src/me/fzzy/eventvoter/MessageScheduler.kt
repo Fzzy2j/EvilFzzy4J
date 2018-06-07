@@ -24,6 +24,19 @@ class MessageScheduler constructor(task: Task) {
         }, 1, true))
     }
 
+    fun clearTempMessage(message: IMessage) {
+        val iter = tempMessages.iterator()
+        while (iter.hasNext()) {
+            val i = iter.next()
+            if (i.key != null) {
+                if (message == i.key) {
+                    iter.remove()
+                    break
+                }
+            }
+        }
+    }
+
     fun sendTempMessage(timeToStayMillis: Long, channel: IChannel, text: String): IMessage? {
         val msg = Funcs.sendMessage(channel, text)
         if (msg != null) {

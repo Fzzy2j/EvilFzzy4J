@@ -43,13 +43,11 @@ class Deepfry : Command {
 
                     op.addImage(file.name)
                     op.quality(8.0)
-                    for (i in 0..4)
+                    for (i in 0..3)
                         op.contrast()
                     op.noise(2.0)
                     op.sharpen(10.0)
                     op.resize((width / 1.5).roundToInt(), (height / 1.5).roundToInt(), '!')
-                    op.strip()
-                    op.interlace("Plane")
                     op.addImage(file.name)
 
                     convert.run(op)
@@ -61,8 +59,6 @@ class Deepfry : Command {
                     op.noise(2.0)
                     op.sharpen(10.0)
                     op.resize(width, height, '!')
-                    op.strip()
-                    op.interlace("Plane")
                     op.addImage(file.name)
 
                     convert.run(op)

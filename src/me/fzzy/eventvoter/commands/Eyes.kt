@@ -20,7 +20,7 @@ class Eyes : Command {
 
     override val cooldownMillis: Long = 6 * 1000
     override val attemptDelete: Boolean = true
-    override val description = "Adds different eyes to an image"
+    override val description = "Adds different eyes to an image, use -eyetypes to see all the eye types"
     override val usageText: String = "-eyes <eyeType> [imageUrl]"
     override val allowDM: Boolean = true
 
@@ -31,7 +31,7 @@ class Eyes : Command {
         var eyes: File? = null
         if (args.isNotEmpty()) {
             for (files in eyesFile.listFiles()) {
-                if (files.nameWithoutExtension.toLowerCase() == args[0].toLowerCase()) {
+                if (files.nameWithoutExtension.toLowerCase().replace("_mirror", "") == args[0].toLowerCase()) {
                     eyes = files
                     break
                 }
@@ -78,9 +78,14 @@ class Eyes : Command {
                                     eyeDistance *= ratio
                                     val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
                                     val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
-                                    val resize = eyeMagickImage.scaleImage(width, height)
+                                    var resize = eyeMagickImage.scaleImage(width, height)
 
                                     magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
+
+                                    // If the eye file ends in _mirror the other eye will be flipped
+                                    if (eyes.nameWithoutExtension.endsWith("_mirror"))
+                                        resize = resize.flopImage()
+
                                     magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
                                 }
                             }
