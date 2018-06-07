@@ -1,8 +1,8 @@
 package me.fzzy.eventvoter.commands
 
 import me.fzzy.eventvoter.Command
-import me.fzzy.eventvoter.TempMessage
-import me.fzzy.eventvoter.sendMessage
+import me.fzzy.eventvoter.DEFAULT_TEMP_MESSAGE_DURATION
+import me.fzzy.eventvoter.messageScheduler
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IUser
 import sx.blah.discord.util.RequestBuffer
@@ -17,7 +17,7 @@ class Pfp : Command {
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
         if (args.isNotEmpty()) {
-            var toCheck: String = ""
+            var toCheck = ""
             for (text in args) {
                 toCheck += " $text"
             }
@@ -38,13 +38,9 @@ class Pfp : Command {
                 }
             }
             if (finalUser == null) {
-                RequestBuffer.request {
-                    val msg = sendMessage(event.channel, "User not found!")
-                    if (msg != null)
-                        TempMessage(7 * 1000, msg).start()
-                }
+                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "User not found!") }
             } else {
-                RequestBuffer.request { sendMessage(event.channel, finalUser.avatarURL) }
+                RequestBuffer.request { messageScheduler.sendTempMessage(60 * 1000, event.channel, finalUser.avatarURL) }
             }
         }
     }

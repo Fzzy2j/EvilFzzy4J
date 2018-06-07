@@ -1,4 +1,4 @@
-package me.fzzy.eventvoter.commands
+package me.fzzy.eventvoter.commands.help
 
 import me.fzzy.eventvoter.Command
 import me.fzzy.eventvoter.commandHandler

@@ -77,7 +77,7 @@ class CommandHandler constructor(prefix: String) {
 
             if (event.channel.isPrivate) {
                 if (!command.allowDM) {
-                    RequestBuffer.request { TempMessage(7 * 1000, event.channel.sendMessage("This command is not allowed in DMs!")).start() }
+                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
                     return
                 }
             }
@@ -89,13 +89,13 @@ class CommandHandler constructor(prefix: String) {
                 cooldowns[event.author.longID]?.triggerCooldown(commandString)
                 cooldowns[event.author.longID]?.triggerCooldown("generalCommands")
 
-                println("${event.author.name} running command: ${commandString.toLowerCase()}")
+                println("${event.author.name} running command: ${event.message.content}")
                 command.runCommand(event, argsList)
             } else {
                 val timeLeft = (commandCooldown - timePassedCommand) / 1000
                 val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft seconds."
                 RequestBuffer.request {
-                    val msg = sendMessage(event.channel, message)
+                    val msg = Funcs.sendMessage(event.channel, message)
                     if (msg != null)
                         CooldownMessage(timeLeft.toInt(), event.channel, event.author.getDisplayName(event.guild), msg).start()
                 }

@@ -1,4 +1,4 @@
-package me.fzzy.eventvoter.commands
+package me.fzzy.eventvoter.commands.help
 
 import me.fzzy.eventvoter.*
 import sx.blah.discord.api.events.EventSubscriber
@@ -64,7 +64,7 @@ class Sounds : Command {
                         val timeLeft = (SOUND_COOLDOWN / 1000) - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())) / 1000)
                         val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft seconds."
                         RequestBuffer.request {
-                            val msg = sendMessage(event.channel, message)
+                            val msg = Funcs.sendMessage(event.channel, message)
                             if (msg != null)
                                 CooldownMessage(timeLeft.toInt(), event.channel, event.author.getDisplayName(event.guild), msg).start()
                         }

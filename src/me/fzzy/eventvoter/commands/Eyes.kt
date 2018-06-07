@@ -4,83 +4,121 @@ import magick.CompositeOperator
 import magick.ImageInfo
 import magick.MagickImage
 import me.fzzy.eventvoter.*
-import me.fzzy.eventvoter.seam.BufferedImagePicture
+import me.fzzy.eventvoter.thread.ImageProcessTask
 import org.json.JSONObject
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 import java.net.URL
+import javax.imageio.ImageIO
+import kotlin.math.roundToInt
 
 
 class Eyes : Command {
 
     override val cooldownMillis: Long = 6 * 1000
-    override val attemptDelete: Boolean = false
+    override val attemptDelete: Boolean = true
     override val description = "Adds different eyes to an image"
-    override val usageText: String = "-eyes [imageUrl]"
+    override val usageText: String = "-eyes <eyeType> [imageUrl]"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
-        val history = event.channel.getMessageHistory(10).toMutableList()
-        history.add(0, event.message)
-        val url: URL? = getFirstImage(history)
-        if (url == null) {
-            RequestBuffer.request { sendMessage(event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
+
+        // Find the specified eyes from the eyes folder
+        val eyesFile = File("eyes")
+        var eyes: File? = null
+        if (args.isNotEmpty()) {
+            for (files in eyesFile.listFiles()) {
+                if (files.nameWithoutExtension.toLowerCase() == args[0].toLowerCase()) {
+                    eyes = files
+                    break
+                }
+            }
+        }
+        if (eyes == null) {
+            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Those eyes don't exist! use -eyetypes to view all the types") }
         } else {
-            println(url.toString())
-            ProcessImageEyes(url, event).start()
+
+            // Find an image from the last 10 messages sent in this channel, include the one the user sent
+            val history = event.channel.getMessageHistory(10).toMutableList()
+            history.add(0, event.message)
+            val url: URL? = ImageFuncs.getFirstImage(history)
+            if (url == null) {
+                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
+            } else {
+
+                // Add the process to the queue
+                imageProcessQueue.addToQueue(ProcessImageEyes({
+                    val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
+                    val file = ImageFuncs.downloadTempFile(url)
+
+                    if (faces != null && file != null) {
+                        val info = ImageInfo(file.name)
+                        val magickImage = MagickImage(info)
+
+                        val eyeInfo = ImageInfo(eyes.absolutePath)
+                        val eyeMagickImage = MagickImage(eyeInfo)
+
+                        val sizeHelper = ImageIO.read(eyes)
+                        val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
+                        if (faces.length() > 0) {
+                            for (face in faces) {
+                                if (face is JSONObject) {
+                                    val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
+                                    val right = face.getJSONObject("faceLandmarks").getJSONObject("pupilRight")
+
+                                    // The images need scaling based on how big the eyes are, this is done using the distance between the eyes
+                                    val lx = left.getInt("x")
+                                    val ly = left.getInt("y")
+                                    val rx = right.getInt("x")
+                                    val ry = right.getInt("y")
+                                    var eyeDistance = Math.sqrt(Math.pow((lx - rx).toDouble(), 2.0) + Math.pow((ly - ry).toDouble(), 2.0))
+                                    eyeDistance *= ratio
+                                    val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
+                                    val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
+                                    val resize = eyeMagickImage.scaleImage(width, height)
+
+                                    magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
+                                    magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
+                                }
+                            }
+
+                            magickImage.fileName = file.absolutePath
+                            magickImage.writeImage(info)
+                        }
+                    }
+                    file
+                }, event.channel))
+            }
         }
     }
 }
 
-private class ProcessImageEyes constructor(private var url: URL, private var event: MessageReceivedEvent) : Thread() {
+private class ProcessImageEyes(override val code: () -> Any?, private var channel: IChannel) : ImageProcessTask {
 
-    override fun run() {
-        var processingMessage: IMessage? = null
-        RequestBuffer.request { processingMessage = sendMessage(event.channel, "processing...") }
+    var processingMessage: IMessage? = null
 
-        val faces = getFacialInfo("", false, true, url.toString())
+    override fun queueUpdated(position: Int) {
+        val msg = if (position == 0) "processing..." else "position in queue: $position"
+        RequestBuffer.request {
+            if (processingMessage == null)
+                processingMessage = Funcs.sendMessage(channel, msg)
+            else
+                processingMessage?.edit(msg)
+        }
+    }
 
-        if (faces != null) {
-            val file = downloadTempFile(url)
-            val info = ImageInfo(file.name)
-            val magickImage = MagickImage(info)
-
-            val eyeFile = File("redlight.png")
-            val eyeInfo = ImageInfo(eyeFile.name)
-            val eyeMagickImage = MagickImage(eyeInfo)
-            val sizeHelper = BufferedImagePicture.readFromFile(eyeMagickImage.fileName)
-            if (faces.length() > 0) {
-                for (face in faces) {
-                    if (face is JSONObject) {
-                        val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
-                        val right = faces.getJSONObject(0).getJSONObject("faceLandmarks").getJSONObject("pupilRight")
-
-                        magickImage.compositeImage(CompositeOperator.OverCompositeOp, eyeMagickImage, left.getInt("x") - sizeHelper.width / 2, left.getInt("y") - sizeHelper.height / 2)
-                        magickImage.compositeImage(CompositeOperator.OverCompositeOp, eyeMagickImage, right.getInt("x") - sizeHelper.width / 2, right.getInt("y") - sizeHelper.height / 2)
-                    }
-                }
-
-                magickImage.fileName = file.absolutePath
-                magickImage.writeImage(info)
-
+    override fun finished(obj: Any?) {
+        if (obj == null) {
+            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, channel, "No faces detected in image.") }
+        } else {
+            if (obj is File) {
                 RequestBuffer.request {
                     processingMessage?.delete()
-                    try {
-                        event.channel.sendFile(file)
-                    } catch (e: MissingPermissionsException) {
-                    }
-                    file.delete()
-                }
-            } else {
-                RequestBuffer.request {
-                    val msg = sendMessage(event.channel, "No faces detected in image.")
-                    if (msg != null)
-                        TempMessage(7 * 1000, msg).start()
-                    processingMessage?.delete()
-                    file.delete()
+                    messageScheduler.sendTempFile(60 * 1000, channel, obj)
+                    obj.delete()
                 }
             }
         }
