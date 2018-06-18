@@ -2,11 +2,9 @@ package me.fzzy.eventvoter
 
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.util.EmbedBuilder
-import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
-import java.util.ArrayList
-import java.util.LinkedHashMap
+import java.util.*
 
 class Leaderboard constructor(private var guildId: Long) {
 
@@ -93,16 +91,25 @@ class Leaderboard constructor(private var guildId: Long) {
             builder.withColor(0, 200, 255)
             builder.withThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
 
-            if (channel[0].getMessageHistory(1).size > 0 && channel[0].getMessageHistory(1)[0].author.longID == cli.ourUser.longID)
-                RequestBuffer.request { channel[0].getMessageHistory(1)[0].edit(builder.build()) }
-            else
-                RequestBuffer.request {
-                    try {
-                        channel[0].sendMessage(builder.build())
-                    } catch (e: MissingPermissionsException) {
-                        // No permission to send message
+            var found = false
+            val history = channel[0].fullMessageHistory
+            if (history != null) {
+                for (message in history) {
+                    if (message.author.longID == cli.ourUser.longID && !found) {
+                        RequestBuffer.request { message.edit(builder.build()) }
+                        found = true
+                    } else {
+                        RequestBuffer.request {
+                            try {
+                                message.delete()
+                            } catch (e: Exception) {
+                            }
+                        }
                     }
                 }
+            }
+            if (!found)
+                RequestBuffer.request { channel[0].sendMessage(builder.build()) }
         }
     }
 

@@ -1,16 +1,13 @@
 package me.fzzy.eventvoter.commands
 
 import me.fzzy.eventvoter.*
-import me.fzzy.eventvoter.seam.BufferedImagePicture
 import me.fzzy.eventvoter.thread.ImageProcessTask
-import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
-import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
-import java.io.File
 import java.net.URL
+import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
 class Deepfry : Command {
@@ -28,73 +25,63 @@ class Deepfry : Command {
         if (url == null) {
             RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
         } else {
-            imageProcessQueue.addToQueue(ProcessImageDeepfry({
-                val file = ImageFuncs.downloadTempFile(url)
+            imageProcessQueue.addToQueue(object: ImageProcessTask{
 
-                if (file == null) {
-                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't download image!") }
-                } else {
-                    val sizeHelper = BufferedImagePicture.readFromFile(file.name)
-                    val width = sizeHelper.width
-                    val height = sizeHelper.height
-                    var op = IMOperation()
-                    val convert = ConvertCmd()
-                    convert.searchPath = "C:\\Program Files (x86)\\ImageMagick-6.9.9-Q16"
+                var processingMessage: IMessage? = null
 
-                    op.addImage(file.name)
-                    op.quality(8.0)
-                    for (i in 0..3)
+                override fun run(): Any? {
+                    val file = ImageFuncs.downloadTempFile(url)
+
+                    if (file == null) {
+                        RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't download image!") }
+                    } else {
+                        val sizeHelper = ImageIO.read(file)
+                        val width = sizeHelper.width
+                        val height = sizeHelper.height
+                        var op = IMOperation()
+
+                        op.addImage(file.name)
+                        op.quality(6.0)
                         op.contrast()
-                    op.noise(2.0)
-                    op.sharpen(10.0)
-                    op.resize((width / 1.5).roundToInt(), (height / 1.5).roundToInt(), '!')
-                    op.addImage(file.name)
+                        op.addImage("noise.png")
+                        op.compose("dissolve")
+                        op.define("compose:args=\"20\"")
+                        op.composite()
+                        op.enhance()
+                        op.resize((width / 1.6).roundToInt(), (height / 3.0).roundToInt(), '!')
+                        op.addImage(file.name)
 
-                    convert.run(op)
+                        convert.run(op)
 
-                    op = IMOperation()
+                        op = IMOperation()
 
-                    op.addImage(file.name)
-                    op.quality(7.0)
-                    op.noise(2.0)
-                    op.sharpen(10.0)
-                    op.resize(width, height, '!')
-                    op.addImage(file.name)
+                        op.addImage(file.name)
+                        op.quality(5.0)
+                        op.sharpen(10.0)
+                        op.resize(width, height, '!')
+                        op.addImage(file.name)
 
-                    convert.run(op)
+                        convert.run(op)
 
-                    file
+                        RequestBuffer.request {
+                            processingMessage?.delete()
+                            messageScheduler.sendTempFile(60 * 1000, event.channel, file)
+                            file.delete()
+                        }
+                    }
+                    return file
                 }
-            }, event.channel))
-        }
-    }
-}
 
-private class ProcessImageDeepfry(override val code: () -> Any?, private var channel: IChannel) : ImageProcessTask {
-
-    var processingMessage: IMessage? = null
-
-    override fun queueUpdated(position: Int) {
-        val msg = if (position == 0) "processing..." else "position in queue: $position"
-        RequestBuffer.request {
-            if (processingMessage == null)
-                processingMessage = Funcs.sendMessage(channel, msg)
-            else
-                processingMessage?.edit(msg)
-        }
-    }
-
-    override fun finished(obj: Any?) {
-        if (obj == null) {
-            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, channel, "Couldn't download image!") }
-        } else {
-            if (obj is File) {
-                RequestBuffer.request {
-                    processingMessage?.delete()
-                    messageScheduler.sendTempFile(60 * 1000, channel, obj)
-                    obj.delete()
+                override fun queueUpdated(position: Int) {
+                    val msg = if (position == 0) "processing..." else "position in queue: $position"
+                    RequestBuffer.request {
+                        if (processingMessage == null)
+                            processingMessage = Funcs.sendMessage(event.channel, msg)
+                        else
+                            processingMessage?.edit(msg)
+                    }
                 }
-            }
+            })
         }
     }
 }

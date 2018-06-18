@@ -4,8 +4,7 @@ import me.fzzy.eventvoter.running
 import java.util.*
 
 interface ImageProcessTask {
-    val code: () -> Any?
-    fun finished(obj: Any?)
+    fun run(): Any?
     fun queueUpdated(position: Int)
 }
 
@@ -23,8 +22,12 @@ class ImageProcessQueue : Thread() {
             Thread.sleep(1000)
 
             if (queue.size > 0) {
-                val file = queue[0].code.invoke()
-                queue[0].finished(file)
+                try {
+                    queue[0].run()
+                } catch (e: Exception) {
+                    println("Failed to run image process queue!")
+                    e.printStackTrace()
+                }
                 queue.removeAt(0)
                 for (task in queue) {
                     task.queueUpdated(queue.indexOf(task))

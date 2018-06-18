@@ -1,13 +1,12 @@
 package me.fzzy.eventvoter
 
 import me.fzzy.eventvoter.commands.*
-import me.fzzy.eventvoter.commands.help.Eyetypes
-import me.fzzy.eventvoter.commands.help.Help
-import me.fzzy.eventvoter.commands.help.Picturetypes
-import me.fzzy.eventvoter.commands.help.Sounds
+import me.fzzy.eventvoter.commands.help.*
 import me.fzzy.eventvoter.thread.ImageProcessQueue
 import me.fzzy.eventvoter.thread.IndividualTask
 import me.fzzy.eventvoter.thread.Task
+import org.im4java.core.ConvertCmd
+import org.im4java.core.MogrifyCmd
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
 import sx.blah.discord.handle.obj.ActivityType
@@ -20,6 +19,8 @@ import java.util.*
 lateinit var cli: IDiscordClient
 lateinit var guilds: ArrayList<Leaderboard>
 lateinit var commandHandler: CommandHandler
+lateinit var convert: ConvertCmd
+lateinit var mogrify: MogrifyCmd
 
 lateinit var azureToken: String
 
@@ -54,6 +55,10 @@ fun main(args: Array<String>) {
     }
     running = true
     azureToken = args[1]
+    convert = ConvertCmd()
+    mogrify = MogrifyCmd()
+    mogrify.searchPath = "C:\\Program Files (x86)\\ImageMagick-6.9.9-Q16"
+    convert.searchPath = "C:\\Program Files (x86)\\ImageMagick-6.9.9-Q16"
 
     val sounds = Sounds()
 
@@ -64,14 +69,19 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("emotion", Emotion())
     commandHandler.registerCommand("deepfry", Deepfry())
     commandHandler.registerCommand("mc", Mc())
+    commandHandler.registerCommand("meme", Meme())
+    commandHandler.registerCommand("mock", Mock())
+    commandHandler.registerCommand("explode", Explode())
 
     commandHandler.registerCommand("pfp", Pfp())
     commandHandler.registerCommand("keep", Keep())
 
     commandHandler.registerCommand("help", Help())
+    commandHandler.registerCommand("invite", Invite())
     commandHandler.registerCommand("sounds", sounds)
     commandHandler.registerCommand("eyetypes", Eyetypes())
     commandHandler.registerCommand("picturetypes", Picturetypes())
+    commandHandler.registerCommand("mocks", Mocks())
 
     guilds = ArrayList()
 
@@ -83,7 +93,18 @@ fun main(args: Array<String>) {
         if (presenceActivityType != null && presenceStatusType != null && presenceText != null)
             RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
 
-        for (leaderboard in guilds) {
+        val iter = guilds.iterator()
+        while (iter.hasNext()) {
+            val leaderboard = iter.next()
+            var exists = false
+            for (guild in cli.guilds) {
+                if (guild.longID == leaderboard.leaderboardGuildId)
+                    exists = true
+            }
+            if (!exists) {
+                iter.remove()
+                continue
+            }
             if (Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY) {
                 if (leaderboard.weekWinner == null)
                     leaderboard.weekWinner = leaderboard.getCurrentWinner()

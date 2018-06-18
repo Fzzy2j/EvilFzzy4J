@@ -7,7 +7,6 @@ import me.fzzy.eventvoter.*
 import me.fzzy.eventvoter.thread.ImageProcessTask
 import org.json.JSONObject
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
-import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
@@ -50,81 +49,72 @@ class Eyes : Command {
             } else {
 
                 // Add the process to the queue
-                imageProcessQueue.addToQueue(ProcessImageEyes({
-                    val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
-                    val file = ImageFuncs.downloadTempFile(url)
+                imageProcessQueue.addToQueue(object : ImageProcessTask {
 
-                    if (faces != null && file != null) {
-                        val info = ImageInfo(file.name)
-                        val magickImage = MagickImage(info)
+                    var processingMessage: IMessage? = null
 
-                        val eyeInfo = ImageInfo(eyes.absolutePath)
-                        val eyeMagickImage = MagickImage(eyeInfo)
+                    override fun run(): Any? {
+                        val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
+                        val file = ImageFuncs.downloadTempFile(url)
 
-                        val sizeHelper = ImageIO.read(eyes)
-                        val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
-                        if (faces.length() > 0) {
-                            for (face in faces) {
-                                if (face is JSONObject) {
-                                    val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
-                                    val right = face.getJSONObject("faceLandmarks").getJSONObject("pupilRight")
+                        if (faces != null && file != null) {
+                            val info = ImageInfo(file.name)
+                            val magickImage = MagickImage(info)
 
-                                    // The images need scaling based on how big the eyes are, this is done using the distance between the eyes
-                                    val lx = left.getInt("x")
-                                    val ly = left.getInt("y")
-                                    val rx = right.getInt("x")
-                                    val ry = right.getInt("y")
-                                    var eyeDistance = Math.sqrt(Math.pow((lx - rx).toDouble(), 2.0) + Math.pow((ly - ry).toDouble(), 2.0))
-                                    eyeDistance *= ratio
-                                    val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
-                                    val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
-                                    var resize = eyeMagickImage.scaleImage(width, height)
+                            val eyeInfo = ImageInfo(eyes.absolutePath)
+                            val eyeMagickImage = MagickImage(eyeInfo)
 
-                                    magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
+                            val sizeHelper = ImageIO.read(eyes)
+                            val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
+                            if (faces.length() > 0) {
+                                for (face in faces) {
+                                    if (face is JSONObject) {
+                                        val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
+                                        val right = face.getJSONObject("faceLandmarks").getJSONObject("pupilRight")
 
-                                    // If the eye file ends in _mirror the other eye will be flipped
-                                    if (eyes.nameWithoutExtension.endsWith("_mirror"))
-                                        resize = resize.flopImage()
+                                        // The images need scaling based on how big the eyes are, this is done using the distance between the eyes
+                                        val lx = left.getInt("x")
+                                        val ly = left.getInt("y")
+                                        val rx = right.getInt("x")
+                                        val ry = right.getInt("y")
+                                        var eyeDistance = Math.sqrt(Math.pow((lx - rx).toDouble(), 2.0) + Math.pow((ly - ry).toDouble(), 2.0))
+                                        eyeDistance *= ratio
+                                        val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
+                                        val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
+                                        var resize = eyeMagickImage.scaleImage(width, height)
 
-                                    magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
+                                        magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
+
+                                        // If the eye file ends in _mirror the other eye will be flipped
+                                        if (eyes.nameWithoutExtension.endsWith("_mirror"))
+                                            resize = resize.flopImage()
+
+                                        magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
+                                    }
+                                }
+
+                                magickImage.fileName = file.absolutePath
+                                magickImage.writeImage(info)
+                                RequestBuffer.request {
+                                    processingMessage?.delete()
+                                    messageScheduler.sendTempFile(60 * 1000, event.channel, file)
+                                    file.delete()
                                 }
                             }
+                        }
+                        return file
+                    }
 
-                            magickImage.fileName = file.absolutePath
-                            magickImage.writeImage(info)
+                    override fun queueUpdated(position: Int) {
+                        val msg = if (position == 0) "processing..." else "position in queue: $position"
+                        RequestBuffer.request {
+                            if (processingMessage == null)
+                                processingMessage = Funcs.sendMessage(event.channel, msg)
+                            else
+                                processingMessage?.edit(msg)
                         }
                     }
-                    file
-                }, event.channel))
-            }
-        }
-    }
-}
-
-private class ProcessImageEyes(override val code: () -> Any?, private var channel: IChannel) : ImageProcessTask {
-
-    var processingMessage: IMessage? = null
-
-    override fun queueUpdated(position: Int) {
-        val msg = if (position == 0) "processing..." else "position in queue: $position"
-        RequestBuffer.request {
-            if (processingMessage == null)
-                processingMessage = Funcs.sendMessage(channel, msg)
-            else
-                processingMessage?.edit(msg)
-        }
-    }
-
-    override fun finished(obj: Any?) {
-        if (obj == null) {
-            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, channel, "No faces detected in image.") }
-        } else {
-            if (obj is File) {
-                RequestBuffer.request {
-                    processingMessage?.delete()
-                    messageScheduler.sendTempFile(60 * 1000, channel, obj)
-                    obj.delete()
-                }
+                })
             }
         }
     }

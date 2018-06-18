@@ -19,8 +19,13 @@ class Task : Thread() {
             Thread.sleep(1000)
 
             for ((task, time) in tasks) {
-                if (System.currentTimeMillis() - time > task.intervalSeconds) {
-                    task.toRun.invoke()
+                if ((System.currentTimeMillis() - time) / 1000 > task.intervalSeconds) {
+                    try {
+                        task.toRun.invoke()
+                    } catch (e: Exception) {
+                        println("Failed to run task!")
+                        e.printStackTrace()
+                    }
                     if (task.repeat)
                         tasks[task] = System.currentTimeMillis()
                     else

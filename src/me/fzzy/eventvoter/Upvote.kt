@@ -1,5 +1,6 @@
 package me.fzzy.eventvoter
 
+import me.fzzy.eventvoter.thread.ImageProcessTask
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.ReadyEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
@@ -11,6 +12,7 @@ import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.RequestBuilder
+import java.net.URL
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -25,6 +27,22 @@ class Upvote {
                 val pattern = Pattern.compile("((http:\\/\\/|https:\\/\\/)?(www.)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(\\/([a-zA-Z-_\\/\\.0-9#:?=&;,]*)?)?)")
                 val m: Matcher = pattern.matcher(event.message.content)
                 if (m.find() || event.message.attachments.size > 0) {
+                    if (event.message.content.contains("imgur.com", true)) {
+                        if (event.message.content.endsWith(".gif") || event.message.content.endsWith(".gifv")) {
+                            imageProcessQueue.addToQueue(object: ImageProcessTask{
+                                override fun run(): Any? {
+                                    val temp = ImageFuncs.downloadTempFile(URL(event.message.content))
+                                    if (temp != null) {
+                                        event.channel.sendFile(temp)
+                                        temp.delete()
+                                    }
+                                    return temp
+                                }
+                                override fun queueUpdated(position: Int) {
+                                }
+                            })
+                        }
+                    }
                     RequestBuilder(event.client).shouldBufferRequests(true).doAction {
                         event.message.addReaction(ReactionEmoji.of("upvote", 445376322353496064L))
                         true

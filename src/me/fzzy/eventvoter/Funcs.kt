@@ -49,9 +49,16 @@ class ImageFuncs {
         }
 
         fun downloadTempFile(url: URL): File? {
-            val fileName = "${imageQueues++}.${if (url.toString().endsWith("webp") || url.toString().endsWith("png")) "png" else "jpg"}"
+            val fixedUrl = URL(url.toString().replace(".gifv", ".gif"))
+            var suffix = "jpg"
+            if (fixedUrl.toString().endsWith("webp") || fixedUrl.toString().endsWith("png"))
+                suffix = "png"
+            if (fixedUrl.toString().endsWith("gif"))
+                suffix = "gif"
+
+            val fileName = "${imageQueues++}.$suffix"
             try {
-                val openConnection = url.openConnection()
+                val openConnection = fixedUrl.openConnection()
                 openConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11")
                 openConnection.connect()
 
@@ -95,7 +102,10 @@ class ImageFuncs {
 
                 if (entity != null) {
                     val jsonString = EntityUtils.toString(entity).trim { it <= ' ' }
-                    return JSONArray(jsonString)
+                    try {
+                        return JSONArray(jsonString)
+                    } catch (e: Exception) {
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -115,15 +125,22 @@ class ImageFuncs {
                             val matcher = pattern.matcher(split)
                             if (matcher.find()) {
                                 var urlString = split.substring(matcher.start(1), matcher.end()).replace(".webp", ".png").replace("//gyazo.com", "//i.gyazo.com")
-                                if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png"))
+                                if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png")) {
                                     urlString += ".png"
+                                }
+                                if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".jpg")) {
+                                    urlString += ".jpq"
+                                }
                                 url = URL(urlString)
                                 break
                             }
                         }
                     }
                     if (url != null) {
-                        if (url.toString().toLowerCase().endsWith(".png") || url.toString().toLowerCase().endsWith(".jpg") || url.toString().toLowerCase().endsWith(".jpeg")) {
+                        if (url.toString().toLowerCase().endsWith(".png")
+                                || url.toString().toLowerCase().endsWith(".jpg")
+                                || url.toString().toLowerCase().endsWith(".jpeg")
+                                || url.toString().toLowerCase().endsWith(".gif")) {
                             break
                         }
                     }
