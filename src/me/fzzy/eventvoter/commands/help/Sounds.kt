@@ -1,6 +1,7 @@
 package me.fzzy.eventvoter.commands.help
 
 import me.fzzy.eventvoter.*
+import me.fzzy.eventvoter.thread.ImageProcessTask
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.DiscordException
@@ -8,6 +9,10 @@ import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
 import java.io.File
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
+import javax.sound.sampled.UnsupportedAudioFileException
 
 private const val SOUND_COOLDOWN: Long = 30 * 1000
 
@@ -35,14 +40,14 @@ class Sounds : Command {
         if (event.guild != null) {
             if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
                 if (event.message.content.startsWith(BOT_PREFIX)) {
+                    val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel ?: return
+                    val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
+                    val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
+
+                    if (audioDir == null || audioDir.isEmpty())
+                        return
+
                     if (System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, 0) > SOUND_COOLDOWN) {
-                        val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel ?: return
-                        val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
-                        val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
-
-                        if (audioDir == null || audioDir.isEmpty())
-                            return
-
                         RequestBuffer.request {
                             try {
                                 event.message.delete()
@@ -51,7 +56,30 @@ class Sounds : Command {
                             }
                         }
 
-                        Sound(userVoiceChannel, audioP, audioDir[0], event.guild).start()
+                        println("${SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))} - ${event.author.name}#${event.author.discriminator} playing sound: ${event.message.content}")
+                        imageProcessQueue.addToQueue(object : ImageProcessTask {
+                            override fun run(): Any? {
+                                userVoiceChannel.join()
+                                Thread.sleep(100)
+                                audioP.clear()
+                                Thread.sleep(100)
+                                try {
+                                    audioP.queue(audioDir[0])
+                                } catch (e: IOException) {
+                                    // File not found
+                                } catch (e: UnsupportedAudioFileException) {
+                                    e.printStackTrace()
+                                }
+                                while (audioP.currentTrack != null) {
+                                    Thread.sleep(100)
+                                }
+                                cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
+                                return null
+                            }
+
+                            override fun queueUpdated(position: Int) {
+                            }
+                        })
                         cooldowns[event.author.longID] = System.currentTimeMillis()
                     } else {
                         RequestBuffer.request {

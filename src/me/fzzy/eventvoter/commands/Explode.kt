@@ -84,7 +84,7 @@ class Explode : Command {
                             op.layers("optimize")
                             op.type("Palette")
                             op.depth(8)
-                            op.fuzz(4.0, true)
+                            op.fuzz(6.0, true)
                             op.dither("none")
 
                             op.loop(0)
@@ -107,7 +107,7 @@ class Explode : Command {
                             op.layers("optimize")
                             op.type("Palette")
                             op.depth(8)
-                            op.fuzz(4.0, true)
+                            op.fuzz(6.0, true)
                             op.dither("none")
 
                             op.loop(0)

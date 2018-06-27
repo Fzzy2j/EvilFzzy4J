@@ -11,4 +11,5 @@ interface Command {
     val allowDM: Boolean
 
     fun runCommand(event: MessageReceivedEvent, args: List<String>)
+
 }

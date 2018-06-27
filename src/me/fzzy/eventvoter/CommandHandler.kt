@@ -7,6 +7,7 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
+import java.text.SimpleDateFormat
 import java.util.*
 
 private lateinit var commandMap: HashMap<String, Command>
@@ -89,7 +90,7 @@ class CommandHandler constructor(prefix: String) {
                 cooldowns[event.author.longID]?.triggerCooldown(commandString)
                 cooldowns[event.author.longID]?.triggerCooldown("generalCommands")
 
-                println("${event.author.name} running command: ${event.message.content}")
+                println("${SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))} - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
                 command.runCommand(event, argsList)
             } else {
                 val timeLeft = (commandCooldown - timePassedCommand) / 1000
