@@ -6,6 +6,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
 import org.json.JSONArray
+import sx.blah.discord.api.internal.json.objects.EmbedObject
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IMessage
@@ -25,6 +26,13 @@ class Funcs {
                 return null
             return try {
                 channel.sendMessage(text)
+            } catch (e: MissingPermissionsException) {
+                null
+            }
+        }
+        fun sendEmbed(channel: IChannel, embed: EmbedObject): IMessage? {
+            return try {
+                channel.sendMessage(embed)
             } catch (e: MissingPermissionsException) {
                 null
             }

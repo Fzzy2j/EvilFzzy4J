@@ -2,6 +2,7 @@ package me.fzzy.eventvoter
 
 import me.fzzy.eventvoter.thread.IndividualTask
 import me.fzzy.eventvoter.thread.Task
+import sx.blah.discord.api.internal.json.objects.EmbedObject
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
 import java.io.File
@@ -39,6 +40,15 @@ class MessageScheduler constructor(task: Task) {
 
     fun sendTempMessage(timeToStayMillis: Long, channel: IChannel, text: String): IMessage? {
         val msg = Funcs.sendMessage(channel, text)
+        if (msg != null) {
+            tempMessages[msg] = System.currentTimeMillis() + timeToStayMillis
+            return msg
+        }
+        return null
+    }
+
+    fun sendTempEmbed(timeToStayMillis: Long, channel: IChannel, embed: EmbedObject): IMessage? {
+        val msg = Funcs.sendEmbed(channel, embed)
         if (msg != null) {
             tempMessages[msg] = System.currentTimeMillis() + timeToStayMillis
             return msg

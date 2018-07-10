@@ -67,50 +67,29 @@ class Leaderboard constructor(private var guildId: Long) {
         }
     }
 
-    fun updateLeaderboard() {
-        val channel: MutableList<IChannel> = cli.getGuildByID(guildId).getChannelsByName("leaderboard")
-        if (channel.size > 0) {
-            val builder = EmbedBuilder()
+    fun sendLeaderboard(channel: IChannel) {
+        val builder = EmbedBuilder()
 
-            var count = 0
-            for ((key, value) in getSortedLeaderboard()) {
-                if (++count > 25)
-                    break
-                val title = "#$count - ${cli.getUserByID(key).getDisplayName(cli.getGuildByID(guildId))}"
-                val description = "$value points"
-                builder.appendField(title, description, false)
-            }
-            if (weekWinner != null) {
-                builder.withTitle(":zap: ${cli.getUserByID(weekWinner!!.id).getDisplayName(cli.getGuildByID(guildId))} had the most points last week! :zap:")
-                builder.withDescription(":zap: They had ${weekWinner!!.score} points! :zap:")
-            }
-
-            builder.withAuthorName("LEADERBOARD")
-            builder.withAuthorIcon("http://i.imgur.com/dYhgv64.jpg")
-
-            builder.withColor(0, 200, 255)
-            builder.withThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
-
-            var found = false
-            val history = channel[0].fullMessageHistory
-            if (history != null) {
-                for (message in history) {
-                    if (message.author.longID == cli.ourUser.longID && !found) {
-                        RequestBuffer.request { message.edit(builder.build()) }
-                        found = true
-                    } else {
-                        RequestBuffer.request {
-                            try {
-                                message.delete()
-                            } catch (e: Exception) {
-                            }
-                        }
-                    }
-                }
-            }
-            if (!found)
-                RequestBuffer.request { channel[0].sendMessage(builder.build()) }
+        var count = 0
+        for ((key, value) in getSortedLeaderboard()) {
+            if (++count > 25)
+                break
+            val title = "#$count - ${cli.getUserByID(key).getDisplayName(cli.getGuildByID(guildId))}"
+            val description = "$value points"
+            builder.appendField(title, description, false)
         }
+        if (weekWinner != null) {
+            builder.withTitle(":zap: ${cli.getUserByID(weekWinner!!.id).getDisplayName(cli.getGuildByID(guildId))} had the most points last week! :zap:")
+            builder.withDescription(":zap: They had ${weekWinner!!.score} points! :zap:")
+        }
+
+        builder.withAuthorName("LEADERBOARD")
+        builder.withAuthorIcon("http://i.imgur.com/dYhgv64.jpg")
+
+        builder.withColor(0, 200, 255)
+        builder.withThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
+
+        RequestBuffer.request { messageScheduler.sendTempEmbed(10000, channel, builder.build()) }
     }
 
     fun getCurrentWinner(): Winner? {

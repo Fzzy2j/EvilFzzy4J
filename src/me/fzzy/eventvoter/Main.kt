@@ -73,6 +73,8 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("mock", Mock())
     commandHandler.registerCommand("explode", Explode())
 
+    commandHandler.registerCommand("leaderboard", LeaderboardCommand())
+
     commandHandler.registerCommand("pfp", Pfp())
     commandHandler.registerCommand("keep", Keep())
 
@@ -90,6 +92,9 @@ fun main(args: Array<String>) {
 
     scheduler = Task()
     scheduler.registerTask(IndividualTask({
+        if (!cli.isLoggedIn)
+            cli.login()
+
         if (presenceActivityType != null && presenceStatusType != null && presenceText != null)
             RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
 
@@ -111,6 +116,10 @@ fun main(args: Array<String>) {
                 if (leaderboard.weekWinner != null) {
                     if (System.currentTimeMillis() - leaderboard.weekWinner!!.timestamp > 1000 * 60 * 60 * 25 * 1) {
                         leaderboard.weekWinner = leaderboard.getCurrentWinner()
+                        val general = cli.getGuildByID(leaderboard.leaderboardGuildId).getChannelsByName("general")
+                        if (general.size > 0) {
+                            leaderboard.sendLeaderboard(general[0])
+                        }
                         leaderboard.clearLeaderboard()
                     }
                 }
@@ -119,7 +128,6 @@ fun main(args: Array<String>) {
             leaderboard.saveLeaderboard()
             try {
                 cli.ourUser.getVoiceStateForGuild(cli.getGuildByID(leaderboard.leaderboardGuildId)).channel?.leave()
-                leaderboard.updateLeaderboard()
             } catch (e: MissingPermissionsException) {
                 println("Could not update leaderboard for guild")
                 e.printStackTrace()

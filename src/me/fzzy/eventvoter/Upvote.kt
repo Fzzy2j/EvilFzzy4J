@@ -8,7 +8,6 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.Reactio
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
-import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.RequestBuilder
 import java.util.regex.Matcher
@@ -36,10 +35,7 @@ class Upvote {
             }
             if (event.message.content.equals("-stop", true)) {
                 if (event.author.longID == OWNER_ID) {
-                    try {
-                        RequestBuffer.request { event.message.delete() }
-                    } catch (e: MissingPermissionsException) {
-                    }
+                    RequestBuffer.request { event.message.delete() }
                     for (leaderboard in guilds) {
                         leaderboard.saveLeaderboard()
                     }
@@ -91,7 +87,6 @@ class Upvote {
             val leaderboard = Leaderboard(guild.longID)
             guilds.add(leaderboard)
             leaderboard.loadLeaderboard()
-            leaderboard.updateLeaderboard()
         }
         changeStatus(StatusType.ONLINE, ActivityType.LISTENING, "the rain -help")
     }
