@@ -116,10 +116,6 @@ fun main(args: Array<String>) {
                 if (leaderboard.weekWinner != null) {
                     if (System.currentTimeMillis() - leaderboard.weekWinner!!.timestamp > 1000 * 60 * 60 * 25 * 1) {
                         leaderboard.weekWinner = leaderboard.getCurrentWinner()
-                        val general = cli.getGuildByID(leaderboard.leaderboardGuildId).getChannelsByName("general")
-                        if (general.size > 0) {
-                            leaderboard.sendLeaderboard(general[0])
-                        }
                         leaderboard.clearLeaderboard()
                     }
                 }

@@ -40,8 +40,6 @@ class Sounds : Command {
         if (event.guild != null) {
             if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
                 if (event.message.content.startsWith(BOT_PREFIX)) {
-                    val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel ?: return
-                    val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
                     val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
 
                     if (audioDir == null || audioDir.isEmpty())
@@ -59,21 +57,25 @@ class Sounds : Command {
                         println("${SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))} - ${event.author.name}#${event.author.discriminator} playing sound: ${event.message.content}")
                         imageProcessQueue.addToQueue(object : ImageProcessTask {
                             override fun run(): Any? {
-                                userVoiceChannel.join()
-                                Thread.sleep(100)
-                                audioP.clear()
-                                Thread.sleep(100)
-                                try {
-                                    audioP.queue(audioDir[0])
-                                } catch (e: IOException) {
-                                    // File not found
-                                } catch (e: UnsupportedAudioFileException) {
-                                    e.printStackTrace()
-                                }
-                                while (audioP.currentTrack != null) {
+                                val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
+                                val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
+                                if (userVoiceChannel != null) {
+                                    userVoiceChannel.join()
                                     Thread.sleep(100)
+                                    audioP.clear()
+                                    Thread.sleep(100)
+                                    try {
+                                        audioP.queue(audioDir[0])
+                                    } catch (e: IOException) {
+                                        // File not found
+                                    } catch (e: UnsupportedAudioFileException) {
+                                        e.printStackTrace()
+                                    }
+                                    while (audioP.currentTrack != null) {
+                                        Thread.sleep(100)
+                                    }
+                                    cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
                                 }
-                                cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
                                 return null
                             }
 
