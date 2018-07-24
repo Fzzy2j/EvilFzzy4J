@@ -61,9 +61,9 @@ class Sounds : Command {
                                 val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
                                 if (userVoiceChannel != null) {
                                     userVoiceChannel.join()
-                                    Thread.sleep(100)
+                                    Thread.sleep(500)
                                     audioP.clear()
-                                    Thread.sleep(100)
+                                    Thread.sleep(500)
                                     try {
                                         audioP.queue(audioDir[0])
                                     } catch (e: IOException) {
@@ -72,7 +72,7 @@ class Sounds : Command {
                                         e.printStackTrace()
                                     }
                                     while (audioP.currentTrack != null) {
-                                        Thread.sleep(100)
+                                        Thread.sleep(500)
                                     }
                                     cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
                                 }

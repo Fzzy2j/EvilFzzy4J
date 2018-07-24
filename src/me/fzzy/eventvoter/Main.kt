@@ -92,8 +92,11 @@ fun main(args: Array<String>) {
 
     scheduler = Task()
     scheduler.registerTask(IndividualTask({
-        if (!cli.isLoggedIn)
-            cli.login()
+        try {
+            if (!cli.isLoggedIn)
+                cli.login()
+        } catch (e: DiscordException) {
+        }
 
         if (presenceActivityType != null && presenceStatusType != null && presenceText != null)
             RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
