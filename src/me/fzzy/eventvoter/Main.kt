@@ -12,7 +12,6 @@ import sx.blah.discord.api.IDiscordClient
 import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.DiscordException
-import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import java.util.*
 
@@ -125,15 +124,6 @@ fun main(args: Array<String>) {
             }
 
             leaderboard.saveLeaderboard()
-            try {
-                cli.ourUser.getVoiceStateForGuild(cli.getGuildByID(leaderboard.leaderboardGuildId)).channel?.leave()
-            } catch (e: MissingPermissionsException) {
-                println("Could not update leaderboard for guild")
-                e.printStackTrace()
-            } catch (e: DiscordException) {
-                println("Could not update leaderboard for guild")
-                e.printStackTrace()
-            }
         }
     }, 60, true))
     scheduler.start()

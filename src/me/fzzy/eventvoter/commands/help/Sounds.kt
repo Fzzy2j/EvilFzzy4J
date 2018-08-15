@@ -12,7 +12,12 @@ import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
+import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.UnsupportedAudioFileException
+
+
+
+
 
 private const val SOUND_COOLDOWN: Long = 30 * 1000
 
@@ -60,10 +65,15 @@ class Sounds : Command {
                                 val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                                 val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
                                 if (userVoiceChannel != null) {
+
+                                    val stream = AudioSystem.getAudioFileFormat(audioDir[0])
+                                    val frames = stream.frameLength
+                                    val durationInSeconds = (frames + 0.0) / stream.format.frameRate
+
                                     userVoiceChannel.join()
-                                    Thread.sleep(500)
+                                    Thread.sleep(100)
                                     audioP.clear()
-                                    Thread.sleep(500)
+                                    Thread.sleep(100)
                                     try {
                                         audioP.queue(audioDir[0])
                                     } catch (e: IOException) {
@@ -71,9 +81,7 @@ class Sounds : Command {
                                     } catch (e: UnsupportedAudioFileException) {
                                         e.printStackTrace()
                                     }
-                                    while (audioP.currentTrack != null) {
-                                        Thread.sleep(500)
-                                    }
+                                    Thread.sleep((durationInSeconds * 1000).toLong() + 200)
                                     cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
                                 }
                                 return null
