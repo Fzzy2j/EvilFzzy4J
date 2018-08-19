@@ -97,7 +97,7 @@ class Eyes : Command {
                                 magickImage.writeImage(info)
                                 RequestBuffer.request {
                                     processingMessage?.delete()
-                                    messageScheduler.sendTempFile(60 * 1000, event.channel, file)
+                                    Funcs.sendFile(event.channel, file)
                                     file.delete()
                                 }
                             }

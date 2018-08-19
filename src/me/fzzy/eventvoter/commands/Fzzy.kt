@@ -98,7 +98,7 @@ class Fzzy : Command {
                         RequestBuffer.request {
                             processingMessage?.delete()
                             try {
-                                messageScheduler.sendTempFile(60 * 1000, event.channel, file)
+                                Funcs.sendFile(event.channel, file)
                             }catch (e: Exception) {
                                 messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not send generated file!")
                             }

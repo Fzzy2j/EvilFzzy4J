@@ -46,7 +46,7 @@ class Emotion : Command {
                                 }
                             }
                             processingMessage?.delete()
-                            RequestBuffer.request { messageScheduler.sendTempMessage(60 * 1000, event.channel, finalOutput) }
+                            RequestBuffer.request { Funcs.sendMessage(event.channel, finalOutput) }
                         } else {
                             processingMessage?.delete()
                             RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "No faces detected in image.") }

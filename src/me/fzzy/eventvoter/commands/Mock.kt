@@ -80,7 +80,7 @@ class Mock : Command {
                         magickImage.writeImage(info)
                         RequestBuffer.request {
                             processingMessage?.delete()
-                            messageScheduler.sendTempFile(60 * 1000, event.channel, output)
+                            Funcs.sendFile(event.channel, output)
                             output.delete()
                         }
                         return null

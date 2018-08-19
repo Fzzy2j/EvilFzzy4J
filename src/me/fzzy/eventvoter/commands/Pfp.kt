@@ -2,6 +2,7 @@ package me.fzzy.eventvoter.commands
 
 import me.fzzy.eventvoter.Command
 import me.fzzy.eventvoter.DEFAULT_TEMP_MESSAGE_DURATION
+import me.fzzy.eventvoter.Funcs
 import me.fzzy.eventvoter.messageScheduler
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IUser
@@ -40,7 +41,7 @@ class Pfp : Command {
             if (finalUser == null) {
                 RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "User not found!") }
             } else {
-                RequestBuffer.request { messageScheduler.sendTempMessage(60 * 1000, event.channel, finalUser.avatarURL) }
+                RequestBuffer.request { Funcs.sendMessage(event.channel, finalUser.avatarURL) }
             }
         }
     }
