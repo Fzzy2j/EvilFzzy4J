@@ -27,24 +27,24 @@ class Upvote {
 
     @EventSubscriber
     fun onMessageReceived(event: MessageReceivedEvent) {
-        if (!event.message.author.isBot) {
-            if (event.guild != null) {
-                if (getGuild(event.guild.longID) == null)
-                    guilds.add(Guild(event.guild.longID))
-                val pattern = Pattern.compile("((http:\\/\\/|https:\\/\\/)?(www.)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(\\/([a-zA-Z-_\\/\\.0-9#:?=&;,]*)?)?)")
-                val m: Matcher = pattern.matcher(event.message.content)
-                if (m.find() || event.message.attachments.size > 0) {
-                    getGuild(event.guild.longID)!!.posts++
-                    getGuild(event.guild.longID)!!.votes++
-                    RequestBuilder(event.client).shouldBufferRequests(true).doAction {
-                        event.message.addReaction(ReactionEmoji.of("upvote", 445376322353496064L))
-                        true
-                    }.andThen {
-                        event.message.addReaction(ReactionEmoji.of("downvote", 445376330989830147L))
-                        true
-                    }.execute()
-                }
+        if (event.guild != null) {
+            if (getGuild(event.guild.longID) == null)
+                guilds.add(Guild(event.guild.longID))
+            val pattern = Pattern.compile("((http:\\/\\/|https:\\/\\/)?(www.)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(\\/([a-zA-Z-_\\/\\.0-9#:?=&;,]*)?)?)")
+            val m: Matcher = pattern.matcher(event.message.content)
+            if (m.find() || event.message.attachments.size > 0) {
+                getGuild(event.guild.longID)!!.posts++
+                getGuild(event.guild.longID)!!.votes++
+                RequestBuilder(event.client).shouldBufferRequests(true).doAction {
+                    event.message.addReaction(ReactionEmoji.of("upvote", 445376322353496064L))
+                    true
+                }.andThen {
+                    event.message.addReaction(ReactionEmoji.of("downvote", 445376330989830147L))
+                    true
+                }.execute()
             }
+        }
+        if (!event.message.author.isBot) {
             if (event.message.content.equals("-stop", true)) {
                 if (event.author.longID == OWNER_ID) {
                     RequestBuffer.request { event.message.delete() }
