@@ -1,15 +1,90 @@
 package me.fzzy.eventvoter
 
-import sx.blah.discord.handle.obj.IChannel
-import sx.blah.discord.util.EmbedBuilder
-import sx.blah.discord.util.RequestBuffer
-import java.io.File
+import javafx.util.Pair
 import java.util.*
 
 class Leaderboard constructor(private var guildId: Long) {
 
-    private var scores: HashMap<Long, Int>
-    var weekWinner: Winner? = null
+    //valueMap[id]=Pair(Rank, Score)
+    var valueMap: HashMap<Long, Pair<Int, Int>> = HashMap()
+        private set
+    //rankMap[Rank]=id
+    private var rankMap: HashMap<Int, Long> = HashMap()
+
+    val leaderboardGuildId: Long get() = this.guildId
+
+    fun clear() {
+        rankMap.clear()
+        valueMap.clear()
+    }
+
+    fun getOrDefault(id: Long, def: Int): Int {
+        return if (valueMap.containsKey(id)) valueMap[id]!!.value else def
+    }
+
+    fun getAtRank(rank: Int): Long? {
+        return rankMap[rank]
+    }
+
+    fun getRank(id: Long): Int? {
+        return valueMap[id]?.key
+    }
+
+    fun setValue(id: Long, newValue: Int) {
+        if (valueMap.containsKey(id)) {
+            val prevValue = valueMap[id]!!.value
+
+            // Determines if they need to move up or down in the leaderboard
+            if (newValue < prevValue) {
+                moveDownInLeaderboard(id, newValue)
+            } else {
+                moveUpInLeaderboard(id, newValue)
+            }
+        } else {
+            newEntry(id, newValue)
+        }
+    }
+
+    private fun newEntry(id: Long, newValue: Int) {
+
+        // Start from the bottom of the leaderboard
+        val rank = valueMap.size + 1
+        valueMap[id] = Pair(rank, newValue)
+        rankMap[rank] = id
+        setValue(id, newValue)
+    }
+
+    private fun moveUpInLeaderboard(id: Long, newValue: Int) {
+        var rank = valueMap[id]!!.key
+
+        // If the new value is greater than the entry 1 rank above it, move it, repeat
+        var compare = rankMap[rank - 1]
+        while (rank != 1 && newValue > valueMap[compare]!!.value) {
+            valueMap[compare!!] = Pair(rank, valueMap[compare]!!.value)
+            rankMap[rank] = compare
+            rank--
+            rankMap[rank] = id
+            compare = rankMap[rank - 1]
+        }
+        valueMap[id] = Pair(rank, newValue)
+    }
+
+    private fun moveDownInLeaderboard(id: Long, newValue: Int) {
+        var rank = valueMap[id]!!.key
+
+        // If the new value is less than the entry 1 rank below it, move it, repeat
+        var compare = rankMap[rank + 1]
+        while (rank != valueMap.size && newValue > valueMap[compare]!!.value) {
+            valueMap[compare!!] = Pair(rank, valueMap[compare]!!.value)
+            rankMap[rank] = compare
+            rank++
+            rankMap[rank] = id
+            compare = rankMap[rank + 1]
+        }
+        valueMap[id] = Pair(rank, newValue)
+    }
+
+    /*private var scores: HashMap<Long, Int>
 
     init {
         scores = hashMapOf()
@@ -34,11 +109,6 @@ class Leaderboard constructor(private var guildId: Long) {
                 serial += ";$key,$value,"
             }
 
-            serial += "%"
-            if (weekWinner != null) {
-                serial += "${weekWinner?.id},${weekWinner?.score},${weekWinner?.timestamp},"
-            }
-
             file.printWriter().use { out -> out.println(serial.substring(1)) }
         } else
             file.printWriter().use { out -> out.println() }
@@ -55,15 +125,6 @@ class Leaderboard constructor(private var guildId: Long) {
                     scores[id] = value
                 }
             }
-            if (serial.split("%").size > 1) {
-                val weekWinnerSerial = serial.split("%")[1]
-                if (weekWinnerSerial.contains(",")) {
-                    val id = weekWinnerSerial.split(",")[0].toLong()
-                    val score = weekWinnerSerial.split(",")[1].toInt()
-                    val timestamp = weekWinnerSerial.split(",")[2].toLong()
-                    weekWinner = Winner(id, score, timestamp)
-                }
-            }
         }
     }
 
@@ -78,10 +139,6 @@ class Leaderboard constructor(private var guildId: Long) {
             val description = "$value points"
             builder.appendField(title, description, false)
         }
-        if (weekWinner != null) {
-            builder.withTitle(":zap: ${cli.getUserByID(weekWinner!!.id).getDisplayName(cli.getGuildByID(guildId))} had the most points last week! :zap:")
-            builder.withDescription(":zap: They had ${weekWinner!!.score} points! :zap:")
-        }
 
         builder.withAuthorName("LEADERBOARD")
         builder.withAuthorIcon("http://i.imgur.com/dYhgv64.jpg")
@@ -90,13 +147,6 @@ class Leaderboard constructor(private var guildId: Long) {
         builder.withThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
 
         RequestBuffer.request { messageScheduler.sendTempEmbed(10000, channel, builder.build()) }
-    }
-
-    fun getCurrentWinner(): Winner? {
-        for ((key, value) in getSortedLeaderboard()) {
-            return Winner(key, value, System.currentTimeMillis())
-        }
-        return null
     }
 
     fun getSortedLeaderboard(): LinkedHashMap<Long, Int> {
@@ -124,17 +174,5 @@ class Leaderboard constructor(private var guildId: Long) {
             }
         }
         return sortedMap
-    }
-}
-
-class Winner constructor(id: Long, score: Int, timestamp: Long) {
-    var id: Long
-    var score: Int
-    var timestamp: Long
-
-    init {
-        this.id = id
-        this.score = score
-        this.timestamp = timestamp
-    }
+    }*/
 }

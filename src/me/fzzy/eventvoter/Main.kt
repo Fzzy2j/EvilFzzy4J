@@ -2,6 +2,7 @@ package me.fzzy.eventvoter
 
 import me.fzzy.eventvoter.commands.*
 import me.fzzy.eventvoter.commands.help.*
+import me.fzzy.eventvoter.thread.Authentication
 import me.fzzy.eventvoter.thread.ImageProcessQueue
 import me.fzzy.eventvoter.thread.IndividualTask
 import me.fzzy.eventvoter.thread.Task
@@ -13,15 +14,20 @@ import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.RequestBuffer
+import java.io.File
 import java.util.*
 
 lateinit var cli: IDiscordClient
-lateinit var guilds: ArrayList<Leaderboard>
+lateinit var guilds: ArrayList<Guild>
 lateinit var commandHandler: CommandHandler
 lateinit var convert: ConvertCmd
 lateinit var mogrify: MogrifyCmd
 
-lateinit var azureToken: String
+val reviewIds = ArrayList<Long>()
+private val file: File = File("reviewIds.txt")
+
+lateinit var faceApiToken: String
+lateinit var speechApiToken: String
 
 var imageQueues = 0
 var running = false
@@ -47,13 +53,21 @@ lateinit var messageScheduler: MessageScheduler
 lateinit var scheduler: Task
 lateinit var imageProcessQueue: ImageProcessQueue
 
+lateinit var auth: Authentication
+
+val random = Random()
+
+var day = -1
+
 fun main(args: Array<String>) {
-    if (args.size != 2) {
-        println("Please enter the bots tokens e.g. java -jar thisjar.jar discordtokenhere azuretokenhere")
+    if (args.size != 3) {
+        println("Please enter the bots tokens e.g. java -jar thisjar.jar discordtokenhere azurefacetokenhere azurespeechtokenhere")
         return
     }
     running = true
-    azureToken = args[1]
+    faceApiToken = args[1]
+    speechApiToken = args[2]
+    auth = Authentication(speechApiToken)
     convert = ConvertCmd()
     mogrify = MogrifyCmd()
     mogrify.searchPath = "C:\\Program Files (x86)\\ImageMagick-6.9.9-Q16"
@@ -71,11 +85,11 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("meme", Meme())
     commandHandler.registerCommand("mock", Mock())
     commandHandler.registerCommand("explode", Explode())
+    commandHandler.registerCommand("tts", Tts())
 
     commandHandler.registerCommand("leaderboard", LeaderboardCommand())
 
     commandHandler.registerCommand("pfp", Pfp())
-    commandHandler.registerCommand("keep", Keep())
 
     commandHandler.registerCommand("help", Help())
     commandHandler.registerCommand("invite", Invite())
@@ -89,6 +103,14 @@ fun main(args: Array<String>) {
     imageProcessQueue = ImageProcessQueue()
     imageProcessQueue.start()
 
+    reviewIds.clear()
+    if (file.exists()) {
+        val serial = file.readText()
+        for (score in 0 until serial.split(",").size - 1) {
+            reviewIds.add(serial.split(",")[score].toLong())
+        }
+    }
+
     scheduler = Task()
     scheduler.registerTask(IndividualTask({
         try {
@@ -100,30 +122,37 @@ fun main(args: Array<String>) {
         if (presenceActivityType != null && presenceStatusType != null && presenceText != null)
             RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
 
+        val date = Date(System.currentTimeMillis())
+        if (day != date.day && date.hours == 16) {
+            day = Date(System.currentTimeMillis()).day
+            val list = File("memes").listFiles()
+            cli.getChannelByID(memeGeneralId).sendFile(list[random.nextInt(list.size)])
+        }
+
         val iter = guilds.iterator()
         while (iter.hasNext()) {
-            val leaderboard = iter.next()
+            val guild = iter.next()
             var exists = false
-            for (guild in cli.guilds) {
-                if (guild.longID == leaderboard.leaderboardGuildId)
+            for (guilds in cli.guilds) {
+                if (guilds.longID == guild.longId)
                     exists = true
             }
             if (!exists) {
                 iter.remove()
                 continue
             }
-            if (Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.MONDAY) {
-                if (leaderboard.weekWinner == null)
-                    leaderboard.weekWinner = leaderboard.getCurrentWinner()
-                if (leaderboard.weekWinner != null) {
-                    if (System.currentTimeMillis() - leaderboard.weekWinner!!.timestamp > 1000 * 60 * 60 * 25 * 1) {
-                        leaderboard.weekWinner = leaderboard.getCurrentWinner()
-                        leaderboard.clearLeaderboard()
-                    }
-                }
-            }
 
-            leaderboard.saveLeaderboard()
+            guild.save()
+            if (reviewIds.size > 0) {
+                var serial = ""
+
+                for (i in reviewIds) {
+                    serial += "$i,"
+                }
+
+                file.printWriter().use { out -> out.println(serial) }
+            } else
+                file.printWriter().use { out -> out.println() }
         }
     }, 60, true))
     scheduler.start()
@@ -137,10 +166,10 @@ fun main(args: Array<String>) {
     cli.login()
 }
 
-fun getLeaderboard(guildId: Long): Leaderboard? {
-    for (leaderboard in guilds) {
-        if (leaderboard.leaderboardGuildId == guildId)
-            return leaderboard
+fun getGuild(guildId: Long): Guild? {
+    for (guild in guilds) {
+        if (guild.longId == guildId)
+            return guild
     }
     return null
 }

@@ -81,7 +81,7 @@ class Sounds : Command {
                                     } catch (e: UnsupportedAudioFileException) {
                                         e.printStackTrace()
                                     }
-                                    Thread.sleep((durationInSeconds * 1000).toLong() + 200)
+                                    Thread.sleep((durationInSeconds * 1000).toLong() + 1000)
                                     cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
                                 }
                                 return null

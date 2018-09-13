@@ -17,6 +17,7 @@ import java.io.*
 import java.net.URL
 import java.util.*
 import java.util.regex.Pattern
+import javax.net.ssl.HttpsURLConnection
 import javax.sound.sampled.UnsupportedAudioFileException
 
 class Funcs {
@@ -44,6 +45,97 @@ class Funcs {
             } catch (e: MissingPermissionsException) {
                 null
             }
+        }
+
+
+        fun getTextToSpeech(text: String): ByteArray? {
+            val apiurl = "https://speech.platform.bing.com/synthesize"
+            var input = "<speak version='1.0' xml:lang='en-US'>" +
+                    "<voice xml:lang='en-US' name='Microsoft Server Speech Text to Speech Voice (en-US, JessaRUS)'>" +
+                    text +
+                    "</voice>" +
+                    "</speak>"
+
+            try {
+                val url = URL(apiurl)
+                val urlConnection = url.openConnection() as HttpsURLConnection
+                urlConnection.doInput = true
+                urlConnection.doOutput = true
+                urlConnection.connectTimeout = 5000
+                urlConnection.readTimeout = 15000
+                urlConnection.requestMethod = "POST"
+                urlConnection.setRequestProperty("Content-Type", "application/ssml+xml")
+                urlConnection.setRequestProperty("X-MICROSOFT-OutputFormat", "audio-16khz-64kbitrate-mono-mp3")
+                urlConnection.setRequestProperty("Authorization", "Bearer ${auth.GetAccessToken()}")
+                urlConnection.setRequestProperty("Accept", "*/*")
+                val ssmlBytes = input.toByteArray()
+                urlConnection.setRequestProperty("content-length", ssmlBytes.size.toString())
+                urlConnection.connect()
+                urlConnection.outputStream.write(ssmlBytes)
+                val code = urlConnection.responseCode
+                if (code == 200) {
+                    val `in` = urlConnection.inputStream
+                    val bout = ByteArrayOutputStream()
+                    val bytes = ByteArray(1024)
+                    var ret = `in`.read(bytes)
+                    while (ret > 0) {
+                        bout.write(bytes, 0, ret)
+                        ret = `in`.read(bytes)
+                    }
+                    return bout.toByteArray()
+                } else
+                    println(code)
+                urlConnection.disconnect()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+
+            /*try {
+                val builder = URIBuilder(apiurl)
+            val httpClient = HttpClientBuilder.create().build()
+
+                val uri = builder.build()
+                val request = HttpPost(uri)
+
+                var input = "<speak version='1.0' xml:lang='en-US'>" +
+                        "<voice xml:lang='en-US' xml:gender='Female' name='Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)'>" +
+                        "Microsoft Bing Voice Output API" +
+                        "</voice>" +
+                        "</speak>"
+
+                request.setHeader("Content-Type", "application/ssml+xml")
+                request.setHeader("X-Microsoft-OutputFormat", "audio-16khz-64kbitrate-mono-mp3")
+                request.setHeader("Ocp-Apim-Subscription-Key", speechApiToken)
+                request.setHeader("Authorization", "Bearer $speechApiToken")
+                val ssmlBytes = text.toByteArray()
+                request.setHeader("content-length", ssmlBytes.size.toString())
+
+                val reqEntity = StringEntity(input)
+                request.entity = reqEntity
+
+                val response = httpClient.execute(request)
+                val entity = response.entity
+
+                if (entity != null) {
+                    println(entity)
+                    val `in` = entity
+                    val bout = ByteArrayOutputStream()
+                    val bytes = ByteArray(1024)
+                    var ret = `in`.read(bytes)
+                    while (ret > 0) {
+                        bout.write(bytes, 0, ret)
+                        ret = `in`.read(bytes)
+                    }
+                    val jsonString = EntityUtils.toString(entity).trim { it <= ' ' }
+                    try {
+                        return JSONArray(jsonString)
+                    } catch (e: Exception) {
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }*/
+            return null
         }
     }
 }
@@ -100,7 +192,7 @@ class ImageFuncs {
                 val request = HttpPost(uri)
 
                 request.setHeader("Content-Type", "application/json")
-                request.setHeader("Ocp-Apim-Subscription-Key", azureToken)
+                request.setHeader("Ocp-Apim-Subscription-Key", faceApiToken)
 
                 val reqEntity = StringEntity("{\"url\":\"$url\"}")
                 request.entity = reqEntity
