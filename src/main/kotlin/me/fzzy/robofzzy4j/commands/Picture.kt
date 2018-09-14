@@ -1,6 +1,5 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.thread.ImageProcessTask
 import me.fzzy.robofzzy4j.*
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
@@ -40,98 +39,79 @@ class Picture : Command {
             if (url == null) {
                 RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
             } else {
+                Thread(Runnable {
+                    val file = ImageFuncs.downloadTempFile(url)
 
-                // Add the process to the queue
-                imageProcessQueue.addToQueue(object : ImageProcessTask {
+                    if (file == null) {
+                        RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not download image!") }
+                    } else {
+                        /*val info = ImageInfo(file.name)
+                        var magickImage = MagickImage(info)
 
-                    var processingMessage: IMessage? = null
+                        val pictureInfo = ImageInfo(picture.absolutePath)
+                        val pictureMagickImage = MagickImage(pictureInfo)
+                        val sizeHelper = ImageIO.read(picture)
 
-                    override fun run(): Any? {
-                        val file = ImageFuncs.downloadTempFile(url)
+                        // Hard to understand, this gets the corners of the transparent box in the image
+                        var farRight = Pair(0, 0)
+                        var farLeft = Pair(sizeHelper.width, 0)
+                        var farTop = Pair(0, sizeHelper.height)
+                        var farBottom = Pair(0, 0)
+                        for (x in 0 until sizeHelper.width) {
+                            for (y in 0 until sizeHelper.height) {
+                                if (pictureMagickImage.getOnePixel(x, y).opacity != 0) {
+                                    // top right bias
+                                    if (farRight.first < x)
+                                        farRight = Pair(x, y)
 
-                        if (file == null) {
-                            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not download image!") }
-                            processingMessage?.delete()
-                        } else {
-                            /*val info = ImageInfo(file.name)
-                            var magickImage = MagickImage(info)
+                                    // bottom left bias
+                                    if (farLeft.first >= x)
+                                        farLeft = Pair(x, y)
 
-                            val pictureInfo = ImageInfo(picture.absolutePath)
-                            val pictureMagickImage = MagickImage(pictureInfo)
-                            val sizeHelper = ImageIO.read(picture)
+                                    // top left bias
+                                    if (farTop.second > y)
+                                        farTop = Pair(x, y)
 
-                            // Hard to understand, this gets the corners of the transparent box in the image
-                            var farRight = Pair(0, 0)
-                            var farLeft = Pair(sizeHelper.width, 0)
-                            var farTop = Pair(0, sizeHelper.height)
-                            var farBottom = Pair(0, 0)
-                            for (x in 0 until sizeHelper.width) {
-                                for (y in 0 until sizeHelper.height) {
-                                    if (pictureMagickImage.getOnePixel(x, y).opacity != 0) {
-                                        // top right bias
-                                        if (farRight.first < x)
-                                            farRight = Pair(x, y)
-
-                                        // bottom left bias
-                                        if (farLeft.first >= x)
-                                            farLeft = Pair(x, y)
-
-                                        // top left bias
-                                        if (farTop.second > y)
-                                            farTop = Pair(x, y)
-
-                                        // bottom right bias
-                                        if (farBottom.second <= y)
-                                            farBottom = Pair(x, y)
-                                    }
+                                    // bottom right bias
+                                    if (farBottom.second <= y)
+                                        farBottom = Pair(x, y)
                                 }
                             }
-                            // Wow this is hard to understand
-                            val topRight = if (farTop.first < farBottom.first) farRight else farTop
-                            val topLeft = if (farTop.first > farBottom.first) farLeft else farTop
-                            val bottomRight = if (farRight.second > farLeft.second) farRight else farBottom
-                            val bottomLeft = if (farRight.second < farLeft.second) farLeft else farBottom
-
-                            // Get how much to rotate the image in radians
-                            var t = Math.atan(Math.abs(topRight.second - topLeft.second) / Math.abs(topRight.first - topLeft.first.toDouble()))
-                            if (farTop.first >= farBottom.first)
-                                t = -t
-
-                            val give = 30
-                            // Get the size the image should be
-                            val width = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft)) + give
-                            val height = Math.max(distance(topRight, bottomRight), distance(topLeft, bottomLeft)) + give
-
-                            // Apply the transform
-                            magickImage = magickImage.scaleImage(width, height)
-                            magickImage = magickImage.rotateImage(Math.toDegrees(t))
-
-                            // Do some layering
-                            val og = MagickImage(pictureInfo)
-                            pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, magickImage, Math.min(topLeft.first, bottomLeft.first) - give / 2, Math.min(topLeft.second, topRight.second) - give / 2)
-                            pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, og, 0, 0)
-
-                            pictureMagickImage.fileName = file.absolutePath
-                            pictureMagickImage.writeImage(info)
-                            RequestBuffer.request {
-                                processingMessage?.delete()
-                                Funcs.sendFile(event.channel, file)
-                                file.delete()
-                            }*/
                         }
-                        return file
-                    }
+                        // Wow this is hard to understand
+                        val topRight = if (farTop.first < farBottom.first) farRight else farTop
+                        val topLeft = if (farTop.first > farBottom.first) farLeft else farTop
+                        val bottomRight = if (farRight.second > farLeft.second) farRight else farBottom
+                        val bottomLeft = if (farRight.second < farLeft.second) farLeft else farBottom
 
-                    override fun queueUpdated(position: Int) {
-                        val msg = if (position == 0) "processing..." else "position in queue: $position"
+                        // Get how much to rotate the image in radians
+                        var t = Math.atan(Math.abs(topRight.second - topLeft.second) / Math.abs(topRight.first - topLeft.first.toDouble()))
+                        if (farTop.first >= farBottom.first)
+                            t = -t
+
+                        val give = 30
+                        // Get the size the image should be
+                        val width = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft)) + give
+                        val height = Math.max(distance(topRight, bottomRight), distance(topLeft, bottomLeft)) + give
+
+                        // Apply the transform
+                        magickImage = magickImage.scaleImage(width, height)
+                        magickImage = magickImage.rotateImage(Math.toDegrees(t))
+
+                        // Do some layering
+                        val og = MagickImage(pictureInfo)
+                        pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, magickImage, Math.min(topLeft.first, bottomLeft.first) - give / 2, Math.min(topLeft.second, topRight.second) - give / 2)
+                        pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, og, 0, 0)
+
+                        pictureMagickImage.fileName = file.absolutePath
+                        pictureMagickImage.writeImage(info)
                         RequestBuffer.request {
-                            if (processingMessage == null)
-                                processingMessage = Funcs.sendMessage(event.channel, msg)
-                            else
-                                processingMessage?.edit(msg)
-                        }
+                            processingMessage?.delete()
+                            Funcs.sendFile(event.channel, file)
+                            file.delete()
+                        }*/
                     }
-                })
+                }).start()
             }
         }
     }

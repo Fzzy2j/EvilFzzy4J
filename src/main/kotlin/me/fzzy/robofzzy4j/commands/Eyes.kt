@@ -1,6 +1,5 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.thread.ImageProcessTask
 import me.fzzy.robofzzy4j.*
 import org.im4java.core.CompositeCmd
 import org.im4java.core.ConvertCmd
@@ -49,102 +48,84 @@ class Eyes : Command {
                 RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
             } else {
 
-                // Add the process to the queue
-                imageProcessQueue.addToQueue(object : ImageProcessTask {
+                Thread(Runnable {
+                    val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
+                    val file = ImageFuncs.downloadTempFile(url)
 
-                    var processingMessage: IMessage? = null
+                    if (faces != null && file != null) {
 
-                    override fun run(): Any? {
-                        val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
-                        val file = ImageFuncs.downloadTempFile(url)
+                        val sizeHelper = ImageIO.read(eyes)
+                        val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
+                        if (faces.length() > 0) {
+                            var s2b = Stream2BufferedImage()
+                            for (face in faces) {
+                                if (face is JSONObject) {
+                                    val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
+                                    val right = face.getJSONObject("faceLandmarks").getJSONObject("pupilRight")
 
-                        if (faces != null && file != null) {
+                                    // The images need scaling based on how big the eyes are, this is done using the distance between the eyes
+                                    val lx = left.getInt("x")
+                                    val ly = left.getInt("y")
+                                    val rx = right.getInt("x")
+                                    val ry = right.getInt("y")
+                                    var eyeDistance = Math.sqrt(Math.pow((lx - rx).toDouble(), 2.0) + Math.pow((ly - ry).toDouble(), 2.0))
+                                    eyeDistance *= ratio
+                                    val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
+                                    val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
 
-                            val sizeHelper = ImageIO.read(eyes)
-                            val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
-                            if (faces.length() > 0) {
-                                var s2b = Stream2BufferedImage()
-                                for (face in faces) {
-                                    if (face is JSONObject) {
-                                        val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
-                                        val right = face.getJSONObject("faceLandmarks").getJSONObject("pupilRight")
+                                    var op = IMOperation()
+                                    op.addImage()
+                                    op.resize(width, height)
+                                    op.addImage("jpg:-")
+                                    convert.setOutputConsumer(s2b)
+                                    convert.run(op, ImageIO.read(eyes))
+                                    var resize = s2b.image
 
-                                        // The images need scaling based on how big the eyes are, this is done using the distance between the eyes
-                                        val lx = left.getInt("x")
-                                        val ly = left.getInt("y")
-                                        val rx = right.getInt("x")
-                                        val ry = right.getInt("y")
-                                        var eyeDistance = Math.sqrt(Math.pow((lx - rx).toDouble(), 2.0) + Math.pow((ly - ry).toDouble(), 2.0))
-                                        eyeDistance *= ratio
-                                        val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
-                                        val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
+                                    op = IMOperation()
 
-                                        var op = IMOperation()
-                                        op.addImage()
-                                        op.resize(width, height)
-                                        op.addImage("jpg:-")
-                                        convert.setOutputConsumer(s2b)
-                                        convert.run(op, ImageIO.read(eyes))
-                                        var resize = s2b.image
+                                    val composite = CompositeCmd()
+                                    composite.searchPath = "C:\\Program Files\\ImageMagick-7.0.8-Q16"
+                                    composite.setOutputConsumer(s2b)
+                                    op.gravity("+${lx - width / 2}+${ly - height / 2}")
+                                    op.addImage()
+                                    op.addImage()
 
+                                    op.addImage("jpg:-")
+                                    composite.run(op, resize, ImageIO.read(file))
+                                    val eye1 = s2b.image
+                                    //magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
+
+                                    // If the eye file ends in _mirror the other eye will be flipped
+                                    if (eyes.nameWithoutExtension.endsWith("_mirror")) {
                                         op = IMOperation()
-
-                                        val composite = CompositeCmd()
-                                        composite.searchPath = "C:\\Program Files\\ImageMagick-7.0.8-Q16"
-                                        composite.setOutputConsumer(s2b)
-                                        op.gravity("+${lx - width / 2}+${ly - height / 2}")
-                                        op.addImage()
-                                        op.addImage()
-
-                                        op.addImage("jpg:-")
-                                        composite.run(op, resize, ImageIO.read(file))
-                                        val eye1 = s2b.image
-                                        //magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
-
-                                        // If the eye file ends in _mirror the other eye will be flipped
-                                        if (eyes.nameWithoutExtension.endsWith("_mirror")) {
-                                            op = IMOperation()
-                                            op.flop()
-                                            op.addImage()
-                                            op.addImage("jpg:-")
-                                            convert.run(op, resize)
-                                            resize = s2b.image
-                                        }
-
-                                        op = IMOperation()
-
-                                        op.composite()
-                                        op.gravity("+${rx - width / 2}+${ry - height / 2}")
-                                        op.addImage()
+                                        op.flop()
                                         op.addImage()
                                         op.addImage("jpg:-")
-                                        convert.run(op, resize, eye1)
-                                        //magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
+                                        convert.run(op, resize)
+                                        resize = s2b.image
                                     }
-                                }
 
+                                    op = IMOperation()
 
-                                ImageIO.write(s2b.image, file.name, file)
-                                RequestBuffer.request {
-                                    processingMessage?.delete()
-                                    Funcs.sendFile(event.channel, file)
-                                    file.delete()
+                                    op.composite()
+                                    op.gravity("+${rx - width / 2}+${ry - height / 2}")
+                                    op.addImage()
+                                    op.addImage()
+                                    op.addImage("jpg:-")
+                                    convert.run(op, resize, eye1)
+                                    //magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
                                 }
                             }
-                        }
-                        return file
-                    }
 
-                    override fun queueUpdated(position: Int) {
-                        val msg = if (position == 0) "processing..." else "position in queue: $position"
-                        RequestBuffer.request {
-                            if (processingMessage == null)
-                                processingMessage = Funcs.sendMessage(event.channel, msg)
-                            else
-                                processingMessage?.edit(msg)
+
+                            ImageIO.write(s2b.image, file.name, file)
+                            RequestBuffer.request {
+                                Funcs.sendFile(event.channel, file)
+                                file.delete()
+                            }
                         }
                     }
-                })
+                }).start()
             }
         }
     }

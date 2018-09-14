@@ -1,6 +1,5 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.thread.ImageProcessTask
 import me.fzzy.robofzzy4j.*
 import org.apache.commons.io.FileUtils
 import org.im4java.core.ConvertCmd
@@ -31,136 +30,118 @@ class Explode : Command {
         if (url == null) {
             RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
         } else {
-            imageProcessQueue.addToQueue(object : ImageProcessTask {
+            Thread(Runnable {
+                var file = ImageFuncs.downloadTempFile(url)
+                if (file == null) {
+                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't download image!") }
+                } else {
 
-                var processingMessage: IMessage? = null
+                    var tempFile: File? = null
+                    val finalSize = 0.1
 
-                override fun run(): Any? {
-                    var file = ImageFuncs.downloadTempFile(url)
-                    if (file == null) {
-                        RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't download image!") }
+                    if (file.extension == "gif") {
+                        var op = IMOperation()
+
+                        val info = Info(file.name, false)
+                        var delay = info.getProperty("Delay")
+                        if (delay == null) {
+                            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find framerate of image!") }
+                        }
+
+                        if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
+                            delay = "25x100"
+                        }
+
+                        tempFile = File(file.nameWithoutExtension)
+                        tempFile.mkdirs()
+
+                        op.coalesce()
+                        op.addImage(file.name)
+                        op.addImage("${tempFile.nameWithoutExtension}/temp%05d.png")
+
+                        convert.run(op)
+
+                        val fileList = tempFile.list()
+                        for (i in 0 until fileList.size) {
+                            val listFile = fileList[i]
+
+                            // https://www.desmos.com/calculator/gztrr4yh2w
+                            val initialSize = 1.0
+                            val sizeAmt = -(i / (fileList.size.toDouble() / (initialSize - finalSize))) + initialSize
+                            resize(File("${tempFile.nameWithoutExtension}/$listFile"), sizeAmt)
+                        }
+
+                        op = IMOperation()
+
+                        //Trying to make the file smaller
+                        op.deconstruct()
+                        op.layers("optimize")
+                        op.type("Palette")
+                        op.depth(8)
+                        op.fuzz(6.0, true)
+                        op.dither("none")
+
+                        op.loop(0)
+                        op.dispose(2.toString())
+                        op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
+                        for (listFile in tempFile.list()) {
+                            op.addImage("${tempFile.nameWithoutExtension}/$listFile")
+                        }
+
+                        op.addImage(file.absolutePath)
+
+                        convert.run(op)
                     } else {
 
-                        var tempFile: File? = null
-                        val finalSize = 0.1
+                        // Construct a gif out of a single image
+                        val op = IMOperation()
 
-                        if (file.extension == "gif") {
-                            var op = IMOperation()
+                        //Trying to make the file smaller
+                        op.deconstruct()
+                        op.layers("optimize")
+                        op.type("Palette")
+                        op.depth(8)
+                        op.fuzz(6.0, true)
+                        op.dither("none")
 
-                            val info = Info(file.name, false)
-                            var delay = info.getProperty("Delay")
-                            if (delay == null) {
-                                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find framerate of image!") }
-                                return null
-                            }
+                        op.loop(0)
+                        op.dispose(2.toString())
+                        op.delay(10, 100)
+                        val tempPath = File(file.nameWithoutExtension)
+                        tempPath.mkdirs()
+                        val frameCount = 20
+                        for (i in 0..frameCount) {
+                            val child = "temp$i.${file.extension}"
+                            val warpFile = File(tempPath, child)
+                            FileUtils.copyFile(file, warpFile)
 
-                            if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
-                                delay = "25x100"
-                            }
-
-                            tempFile = File(file.nameWithoutExtension)
-                            tempFile.mkdirs()
-
-                            op.coalesce()
-                            op.addImage(file.name)
-                            op.addImage("${tempFile.nameWithoutExtension}/temp%05d.png")
-
-                            convert.run(op)
-
-                            val fileList = tempFile.list()
-                            for (i in 0 until fileList.size) {
-                                val listFile = fileList[i]
-
-                                // https://www.desmos.com/calculator/gztrr4yh2w
-                                val initialSize = 1.0
-                                val sizeAmt = -(i / (fileList.size.toDouble() / (initialSize - finalSize))) + initialSize
-                                resize(File("${tempFile.nameWithoutExtension}/$listFile"), sizeAmt)
-                            }
-
-                            op = IMOperation()
-
-                            //Trying to make the file smaller
-                            op.deconstruct()
-                            op.layers("optimize")
-                            op.type("Palette")
-                            op.depth(8)
-                            op.fuzz(6.0, true)
-                            op.dither("none")
-
-                            op.loop(0)
-                            op.dispose(2.toString())
-                            op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
-                            for (listFile in tempFile.list()) {
-                                op.addImage("${tempFile.nameWithoutExtension}/$listFile")
-                            }
-
-                            op.addImage(file.absolutePath)
-
-                            convert.run(op)
-                        } else {
-
-                            // Construct a gif out of a single image
-                            val op = IMOperation()
-
-                            //Trying to make the file smaller
-                            op.deconstruct()
-                            op.layers("optimize")
-                            op.type("Palette")
-                            op.depth(8)
-                            op.fuzz(6.0, true)
-                            op.dither("none")
-
-                            op.loop(0)
-                            op.dispose(2.toString())
-                            op.delay(10, 100)
-                            val tempPath = File(file.nameWithoutExtension)
-                            tempPath.mkdirs()
-                            val frameCount = 20
-                            for (i in 0..frameCount) {
-                                val child = "temp$i.${file.extension}"
-                                val warpFile = File(tempPath, child)
-                                FileUtils.copyFile(file, warpFile)
-
-                                // https://www.desmos.com/calculator/gztrr4yh2w
-                                val initialSize = 1.0
-                                val sizeAmt = -(i / (frameCount.toDouble() / (initialSize - finalSize))) + initialSize
-                                resize(warpFile, sizeAmt)
-                                op.addImage("${tempPath.name}/$child")
-                            }
-                            val result = File("${file.nameWithoutExtension}.gif")
-                            op.addImage(result.absolutePath)
-
-                            file.delete()
-                            convert.run(op)
-                            tempPath.deleteRecursively()
-
-                            file = result
+                            // https://www.desmos.com/calculator/gztrr4yh2w
+                            val initialSize = 1.0
+                            val sizeAmt = -(i / (frameCount.toDouble() / (initialSize - finalSize))) + initialSize
+                            resize(warpFile, sizeAmt)
+                            op.addImage("${tempPath.name}/$child")
                         }
+                        val result = File("${file.nameWithoutExtension}.gif")
+                        op.addImage(result.absolutePath)
 
-                        RequestBuffer.request {
-                            processingMessage?.delete()
-                            try {
-                                Funcs.sendFile( event.channel, file)
-                            }catch (e: Exception) {
-                                messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not send generated file!")
-                            }
-                            file.delete()
-                            tempFile?.deleteRecursively()
-                        }
+                        file.delete()
+                        convert.run(op)
+                        tempPath.deleteRecursively()
+
+                        file = result
                     }
-                    return file
-                }
 
-                override fun queueUpdated(position: Int) {
-                    val msg = if (position == 0) "processing..." else "position in queue: $position"
                     RequestBuffer.request {
-                        if (processingMessage == null)
-                            processingMessage = Funcs.sendMessage(event.channel, msg)
-                        else
-                            processingMessage?.edit(msg)
+                        try {
+                            Funcs.sendFile( event.channel, file)
+                        }catch (e: Exception) {
+                            messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not send generated file!")
+                        }
+                        file.delete()
+                        tempFile?.deleteRecursively()
                     }
                 }
-            })
+            }).start()
         }
     }
 

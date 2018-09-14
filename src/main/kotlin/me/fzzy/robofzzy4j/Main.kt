@@ -1,6 +1,5 @@
 package me.fzzy.robofzzy4j
 
-import me.fzzy.robofzzy4j.thread.ImageProcessQueue
 import me.fzzy.robofzzy4j.thread.IndividualTask
 import me.fzzy.robofzzy4j.thread.Task
 import me.fzzy.robofzzy4j.commands.*
@@ -51,7 +50,6 @@ lateinit var messageScheduler: MessageScheduler
 
 // Threads
 lateinit var scheduler: Task
-lateinit var imageProcessQueue: ImageProcessQueue
 
 lateinit var auth: Authentication
 
@@ -97,9 +95,6 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("mocks", Mocks())
 
     guilds = ArrayList()
-
-    imageProcessQueue = ImageProcessQueue()
-    imageProcessQueue.start()
 
     reviewIds.clear()
     if (file.exists()) {

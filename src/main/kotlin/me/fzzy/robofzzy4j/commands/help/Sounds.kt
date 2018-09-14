@@ -1,7 +1,6 @@
 package me.fzzy.robofzzy4j.commands.help
 
 import me.fzzy.robofzzy4j.*
-import me.fzzy.robofzzy4j.thread.ImageProcessTask
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.DiscordException
@@ -39,69 +38,57 @@ class Sounds : Command {
     @EventSubscriber
     fun onMessageReceived(event: MessageReceivedEvent) {
         if (event.guild != null) {
-            if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
-                if (event.message.content.startsWith(BOT_PREFIX)) {
-                    val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
+            if (event.message.content.startsWith(BOT_PREFIX)) {
+                val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
 
-                    if (audioDir == null || audioDir.isEmpty())
-                        return
+                if (audioDir == null || audioDir.isEmpty())
+                    return
 
-                    if (System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, 0) > SOUND_COOLDOWN) {
-                        RequestBuffer.request {
-                            try {
-                                event.message.delete()
-                            } catch (e: MissingPermissionsException) {
-                            } catch (e: DiscordException) {
-                            }
-                        }
+                RequestBuffer.request {
+                    try {
+                        event.message.delete()
+                    } catch (e: MissingPermissionsException) {
+                    } catch (e: DiscordException) {
+                    }
+                }
+
+                if (System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, 0) > SOUND_COOLDOWN) {
+                    if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
+                        cooldowns[event.author.longID] = System.currentTimeMillis()
 
                         println("${SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))} - ${event.author.name}#${event.author.discriminator} playing sound: ${event.message.content}")
-                        imageProcessQueue.addToQueue(object : ImageProcessTask {
-                            override fun run(): Any? {
-                                val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
-                                val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
-                                if (userVoiceChannel != null) {
+                        Thread(Runnable {
+                            val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
+                            val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
+                            if (userVoiceChannel != null) {
 
-                                    val stream = AudioSystem.getAudioFileFormat(audioDir[0])
-                                    val frames = stream.frameLength
-                                    val durationInSeconds = (frames + 0.0) / stream.format.frameRate
+                                val stream = AudioSystem.getAudioFileFormat(audioDir[0])
+                                val frames = stream.frameLength
+                                val durationInSeconds = (frames + 0.0) / stream.format.frameRate
 
-                                    userVoiceChannel.join()
-                                    Thread.sleep(100)
-                                    audioP.clear()
-                                    Thread.sleep(100)
-                                    try {
-                                        audioP.queue(audioDir[0])
-                                    } catch (e: IOException) {
-                                        // File not found
-                                    } catch (e: UnsupportedAudioFileException) {
-                                        e.printStackTrace()
-                                    }
-                                    Thread.sleep((durationInSeconds * 1000).toLong() + 1000)
-                                    cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
+                                userVoiceChannel.join()
+                                Thread.sleep(100)
+                                audioP.clear()
+                                Thread.sleep(100)
+                                try {
+                                    audioP.queue(audioDir[0])
+                                } catch (e: IOException) {
+                                    // File not found
+                                } catch (e: UnsupportedAudioFileException) {
+                                    e.printStackTrace()
                                 }
-                                return null
+                                Thread.sleep((durationInSeconds * 1000).toLong() + 1000)
+                                cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
                             }
-
-                            override fun queueUpdated(position: Int) {
-                            }
-                        })
-                        cooldowns[event.author.longID] = System.currentTimeMillis()
-                    } else {
-                        RequestBuffer.request {
-                            try {
-                                event.message.delete()
-                            } catch (e: MissingPermissionsException) {
-                            } catch (e: DiscordException) {
-                            }
-                        }
-                        val timeLeft = (SOUND_COOLDOWN / 1000) - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())) / 1000)
-                        val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft seconds."
-                        RequestBuffer.request {
-                            val msg = Funcs.sendMessage(event.channel, message)
-                            if (msg != null)
-                                CooldownMessage(timeLeft.toInt(), event.channel, event.author.getDisplayName(event.guild), msg).start()
-                        }
+                        }).start()
+                    }
+                } else {
+                    val timeLeft = (SOUND_COOLDOWN / 1000) - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())) / 1000)
+                    val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft seconds."
+                    RequestBuffer.request {
+                        val msg = Funcs.sendMessage(event.channel, message)
+                        if (msg != null)
+                            CooldownMessage(timeLeft.toInt(), event.channel, event.author.getDisplayName(event.guild), msg).start()
                     }
                 }
             }

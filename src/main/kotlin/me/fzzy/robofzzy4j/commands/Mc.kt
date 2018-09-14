@@ -1,6 +1,5 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.thread.ImageProcessTask
 import me.fzzy.robofzzy4j.*
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
@@ -22,34 +21,17 @@ class Mc : Command {
             }
             achieve = achieve.substring(1)
             val url = ImageFuncs.getMinecraftAchievement(achieve)
-            imageProcessQueue.addToQueue(object: ImageProcessTask {
-
-                var processingMessage: IMessage? = null
-
-                override fun run(): Any? {
-                    val file = ImageFuncs.downloadTempFile(url)
-                    if (file == null) {
-                        RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't contact API!") }
-                    } else {
-                        RequestBuffer.request {
-                            processingMessage?.delete()
-                            Funcs.sendFile(event.channel, file)
-                            file.delete()
-                        }
-                    }
-                    return file
-                }
-
-                override fun queueUpdated(position: Int) {
-                    val msg = if (position == 0) "processing..." else "position in queue: $position"
+            Thread(Runnable {
+                val file = ImageFuncs.downloadTempFile(url)
+                if (file == null) {
+                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't contact API!") }
+                } else {
                     RequestBuffer.request {
-                        if (processingMessage == null)
-                            processingMessage = Funcs.sendMessage(event.channel, msg)
-                        else
-                            processingMessage?.edit(msg)
+                        Funcs.sendFile(event.channel, file)
+                        file.delete()
                     }
                 }
-            })
+            }).start()
         } else {
             RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Invalid command syntax! $usageText") }
         }
