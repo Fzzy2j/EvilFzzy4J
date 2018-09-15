@@ -1,6 +1,7 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
+import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
@@ -34,6 +35,7 @@ class Deepfry : Command {
                     val width = sizeHelper.width
                     val height = sizeHelper.height
                     var op = IMOperation()
+                    val convert = ConvertCmd()
 
                     op.addImage(file.name)
                     op.quality(6.0)

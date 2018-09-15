@@ -20,11 +20,13 @@ class LeaderboardCommand : Command {
         val builder = EmbedBuilder()
         for (i in 1..25) {
             val id = getGuild(event.guild.longID)?.leaderboard?.getAtRank(i)
-            val value = getGuild(event.guild.longID)?.leaderboard?.getOrDefault(id!!, 0)
+            if (id != null) {
+                val value = getGuild(event.guild.longID)?.leaderboard?.getOrDefault(id, 0)
 
-            val title = "#$i - ${cli.getUserByID(id!!).getDisplayName(cli.getGuildByID(event.guild.longID))}"
-            val description = "$value points"
-            builder.appendField(title, description, false)
+                val title = "#$i - ${cli.getUserByID(id).getDisplayName(cli.getGuildByID(event.guild.longID))}"
+                val description = "$value points"
+                builder.appendField(title, description, false)
+            }
         }
 
         builder.withAuthorName("LEADERBOARD")

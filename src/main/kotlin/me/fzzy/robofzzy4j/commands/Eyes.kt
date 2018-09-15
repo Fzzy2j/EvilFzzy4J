@@ -57,7 +57,8 @@ class Eyes : Command {
                         val sizeHelper = ImageIO.read(eyes)
                         val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
                         if (faces.length() > 0) {
-                            var s2b = Stream2BufferedImage()
+                            val convert = ConvertCmd()
+                            val s2b = Stream2BufferedImage()
                             for (face in faces) {
                                 if (face is JSONObject) {
                                     val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")

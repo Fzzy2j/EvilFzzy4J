@@ -7,6 +7,7 @@ import me.fzzy.robofzzy4j.commands.help.*
 import me.fzzy.robofzzy4j.thread.Authentication
 import org.im4java.core.ConvertCmd
 import org.im4java.core.MogrifyCmd
+import org.im4java.process.ProcessStarter
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
 import sx.blah.discord.handle.obj.ActivityType
@@ -19,8 +20,6 @@ import java.util.*
 lateinit var cli: IDiscordClient
 lateinit var guilds: ArrayList<Guild>
 lateinit var commandHandler: CommandHandler
-lateinit var convert: ConvertCmd
-lateinit var mogrify: MogrifyCmd
 
 val reviewIds = ArrayList<Long>()
 private val file: File = File("reviewIds.txt")
@@ -66,10 +65,7 @@ fun main(args: Array<String>) {
     faceApiToken = args[1]
     speechApiToken = args[2]
     auth = Authentication(speechApiToken)
-    convert = ConvertCmd()
-    mogrify = MogrifyCmd()
-    mogrify.searchPath = "C:\\Program Files\\ImageMagick-7.0.8-Q16"
-    convert.searchPath = "C:\\Program Files\\ImageMagick-7.0.8-Q16"
+    ProcessStarter.setGlobalSearchPath("C:\\Program Files\\ImageMagick-7.0.8-Q16")
 
     val sounds = Sounds()
 

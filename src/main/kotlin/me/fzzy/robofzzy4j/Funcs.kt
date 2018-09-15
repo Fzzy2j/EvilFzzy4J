@@ -7,11 +7,13 @@ import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
 import org.json.JSONArray
 import sx.blah.discord.api.internal.json.objects.EmbedObject
+import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IVoiceChannel
 import sx.blah.discord.util.MissingPermissionsException
+import sx.blah.discord.util.RequestBuilder
 import sx.blah.discord.util.audio.AudioPlayer
 import java.io.*
 import java.net.URL
@@ -89,52 +91,6 @@ class Funcs {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-
-            /*try {
-                val builder = URIBuilder(apiurl)
-            val httpClient = HttpClientBuilder.create().build()
-
-                val uri = builder.build()
-                val request = HttpPost(uri)
-
-                var input = "<speak version='1.0' xml:lang='en-US'>" +
-                        "<voice xml:lang='en-US' xml:gender='Female' name='Microsoft Server Speech Text to Speech Voice (en-US, ZiraRUS)'>" +
-                        "Microsoft Bing Voice Output API" +
-                        "</voice>" +
-                        "</speak>"
-
-                request.setHeader("Content-Type", "application/ssml+xml")
-                request.setHeader("X-Microsoft-OutputFormat", "audio-16khz-64kbitrate-mono-mp3")
-                request.setHeader("Ocp-Apim-Subscription-Key", speechApiToken)
-                request.setHeader("Authorization", "Bearer $speechApiToken")
-                val ssmlBytes = text.toByteArray()
-                request.setHeader("content-length", ssmlBytes.size.toString())
-
-                val reqEntity = StringEntity(input)
-                request.entity = reqEntity
-
-                val response = httpClient.execute(request)
-                val entity = response.entity
-
-                if (entity != null) {
-                    println(entity)
-                    val `in` = entity
-                    val bout = ByteArrayOutputStream()
-                    val bytes = ByteArray(1024)
-                    var ret = `in`.read(bytes)
-                    while (ret > 0) {
-                        bout.write(bytes, 0, ret)
-                        ret = `in`.read(bytes)
-                    }
-                    val jsonString = EntityUtils.toString(entity).trim { it <= ' ' }
-                    try {
-                        return JSONArray(jsonString)
-                    } catch (e: Exception) {
-                    }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }*/
             return null
         }
     }

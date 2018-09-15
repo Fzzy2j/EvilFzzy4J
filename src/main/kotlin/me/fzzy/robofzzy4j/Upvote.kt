@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.ReadyEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageSendEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionAddEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
@@ -19,29 +20,50 @@ import java.net.URL
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-private val reviewId = 485256221633413141
-val memeId = 214250278466224128
-val memeGeneralId = 397151198899339264
+private const val reviewId = 485256221633413141
+const val memeId = 214250278466224128
+const val memeGeneralId = 397151198899339264
 
 class Upvote {
 
     @EventSubscriber
-    fun onMessageReceived(event: MessageReceivedEvent) {
+    fun onMessageSend(event: MessageSendEvent) {
         if (event.guild != null) {
-            if (getGuild(event.guild.longID) == null)
-                guilds.add(Guild(event.guild.longID))
-            val pattern = Pattern.compile("((http:\\/\\/|https:\\/\\/)?(www.)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(\\/([a-zA-Z-_\\/\\.0-9#:?=&;,]*)?)?)")
-            val m: Matcher = pattern.matcher(event.message.content)
-            if (m.find() || event.message.attachments.size > 0) {
+            if (event.message.attachments.size > 0) {
                 getGuild(event.guild.longID)!!.posts++
                 getGuild(event.guild.longID)!!.votes++
                 RequestBuilder(event.client).shouldBufferRequests(true).doAction {
-                    event.message.addReaction(ReactionEmoji.of("upvote", 445376322353496064L))
+                    if (event.message != null)
+                        event.message.addReaction(ReactionEmoji.of("upvote", 445376322353496064L))
                     true
                 }.andThen {
-                    event.message.addReaction(ReactionEmoji.of("downvote", 445376330989830147L))
+                    if (event.message != null)
+                        event.message.addReaction(ReactionEmoji.of("downvote", 445376330989830147L))
                     true
                 }.execute()
+            }
+        }
+    }
+
+    @EventSubscriber
+    fun onMessageReceived(event: MessageReceivedEvent) {
+        if (event.guild != null) {
+            if (!event.author.isBot) {
+                if (getGuild(event.guild.longID) == null)
+                    guilds.add(Guild(event.guild.longID))
+                val pattern = Pattern.compile("((http:\\/\\/|https:\\/\\/)?(www.)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(\\/([a-zA-Z-_\\/\\.0-9#:?=&;,]*)?)?)")
+                val m: Matcher = pattern.matcher(event.message.content)
+                if (m.find() || event.message.attachments.size > 0) {
+                    getGuild(event.guild.longID)!!.posts++
+                    getGuild(event.guild.longID)!!.votes++
+                    RequestBuilder(event.client).shouldBufferRequests(true).doAction {
+                        event.message.addReaction(ReactionEmoji.of("upvote", 445376322353496064L))
+                        true
+                    }.andThen {
+                        event.message.addReaction(ReactionEmoji.of("downvote", 445376330989830147L))
+                        true
+                    }.execute()
+                }
             }
         }
         if (!event.message.author.isBot) {

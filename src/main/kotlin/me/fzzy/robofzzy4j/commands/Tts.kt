@@ -17,7 +17,7 @@ class Tts : Command {
     override val cooldownMillis: Long = 60 * 5 * 1000
     override val attemptDelete: Boolean = true
     override val description = "Joins the voice channel and plays text to speech"
-    override val usageText: String = "-tts [text]"
+    override val usageText: String = "-tts <text>"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
@@ -31,7 +31,7 @@ class Tts : Command {
                 val fileName = "${System.currentTimeMillis()}.mp3"
                 val speech = Funcs.getTextToSpeech(text)
                 FileUtils.writeByteArrayToFile(File(fileName), speech)
-                var sound = File(fileName)
+                val sound = File(fileName)
                 val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                 val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
                 if (userVoiceChannel != null) {

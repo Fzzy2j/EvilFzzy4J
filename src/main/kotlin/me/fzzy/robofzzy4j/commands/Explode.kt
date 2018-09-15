@@ -38,6 +38,7 @@ class Explode : Command {
 
                     var tempFile: File? = null
                     val finalSize = 0.1
+                    val convert = ConvertCmd()
 
                     if (file.extension == "gif") {
                         var op = IMOperation()

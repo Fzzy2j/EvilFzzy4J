@@ -44,9 +44,8 @@ class CommandHandler constructor(prefix: String) {
         if (commandMap.containsKey(string)) {
             commandMap.remove(string)
             return true
-        } else {
-            return false
         }
+        return false
     }
 
     @EventSubscriber

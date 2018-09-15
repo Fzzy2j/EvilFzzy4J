@@ -55,7 +55,7 @@ public class Authentication
         String newAccessToken = HttpPost(AccessTokenUri, this.apiKey);
         //swap the new token with old one
         //Note: the swap is thread unsafe
-        System.out.println("new access token: " + accessToken);
+        //System.out.println("new access token: " + accessToken);
         this.accessToken = newAccessToken;
     }
 
