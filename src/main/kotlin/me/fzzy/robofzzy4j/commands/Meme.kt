@@ -23,7 +23,7 @@ class Meme : Command {
     override val cooldownMillis: Long = 6 * 1000
     override val attemptDelete: Boolean = true
     override val description = "Puts meme text onto an image"
-    override val usageText: String = "-meme [imageUrl] <top text>|[bottom text]"
+    override val usageText: String = "-meme [imageUrl] [top text]|[bottom text]"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
