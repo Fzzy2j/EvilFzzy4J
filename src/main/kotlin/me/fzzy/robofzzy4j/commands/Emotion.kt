@@ -19,9 +19,7 @@ class Emotion : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
         val url: URL? = ImageFuncs.getFirstImage(history)
-        if (url == null) {
-            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
-        } else {
+        if (url != null) {
             Thread(Runnable {
                 val faces = ImageFuncs.getFacialInfo("emotion", false, false, url.toString())
                 if (faces == null) {

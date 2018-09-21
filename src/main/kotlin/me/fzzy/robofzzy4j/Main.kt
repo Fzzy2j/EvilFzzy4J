@@ -15,6 +15,7 @@ import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
+import java.lang.NullPointerException
 import java.util.*
 
 lateinit var cli: IDiscordClient
@@ -56,6 +57,8 @@ val random = Random()
 
 var day = -1
 
+private var msgId = 0L
+
 fun main(args: Array<String>) {
     if (args.size != 3) {
         println("Please enter the bots tokens e.g. java -jar thisjar.jar discordtokenhere azurefacetokenhere azurespeechtokenhere")
@@ -77,6 +80,7 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("deepfry", Deepfry())
     commandHandler.registerCommand("mc", Mc())
     commandHandler.registerCommand("explode", Explode())
+    commandHandler.registerCommand("meme", Meme())
     commandHandler.registerCommand("tts", Tts())
 
     commandHandler.registerCommand("leaderboard", LeaderboardCommand())
@@ -145,6 +149,19 @@ fun main(args: Array<String>) {
         }
     }, 60, true))
     scheduler.start()
+
+    val scanner = Scanner(System.`in`)
+    scheduler.registerTask(IndividualTask({
+        if (scanner.hasNext()) {
+            val text = scanner.nextLine()
+            try {
+                msgId = text.toLong()
+                println("message channel set!")
+            } catch (e: Exception) {
+                RequestBuffer.request { cli.getChannelByID(msgId).sendMessage(text) }
+            }
+        }
+    }, 1, true))
 
     messageScheduler = MessageScheduler(scheduler)
 

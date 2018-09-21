@@ -232,7 +232,7 @@ class Upvote {
             guilds.add(leaderboard)
             leaderboard.load()
         }
-        changeStatus(StatusType.ONLINE, ActivityType.LISTENING, "the rain -help")
+        changeStatus(StatusType.DND, ActivityType.PLAYING, "with fire -help")
     }
 
 

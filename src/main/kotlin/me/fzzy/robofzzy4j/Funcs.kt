@@ -169,6 +169,7 @@ class ImageFuncs {
             return null
         }
 
+        private val gotten = ArrayList<URL>()
         fun getFirstImage(list: MutableList<IMessage>): URL? {
             val pattern = Pattern.compile("^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
             var url: URL? = null
@@ -202,7 +203,12 @@ class ImageFuncs {
                     }
                 }
             }
-            return url
+            return if (url != null && !gotten.contains(url)) {
+                if (gotten.size > 20)
+                    gotten.removeAt(0)
+                gotten.add(url)
+                url
+            } else null
         }
     }
 }

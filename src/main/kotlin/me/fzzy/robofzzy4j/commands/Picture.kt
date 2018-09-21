@@ -1,11 +1,15 @@
 package me.fzzy.robofzzy4j.commands
 
+import magick.CompositeOperator
+import magick.ImageInfo
+import magick.MagickImage
 import me.fzzy.robofzzy4j.*
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 import java.net.URL
+import javax.imageio.ImageIO
 
 class Picture : Command {
 
@@ -36,16 +40,14 @@ class Picture : Command {
             val history = event.channel.getMessageHistory(10).toMutableList()
             history.add(0, event.message)
             val url: URL? = ImageFuncs.getFirstImage(history)
-            if (url == null) {
-                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
-            } else {
+            if (url != null) {
                 Thread(Runnable {
                     val file = ImageFuncs.downloadTempFile(url)
 
                     if (file == null) {
                         RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not download image!") }
                     } else {
-                        /*val info = ImageInfo(file.name)
+                        val info = ImageInfo(file.name)
                         var magickImage = MagickImage(info)
 
                         val pictureInfo = ImageInfo(picture.absolutePath)
@@ -106,10 +108,9 @@ class Picture : Command {
                         pictureMagickImage.fileName = file.absolutePath
                         pictureMagickImage.writeImage(info)
                         RequestBuffer.request {
-                            processingMessage?.delete()
                             Funcs.sendFile(event.channel, file)
                             file.delete()
-                        }*/
+                        }
                     }
                 }).start()
             }

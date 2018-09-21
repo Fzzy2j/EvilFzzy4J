@@ -32,10 +32,7 @@ class Explode : Command {
         } else {
             Thread(Runnable {
                 var file = ImageFuncs.downloadTempFile(url)
-                if (file == null) {
-                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't download image!") }
-                } else {
-
+                if (file != null) {
                     var tempFile: File? = null
                     val finalSize = 0.1
                     val convert = ConvertCmd()

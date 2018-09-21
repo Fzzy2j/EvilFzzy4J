@@ -1,5 +1,8 @@
 package me.fzzy.robofzzy4j.commands
 
+import magick.CompositeOperator
+import magick.ImageInfo
+import magick.MagickImage
 import me.fzzy.robofzzy4j.*
 import org.im4java.core.CompositeCmd
 import org.im4java.core.ConvertCmd
@@ -53,12 +56,15 @@ class Eyes : Command {
                     val file = ImageFuncs.downloadTempFile(url)
 
                     if (faces != null && file != null) {
+                        val info = ImageInfo(file.name)
+                        val magickImage = MagickImage(info)
+
+                        val eyeInfo = ImageInfo(eyes.absolutePath)
+                        val eyeMagickImage = MagickImage(eyeInfo)
 
                         val sizeHelper = ImageIO.read(eyes)
                         val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
                         if (faces.length() > 0) {
-                            val convert = ConvertCmd()
-                            val s2b = Stream2BufferedImage()
                             for (face in faces) {
                                 if (face is JSONObject) {
                                     val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
@@ -73,53 +79,20 @@ class Eyes : Command {
                                     eyeDistance *= ratio
                                     val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
                                     val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
+                                    var resize = eyeMagickImage.scaleImage(width, height)
 
-                                    var op = IMOperation()
-                                    op.addImage()
-                                    op.resize(width, height)
-                                    op.addImage("jpg:-")
-                                    convert.setOutputConsumer(s2b)
-                                    convert.run(op, ImageIO.read(eyes))
-                                    var resize = s2b.image
-
-                                    op = IMOperation()
-
-                                    val composite = CompositeCmd()
-                                    composite.searchPath = "C:\\Program Files\\ImageMagick-7.0.8-Q16"
-                                    composite.setOutputConsumer(s2b)
-                                    op.gravity("+${lx - width / 2}+${ly - height / 2}")
-                                    op.addImage()
-                                    op.addImage()
-
-                                    op.addImage("jpg:-")
-                                    composite.run(op, resize, ImageIO.read(file))
-                                    val eye1 = s2b.image
-                                    //magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
+                                    magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
 
                                     // If the eye file ends in _mirror the other eye will be flipped
-                                    if (eyes.nameWithoutExtension.endsWith("_mirror")) {
-                                        op = IMOperation()
-                                        op.flop()
-                                        op.addImage()
-                                        op.addImage("jpg:-")
-                                        convert.run(op, resize)
-                                        resize = s2b.image
-                                    }
+                                    if (eyes.nameWithoutExtension.endsWith("_mirror"))
+                                        resize = resize.flopImage()
 
-                                    op = IMOperation()
-
-                                    op.composite()
-                                    op.gravity("+${rx - width / 2}+${ry - height / 2}")
-                                    op.addImage()
-                                    op.addImage()
-                                    op.addImage("jpg:-")
-                                    convert.run(op, resize, eye1)
-                                    //magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
+                                    magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
                                 }
                             }
 
-
-                            ImageIO.write(s2b.image, file.name, file)
+                            magickImage.fileName = file.absolutePath
+                            magickImage.writeImage(info)
                             RequestBuffer.request {
                                 Funcs.sendFile(event.channel, file)
                                 file.delete()

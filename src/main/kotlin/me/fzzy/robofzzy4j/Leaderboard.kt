@@ -74,7 +74,7 @@ class Leaderboard constructor(private var guildId: Long) {
 
         // If the new value is less than the entry 1 rank below it, move it, repeat
         var compare = rankMap[rank + 1]
-        while (rank != valueMap.size && newValue > valueMap[compare]!!.value) {
+        while (rank != valueMap.size && newValue < valueMap[compare]!!.value) {
             valueMap[compare!!] = Pair(rank, valueMap[compare]!!.value)
             rankMap[rank] = compare
             rank++
