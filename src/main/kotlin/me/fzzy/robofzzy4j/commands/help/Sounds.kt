@@ -2,6 +2,7 @@ package me.fzzy.robofzzy4j.commands.help
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.DiscordException
@@ -57,7 +58,9 @@ class Sounds : Command {
                     if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
                         cooldowns[event.author.longID] = System.currentTimeMillis()
 
-                        println("${SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))} - ${event.author.name}#${event.author.discriminator} playing sound: ${event.message.content}")
+                        val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
+                        Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} playing sound: ${event.message.content}")
+
                         val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                         if (userVoiceChannel != null) {
                             VoiceListener.playTempAudio(userVoiceChannel, audioDir[0], false)

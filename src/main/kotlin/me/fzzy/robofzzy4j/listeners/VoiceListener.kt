@@ -2,13 +2,11 @@ package me.fzzy.robofzzy4j.listeners
 
 import me.fzzy.robofzzy4j.cli
 import sx.blah.discord.api.events.EventSubscriber
-import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IVoiceChannel
 import sx.blah.discord.util.audio.AudioPlayer
 import sx.blah.discord.util.audio.events.TrackFinishEvent
 import java.io.File
 import java.io.IOException
-import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.UnsupportedAudioFileException
 
 class VoiceListener {
@@ -18,6 +16,7 @@ class VoiceListener {
         private var delete = true
 
         fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean) {
+            tempFile?.delete()
             tempFile = file
             this.delete = delete
 
@@ -38,8 +37,10 @@ class VoiceListener {
     @EventSubscriber
     fun onTrackEnd(e: TrackFinishEvent) {
         if (!e.newTrack.isPresent) {
-            if (delete)
+            if (delete) {
                 tempFile?.delete()
+                tempFile = null
+            }
             cli.ourUser.getVoiceStateForGuild(e.player.guild).channel?.leave()
         }
     }

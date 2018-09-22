@@ -1,9 +1,6 @@
 package me.fzzy.robofzzy4j.listeners
 
-import me.fzzy.robofzzy4j.Guild
-import me.fzzy.robofzzy4j.changeStatus
-import me.fzzy.robofzzy4j.cli
-import me.fzzy.robofzzy4j.guilds
+import me.fzzy.robofzzy4j.*
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.ReadyEvent
 import sx.blah.discord.handle.obj.ActivityType
@@ -18,7 +15,7 @@ class StateListener {
             guilds.add(leaderboard)
             leaderboard.load()
         }
-        changeStatus(StatusType.DND, ActivityType.PLAYING, "with fire -help")
+        changeStatus(StatusType.DND, ActivityType.PLAYING, "with fire ${BOT_PREFIX}help")
     }
 
 }

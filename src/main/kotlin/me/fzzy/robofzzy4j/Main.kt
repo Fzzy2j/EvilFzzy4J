@@ -10,6 +10,7 @@ import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.listeners.VoteListener
 import me.fzzy.robofzzy4j.thread.Authentication
 import org.im4java.process.ProcessStarter
+import sx.blah.discord.Discord4J
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
 import sx.blah.discord.handle.obj.ActivityType
@@ -69,12 +70,15 @@ fun main(args: Array<String>) {
         return
     }
     running = true
+    Discord4J.LOGGER.info("Bot Starting.")
     faceApiToken = args[1]
     speechApiToken = args[2]
     auth = Authentication(speechApiToken)
     ProcessStarter.setGlobalSearchPath("C:\\Program Files\\ImageMagick-7.0.8-Q16")
 
     val sounds = Sounds()
+
+    Discord4J.LOGGER.info("Registering commands.")
 
     commandHandler = CommandHandler(BOT_PREFIX)
     commandHandler.registerCommand("fzzy", Fzzy())
@@ -101,6 +105,7 @@ fun main(args: Array<String>) {
 
     guilds = ArrayList()
 
+    Discord4J.LOGGER.info("Loading reviewIds.")
     reviewIds.clear()
     if (file.exists()) {
         val serial = file.readText()
@@ -109,7 +114,13 @@ fun main(args: Array<String>) {
         }
     }
 
+    Discord4J.LOGGER.info("Starting scheduler.")
+
     scheduler = Task()
+    scheduler.start()
+
+    Discord4J.LOGGER.info("Starting auto-saver.")
+
     scheduler.registerTask(IndividualTask({
         try {
             if (!cli.isLoggedIn)
@@ -153,7 +164,8 @@ fun main(args: Array<String>) {
                 file.printWriter().use { out -> out.println() }
         }
     }, 60, true))
-    scheduler.start()
+
+    Discord4J.LOGGER.info("Registering input task.")
 
     val scanner = Scanner(System.`in`)
     scheduler.registerTask(IndividualTask({
@@ -170,6 +182,8 @@ fun main(args: Array<String>) {
 
     messageScheduler = MessageScheduler(scheduler)
 
+    Discord4J.LOGGER.info("Registering events.")
+
     cli = ClientBuilder().withToken(args[0]).build()
     cli.dispatcher.registerListener(StateListener())
     cli.dispatcher.registerListener(VoteListener())
@@ -177,6 +191,9 @@ fun main(args: Array<String>) {
     cli.dispatcher.registerListener(VoiceListener())
     cli.dispatcher.registerListener(sounds)
     cli.dispatcher.registerListener(commandHandler)
+
+    Discord4J.LOGGER.info("Logging in.")
+
     cli.login()
 }
 

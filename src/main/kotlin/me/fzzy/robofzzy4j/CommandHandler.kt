@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j
 
+import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IChannel
@@ -82,7 +83,8 @@ class CommandHandler constructor(prefix: String) {
                 }
             }
 
-            println("${SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))} - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
+            val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
+            Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
 
             val commandCooldown = if (command.cooldownMillis > generalCommandCooldownMillis) command.cooldownMillis else generalCommandCooldownMillis
             val timePassedCommand = cooldowns[event.author.longID]!!.getTimePassedMillis(commandString)
