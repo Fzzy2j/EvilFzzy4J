@@ -5,21 +5,17 @@ import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
-import sx.blah.discord.util.RequestBuffer
-import sx.blah.discord.util.audio.AudioPlayer
 import ws.schild.jave.*
 import java.io.IOException
 import java.io.FileOutputStream
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-import javax.sound.sampled.AudioSystem
-import javax.sound.sampled.UnsupportedAudioFileException
 
 
 class Play : Command {
 
-    override val cooldownMillis: Long = 6 * 1000
+    override val cooldownMillis: Long = 30 * 1000
     override val attemptDelete: Boolean = true
     override val description = "Plays audio in the voice channel"
     override val usageText: String = "-play [videoUrl]"

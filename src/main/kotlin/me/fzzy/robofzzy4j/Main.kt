@@ -9,19 +9,14 @@ import me.fzzy.robofzzy4j.listeners.StateListener
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.listeners.VoteListener
 import me.fzzy.robofzzy4j.thread.Authentication
-import org.im4java.core.ConvertCmd
-import org.im4java.core.MogrifyCmd
 import org.im4java.process.ProcessStarter
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
-import sx.blah.discord.api.events.EventSubscriber
-import sx.blah.discord.handle.impl.events.ReadyEvent
 import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
-import java.lang.NullPointerException
 import java.util.*
 
 lateinit var cli: IDiscordClient
