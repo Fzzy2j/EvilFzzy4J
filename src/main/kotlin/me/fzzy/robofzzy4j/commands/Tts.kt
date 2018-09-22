@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Funcs
 import me.fzzy.robofzzy4j.cli
+import me.fzzy.robofzzy4j.listeners.VoiceListener
 import org.apache.commons.io.FileUtils
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
@@ -27,35 +28,16 @@ class Tts : Command {
                 text += " $arg"
             }
             text = text.substring(1)
-            Thread(Runnable {
+            Thread {
                 val fileName = "${System.currentTimeMillis()}.mp3"
                 val speech = Funcs.getTextToSpeech(text)
                 FileUtils.writeByteArrayToFile(File(fileName), speech)
                 val sound = File(fileName)
                 val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
-                val audioP = AudioPlayer.getAudioPlayerForGuild(event.guild)
                 if (userVoiceChannel != null) {
-
-                    val stream = AudioSystem.getAudioFileFormat(sound)
-                    val frames = stream.frameLength
-                    val durationInSeconds = (frames + 0.0) / stream.format.frameRate
-
-                    userVoiceChannel.join()
-                    Thread.sleep(100)
-                    audioP.clear()
-                    Thread.sleep(100)
-                    try {
-                        audioP.queue(sound)
-                    } catch (e: IOException) {
-                        // File not found
-                    } catch (e: UnsupportedAudioFileException) {
-                        e.printStackTrace()
-                    }
-                    Thread.sleep((durationInSeconds * 1000).toLong() + 1000)
-                    cli.ourUser.getVoiceStateForGuild(event.guild).channel?.leave()
-                    sound.delete()
+                    VoiceListener.playTempAudio(userVoiceChannel, sound, true)
                 }
-            }).start()
+            }.start()
         }
     }
 }

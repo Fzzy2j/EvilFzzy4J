@@ -6,7 +6,6 @@ import magick.MagickImage
 import magick.PixelPacket
 import me.fzzy.robofzzy4j.*
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
-import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.awt.Font
 import java.awt.font.FontRenderContext

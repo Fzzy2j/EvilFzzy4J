@@ -4,12 +4,18 @@ import me.fzzy.robofzzy4j.thread.IndividualTask
 import me.fzzy.robofzzy4j.thread.Task
 import me.fzzy.robofzzy4j.commands.*
 import me.fzzy.robofzzy4j.commands.help.*
+import me.fzzy.robofzzy4j.listeners.MessageListener
+import me.fzzy.robofzzy4j.listeners.StateListener
+import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.listeners.VoteListener
 import me.fzzy.robofzzy4j.thread.Authentication
 import org.im4java.core.ConvertCmd
 import org.im4java.core.MogrifyCmd
 import org.im4java.process.ProcessStarter
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
+import sx.blah.discord.api.events.EventSubscriber
+import sx.blah.discord.handle.impl.events.ReadyEvent
 import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.DiscordException
@@ -33,6 +39,9 @@ var running = false
 
 const val BOT_PREFIX = "-"
 const val OWNER_ID = 66104132028604416L
+const val reviewId = 485256221633413141
+const val memeId = 214250278466224128
+const val memeGeneralId = 397151198899339264
 const val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
 
 private var presenceStatusType: StatusType? = null
@@ -81,6 +90,7 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("mc", Mc())
     commandHandler.registerCommand("explode", Explode())
     commandHandler.registerCommand("meme", Meme())
+    commandHandler.registerCommand("play", Play())
     commandHandler.registerCommand("tts", Tts())
 
     commandHandler.registerCommand("leaderboard", LeaderboardCommand())
@@ -166,7 +176,10 @@ fun main(args: Array<String>) {
     messageScheduler = MessageScheduler(scheduler)
 
     cli = ClientBuilder().withToken(args[0]).build()
-    cli.dispatcher.registerListener(Upvote())
+    cli.dispatcher.registerListener(StateListener())
+    cli.dispatcher.registerListener(VoteListener())
+    cli.dispatcher.registerListener(MessageListener())
+    cli.dispatcher.registerListener(VoiceListener())
     cli.dispatcher.registerListener(sounds)
     cli.dispatcher.registerListener(commandHandler)
     cli.login()
