@@ -1,5 +1,7 @@
 package me.fzzy.robofzzy4j
 
+import com.google.common.reflect.TypeToken
+import jdk.nashorn.internal.parser.TokenType
 import me.fzzy.robofzzy4j.thread.IndividualTask
 import me.fzzy.robofzzy4j.thread.Task
 import me.fzzy.robofzzy4j.commands.*
@@ -19,37 +21,27 @@ import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 import java.util.*
+import ninja.leaping.configurate.ConfigurationNode
+import ninja.leaping.configurate.commented.CommentedConfigurationNode
+import ninja.leaping.configurate.loader.ConfigurationLoader
+import java.io.IOException
+import ninja.leaping.configurate.hocon.HoconConfigurationLoader
+
 
 lateinit var cli: IDiscordClient
 lateinit var guilds: ArrayList<Guild>
 lateinit var commandHandler: CommandHandler
 
 val reviewIds = ArrayList<Long>()
-private val file: File = File("reviewIds.txt")
 
 lateinit var faceApiToken: String
 lateinit var speechApiToken: String
 
-var imageQueues = 0
-var running = false
-
 const val BOT_PREFIX = "-"
-const val OWNER_ID = 66104132028604416L
-const val reviewId = 485256221633413141
-const val memeId = 214250278466224128
-const val memeGeneralId = 397151198899339264
 const val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
-
-private var presenceStatusType: StatusType? = null
-private var presenceActivityType: ActivityType? = null
-private var presenceText: String? = null
-
-fun changeStatus(statusType: StatusType, activityType: ActivityType, text: String) {
-    presenceStatusType = statusType
-    presenceActivityType = activityType
-    presenceText = text
-    RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
-}
+const val MEME_REVIEW_ID = 485256221633413141
+const val MEME_SERVER_ID = 214250278466224128
+const val MEME_GENERAL_CHANNEL_ID = 397151198899339264
 
 lateinit var messageScheduler: MessageScheduler
 
@@ -62,15 +54,32 @@ val random = Random()
 
 var day = -1
 
-private var msgId = 0L
+private lateinit var guildFile: File
+lateinit var guildManager: ConfigurationLoader<CommentedConfigurationNode>
+lateinit var guildNode: ConfigurationNode
+
+private lateinit var dataFile: File
+lateinit var dataManager: ConfigurationLoader<CommentedConfigurationNode>
+lateinit var dataNode: ConfigurationNode
+
+const val CONFIG_DIR: String = "data/"
 
 fun main(args: Array<String>) {
     if (args.size != 3) {
         println("Please enter the bots tokens e.g. java -jar thisjar.jar discordtokenhere azurefacetokenhere azurespeechtokenhere")
         return
     }
-    running = true
+
     Discord4J.LOGGER.info("Bot Starting.")
+
+    guildFile = File(CONFIG_DIR + File.separator + "guilds.conf")
+    dataFile = File(CONFIG_DIR + File.separator + "data.conf")
+    guildFile.parentFile.mkdirs()
+    guildManager = HoconConfigurationLoader.builder().setPath(guildFile.toPath()).build()
+    dataManager = HoconConfigurationLoader.builder().setPath(dataFile.toPath()).build()
+    guildNode = guildManager.load()
+    dataNode = dataManager.load()
+
     faceApiToken = args[1]
     speechApiToken = args[2]
     auth = Authentication(speechApiToken)
@@ -107,11 +116,12 @@ fun main(args: Array<String>) {
 
     Discord4J.LOGGER.info("Loading reviewIds.")
     reviewIds.clear()
-    if (file.exists()) {
-        val serial = file.readText()
-        for (score in 0 until serial.split(",").size - 1) {
-            reviewIds.add(serial.split(",")[score].toLong())
-        }
+    for (text in dataNode.getNode("reviewIds").getList(TypeToken.of(String::class.java))) {
+        reviewIds.add(text.toLong())
+    }
+
+    for (file in File("cache").listFiles()) {
+        file.delete()
     }
 
     Discord4J.LOGGER.info("Starting scheduler.")
@@ -135,7 +145,7 @@ fun main(args: Array<String>) {
         if (day != date.day && date.hours == 16) {
             day = Date(System.currentTimeMillis()).day
             val list = File("memes").listFiles()
-            cli.getChannelByID(memeGeneralId).sendFile(list[random.nextInt(list.size)])
+            cli.getChannelByID(MEME_GENERAL_CHANNEL_ID).sendFile(list[random.nextInt(list.size)])
         }
 
         val iter = guilds.iterator()
@@ -152,33 +162,13 @@ fun main(args: Array<String>) {
             }
 
             guild.save()
-            if (reviewIds.size > 0) {
-                var serial = ""
-
-                for (i in reviewIds) {
-                    serial += "$i,"
-                }
-
-                file.printWriter().use { out -> out.println(serial) }
-            } else
-                file.printWriter().use { out -> out.println() }
+            var i = 0
+            for (id in reviewIds) {
+                dataNode.getNode("reviewIds", i++).value = id
+            }
+            dataManager.save(dataNode)
         }
     }, 60, true))
-
-    Discord4J.LOGGER.info("Registering input task.")
-
-    val scanner = Scanner(System.`in`)
-    scheduler.registerTask(IndividualTask({
-        if (scanner.hasNext()) {
-            val text = scanner.nextLine()
-            try {
-                msgId = text.toLong()
-                println("message channel set!")
-            } catch (e: Exception) {
-                RequestBuffer.request { cli.getChannelByID(msgId).sendMessage(text) }
-            }
-        }
-    }, 1, true))
 
     messageScheduler = MessageScheduler(scheduler)
 
@@ -191,10 +181,22 @@ fun main(args: Array<String>) {
     cli.dispatcher.registerListener(VoiceListener())
     cli.dispatcher.registerListener(sounds)
     cli.dispatcher.registerListener(commandHandler)
+    cli.dispatcher.registerListener(Spook())
 
     Discord4J.LOGGER.info("Logging in.")
 
     cli.login()
+}
+
+private var presenceStatusType: StatusType? = null
+private var presenceActivityType: ActivityType? = null
+private var presenceText: String? = null
+
+fun changeStatus(statusType: StatusType, activityType: ActivityType, text: String) {
+    presenceStatusType = statusType
+    presenceActivityType = activityType
+    presenceText = text
+    RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
 }
 
 fun getGuild(guildId: Long): Guild? {

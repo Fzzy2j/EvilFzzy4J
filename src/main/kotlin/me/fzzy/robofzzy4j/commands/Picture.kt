@@ -19,7 +19,7 @@ class Picture : Command {
     override val usageText: String = "-picture <pictureType> [imageUrl]"
     override val allowDM: Boolean = true
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
         // Find the specified picture from the pictures folder
         val pictureFile = File("pictures")
@@ -32,89 +32,82 @@ class Picture : Command {
                 }
             }
         }
-        if (picture == null) {
-            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "That picture doesn't exist! use -picturetypes to view all the types") }
-        } else {
+        if (picture == null)
+            return CommandResult.fail("That picture doesn't exist! use -picturetypes to view all the types")
 
-            // Find an image from the last 10 messages sent in this channel, include the one the user sent
-            val history = event.channel.getMessageHistory(10).toMutableList()
-            history.add(0, event.message)
-            val url: URL? = ImageFuncs.getFirstImage(history)
-            if (url != null) {
-                Thread(Runnable {
-                    val file = ImageFuncs.downloadTempFile(url)
+        // Find an image from the last 10 messages sent in this channel, include the one the user sent
+        val history = event.channel.getMessageHistory(10).toMutableList()
+        history.add(0, event.message)
 
-                    if (file == null) {
-                        RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not download image!") }
-                    } else {
-                        val info = ImageInfo(file.name)
-                        var magickImage = MagickImage(info)
+        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image.")
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Could not download image!")
 
-                        val pictureInfo = ImageInfo(picture.absolutePath)
-                        val pictureMagickImage = MagickImage(pictureInfo)
-                        val sizeHelper = ImageIO.read(picture)
+        val info = ImageInfo(file.name)
+        var magickImage = MagickImage(info)
 
-                        // Hard to understand, this gets the corners of the transparent box in the image
-                        var farRight = Pair(0, 0)
-                        var farLeft = Pair(sizeHelper.width, 0)
-                        var farTop = Pair(0, sizeHelper.height)
-                        var farBottom = Pair(0, 0)
-                        for (x in 0 until sizeHelper.width) {
-                            for (y in 0 until sizeHelper.height) {
-                                if (pictureMagickImage.getOnePixel(x, y).opacity != 0) {
-                                    // top right bias
-                                    if (farRight.first < x)
-                                        farRight = Pair(x, y)
+        val pictureInfo = ImageInfo(picture.absolutePath)
+        val pictureMagickImage = MagickImage(pictureInfo)
+        val sizeHelper = ImageIO.read(picture)
 
-                                    // bottom left bias
-                                    if (farLeft.first >= x)
-                                        farLeft = Pair(x, y)
+        // Hard to understand, this gets the corners of the transparent box in the image
+        var farRight = Pair(0, 0)
+        var farLeft = Pair(sizeHelper.width, 0)
+        var farTop = Pair(0, sizeHelper.height)
+        var farBottom = Pair(0, 0)
+        for (x in 0 until sizeHelper.width) {
+            for (y in 0 until sizeHelper.height) {
+                if (pictureMagickImage.getOnePixel(x, y).opacity != 0) {
+                    // top right bias
+                    if (farRight.first < x)
+                        farRight = Pair(x, y)
 
-                                    // top left bias
-                                    if (farTop.second > y)
-                                        farTop = Pair(x, y)
+                    // bottom left bias
+                    if (farLeft.first >= x)
+                        farLeft = Pair(x, y)
 
-                                    // bottom right bias
-                                    if (farBottom.second <= y)
-                                        farBottom = Pair(x, y)
-                                }
-                            }
-                        }
-                        // Wow this is hard to understand
-                        val topRight = if (farTop.first < farBottom.first) farRight else farTop
-                        val topLeft = if (farTop.first > farBottom.first) farLeft else farTop
-                        val bottomRight = if (farRight.second > farLeft.second) farRight else farBottom
-                        val bottomLeft = if (farRight.second < farLeft.second) farLeft else farBottom
+                    // top left bias
+                    if (farTop.second > y)
+                        farTop = Pair(x, y)
 
-                        // Get how much to rotate the image in radians
-                        var t = Math.atan(Math.abs(topRight.second - topLeft.second) / Math.abs(topRight.first - topLeft.first.toDouble()))
-                        if (farTop.first >= farBottom.first)
-                            t = -t
-
-                        val give = 30
-                        // Get the size the image should be
-                        val width = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft)) + give
-                        val height = Math.max(distance(topRight, bottomRight), distance(topLeft, bottomLeft)) + give
-
-                        // Apply the transform
-                        magickImage = magickImage.scaleImage(width, height)
-                        magickImage = magickImage.rotateImage(Math.toDegrees(t))
-
-                        // Do some layering
-                        val og = MagickImage(pictureInfo)
-                        pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, magickImage, Math.min(topLeft.first, bottomLeft.first) - give / 2, Math.min(topLeft.second, topRight.second) - give / 2)
-                        pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, og, 0, 0)
-
-                        pictureMagickImage.fileName = file.absolutePath
-                        pictureMagickImage.writeImage(info)
-                        RequestBuffer.request {
-                            Funcs.sendFile(event.channel, file)
-                            file.delete()
-                        }
-                    }
-                }).start()
+                    // bottom right bias
+                    if (farBottom.second <= y)
+                        farBottom = Pair(x, y)
+                }
             }
         }
+        // Wow this is hard to understand
+        val topRight = if (farTop.first < farBottom.first) farRight else farTop
+        val topLeft = if (farTop.first > farBottom.first) farLeft else farTop
+        val bottomRight = if (farRight.second > farLeft.second) farRight else farBottom
+        val bottomLeft = if (farRight.second < farLeft.second) farLeft else farBottom
+
+        // Get how much to rotate the image in radians
+        var t = Math.atan(Math.abs(topRight.second - topLeft.second) / Math.abs(topRight.first - topLeft.first.toDouble()))
+        if (farTop.first >= farBottom.first)
+            t = -t
+
+        val give = 30
+        // Get the size the image should be
+        val width = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft)) + give
+        val height = Math.max(distance(topRight, bottomRight), distance(topLeft, bottomLeft)) + give
+
+        // Apply the transform
+        magickImage = magickImage.scaleImage(width, height)
+        magickImage = magickImage.rotateImage(Math.toDegrees(t))
+
+        // Do some layering
+        val og = MagickImage(pictureInfo)
+        pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, magickImage, Math.min(topLeft.first, bottomLeft.first) - give / 2, Math.min(topLeft.second, topRight.second) - give / 2)
+        pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, og, 0, 0)
+
+        pictureMagickImage.fileName = file.absolutePath
+        pictureMagickImage.writeImage(info)
+        RequestBuffer.request {
+            Funcs.sendFile(event.channel, file)
+            file.delete()
+        }
+
+        return CommandResult.success()
     }
 
     private fun distance(coord1: Pair<Int, Int>, coord2: Pair<Int, Int>): Int {

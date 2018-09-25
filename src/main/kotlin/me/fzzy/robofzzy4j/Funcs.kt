@@ -49,11 +49,29 @@ class Funcs {
             }
         }
 
+        fun mentionsByName(msg: IMessage): Boolean {
+            val check = msg.content.toLowerCase().replace(" ", "")
+            val checkAgainst = "${cli.ourUser.name} ${cli.ourUser.getDisplayName(msg.guild)}".split(" ")
+            for (input in checkAgainst) {
+                if (check.contains("thank") && (check.contains(input.toLowerCase().replace(" ", "")) || msg.mentions.contains(cli.ourUser)))
+                    return true
+            }
+            return false
+        }
+
 
         fun getTextToSpeech(text: String): ByteArray? {
+            val voices = listOf(
+                    "(en-US, BenjaminRUS)",
+                    "(es-MX, Raul, Apollo)",
+                    "(en-GB, HazelRUS)",
+                    "(ms-MY, Rizwan)",
+                    "(zh-HK, TracyRUS)"
+            )
+
             val apiurl = "https://speech.platform.bing.com/synthesize"
-            var input = "<speak version='1.0' xml:lang='en-US'>" +
-                    "<voice xml:lang='en-US' name='Microsoft Server Speech Text to Speech Voice (en-US, JessaRUS)'>" +
+            val input = "<speak version='1.0' xml:lang='en-US'>" +
+                    "<voice xml:lang='en-US' name='Microsoft Server Speech Text to Speech Voice ${voices[random.nextInt(voices.size)]}'>" +
                     text +
                     "</voice>" +
                     "</speak>"
@@ -89,7 +107,7 @@ class Funcs {
                     println(code)
                 urlConnection.disconnect()
             } catch (e: Exception) {
-                e.printStackTrace()
+                return null
             }
             return null
         }
@@ -112,7 +130,7 @@ class ImageFuncs {
             if (fixedUrl.toString().endsWith("gif"))
                 suffix = "gif"
 
-            val fileName = "cache/${imageQueues++}.$suffix"
+            val fileName = "cache/${System.currentTimeMillis()}.$suffix"
             try {
                 val openConnection = fixedUrl.openConnection()
                 openConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11")
@@ -129,8 +147,6 @@ class ImageFuncs {
             } catch (e: Exception) {
                 return null
             }
-            if (imageQueues > 1000000)
-                imageQueues = 0
             return File(fileName)
         }
 
@@ -230,6 +246,7 @@ class Sound constructor(private var userVoiceChannel: IVoiceChannel, private var
         while (audioP.currentTrack != null) {
             Thread.sleep(100)
         }
+        println("funcs")
         cli.ourUser.getVoiceStateForGuild(guild).channel?.leave()
     }
 }

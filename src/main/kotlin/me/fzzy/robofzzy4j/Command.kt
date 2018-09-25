@@ -10,6 +10,6 @@ interface Command {
     val usageText: String
     val allowDM: Boolean
 
-    fun runCommand(event: MessageReceivedEvent, args: List<String>)
+    fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult
 
 }

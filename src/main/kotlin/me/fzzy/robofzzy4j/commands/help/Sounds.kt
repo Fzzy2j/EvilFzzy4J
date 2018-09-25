@@ -26,13 +26,14 @@ class Sounds : Command {
     override val usageText: String = "-sounds"
     override val allowDM: Boolean = true
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var all = "```"
         for (file in File("sounds").listFiles()) {
             all += "-${file.nameWithoutExtension}\n"
         }
         all += "```"
         RequestBuffer.request { event.message.author.orCreatePMChannel.sendMessage(all) }
+        return CommandResult.success()
     }
 
     private var cooldowns: HashMap<Long, Long> = hashMapOf()
@@ -63,7 +64,7 @@ class Sounds : Command {
 
                         val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                         if (userVoiceChannel != null) {
-                            VoiceListener.playTempAudio(userVoiceChannel, audioDir[0], false)
+                            VoiceListener.playTempAudio(userVoiceChannel, audioDir[0], false, 1F)
                         }
                     }
                 } else {
@@ -72,7 +73,7 @@ class Sounds : Command {
                     RequestBuffer.request {
                         val msg = Funcs.sendMessage(event.channel, message)
                         if (msg != null)
-                            CooldownMessage(timeLeft.toInt(), event.channel, event.author.getDisplayName(event.guild), msg).start()
+                            CooldownMessage(timeLeft.toInt(), event.author.getDisplayName(event.guild), msg).start()
                     }
                 }
             }

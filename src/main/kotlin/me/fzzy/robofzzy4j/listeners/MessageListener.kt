@@ -31,8 +31,26 @@ class MessageListener {
         }
     }
 
+    val respongeMsgs = listOf(
+            "No problem %name%!",
+            "Anytime %name%!",
+            ":D",
+            ":3",
+            ":^)"
+    )
+
     @EventSubscriber
     fun onMessageReceived(event: MessageReceivedEvent) {
+        if (Funcs.mentionsByName(event.message)) {
+            for (msg in event.channel.getMessageHistory(3)) {
+                if (msg.author.longID == cli.ourUser.longID) {
+                    RequestBuffer.request {
+                        event.channel.sendMessage(respongeMsgs[random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild)))
+                    }
+                    break
+                }
+            }
+        }
         if (event.guild != null) {
             if (!event.author.isBot) {
                 if (getGuild(event.guild.longID) == null)
@@ -49,19 +67,6 @@ class MessageListener {
                         event.message.addReaction(ReactionEmoji.of("downvote", 445376330989830147L))
                         true
                     }.execute()
-                }
-            }
-        }
-        if (!event.message.author.isBot) {
-            if (event.message.content.equals("-stop", true)) {
-                if (event.author.longID == OWNER_ID) {
-                    RequestBuffer.request { event.message.delete() }
-                    for (guild in guilds) {
-                        guild.save()
-                    }
-                    cli.logout()
-                    running = false
-                    System.exit(0)
                 }
             }
         }

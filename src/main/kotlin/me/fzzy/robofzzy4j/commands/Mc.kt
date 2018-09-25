@@ -13,27 +13,22 @@ class Mc : Command {
     override val usageText: String = "-mc <text>"
     override val allowDM: Boolean = true
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
-        if (args.isNotEmpty()) {
-            var achieve = ""
-            for (text in args) {
-                achieve += "+$text"
-            }
-            achieve = achieve.substring(1)
-            val url = ImageFuncs.getMinecraftAchievement(achieve)
-            Thread(Runnable {
-                val file = ImageFuncs.downloadTempFile(url)
-                if (file == null) {
-                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't contact API!") }
-                } else {
-                    RequestBuffer.request {
-                        Funcs.sendFile(event.channel, file)
-                        file.delete()
-                    }
-                }
-            }).start()
-        } else {
-            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Invalid command syntax! $usageText") }
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+        if (args.isEmpty())
+            return CommandResult.fail("Invalid command syntax! $usageText")
+
+        var achieve = ""
+        for (text in args) {
+            achieve += "+$text"
         }
+        achieve = achieve.substring(1)
+        val url = ImageFuncs.getMinecraftAchievement(achieve)
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't contact API!")
+
+        RequestBuffer.request {
+            Funcs.sendFile(event.channel, file)
+            file.delete()
+        }
+        return CommandResult.success()
     }
 }

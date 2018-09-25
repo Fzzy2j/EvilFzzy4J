@@ -1,6 +1,5 @@
 package me.fzzy.robofzzy4j.thread
 
-import me.fzzy.robofzzy4j.running
 import java.util.*
 
 class IndividualTask constructor(var toRun: () -> Unit, var intervalSeconds: Int, var repeat: Boolean)
@@ -15,7 +14,7 @@ class Task : Thread() {
     }
 
     override fun run() {
-        while (running) {
+        while (true) {
             Thread.sleep(1000)
 
             for ((task, time) in tasks) {

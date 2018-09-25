@@ -15,32 +15,43 @@ class VoiceListener {
         private var tempFile: File? = null
         private var delete = true
 
-        fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean) {
-            tempFile?.delete()
-            tempFile = file
-            this.delete = delete
+        private var playing = false
 
-            val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
+        var interupt = false
 
-            channel.join()
-            audioP.clear()
-            try {
-                audioP.queue(file)
-            } catch (e: IOException) {
-                // File not found
-            } catch (e: UnsupportedAudioFileException) {
-                e.printStackTrace()
+        fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float): Boolean {
+            if (!interupt && !playing) {
+                tempFile?.delete()
+                tempFile = file
+                this.delete = delete
+
+                val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
+
+                channel.join()
+                audioP.clear()
+                try {
+                    audioP.queue(file)
+                    playing = true
+                    audioP.volume = volume
+                    return true
+                } catch (e: IOException) {
+                    // File not found
+                } catch (e: UnsupportedAudioFileException) {
+                    e.printStackTrace()
+                }
             }
+            return false
         }
     }
 
     @EventSubscriber
     fun onTrackEnd(e: TrackFinishEvent) {
-        if (!e.newTrack.isPresent) {
+        if (!e.newTrack.isPresent && !interupt) {
             if (delete) {
                 tempFile?.delete()
                 tempFile = null
             }
+            playing = false
             cli.ourUser.getVoiceStateForGuild(e.player.guild).channel?.leave()
         }
     }

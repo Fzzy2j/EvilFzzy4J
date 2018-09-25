@@ -15,35 +15,30 @@ class Emotion : Command {
     override val usageText: String = "-emotion [imageUrl]"
     override val allowDM: Boolean = true
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
-        val url: URL? = ImageFuncs.getFirstImage(history)
-        if (url != null) {
-            Thread(Runnable {
-                val faces = ImageFuncs.getFacialInfo("emotion", false, false, url.toString())
-                if (faces == null) {
-                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not contact API.") }
-                } else {
-                    if (faces.length() > 0) {
-                        var finalOutput = ""
-                        for (face in faces) {
-                            if (face is JSONObject) {
-                                var output = "```"
-                                val map = face.getJSONObject("faceAttributes").getJSONObject("emotion").toMap()
-                                for ((v1, v2) in map) {
-                                    output += "$v1: $v2\n"
-                                }
-                                output += "```"
-                                finalOutput += output
-                            }
-                        }
-                        RequestBuffer.request { Funcs.sendMessage(event.channel, finalOutput) }
-                    } else {
-                        RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "No faces detected in image.") }
-                    }
+
+        val url: URL? = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image.")
+        val faces = ImageFuncs.getFacialInfo("emotion", false, false, url.toString())
+                ?: return CommandResult.fail("Couldn't contact API")
+
+        if (faces.length() == 0)
+            return CommandResult.fail("No faces detected in image.")
+
+        var finalOutput = ""
+        for (face in faces) {
+            if (face is JSONObject) {
+                var output = "```"
+                val map = face.getJSONObject("faceAttributes").getJSONObject("emotion").toMap()
+                for ((v1, v2) in map) {
+                    output += "$v1: $v2\n"
                 }
-            }).start()
+                output += "```"
+                finalOutput += output
+            }
         }
+        RequestBuffer.request { Funcs.sendMessage(event.channel, finalOutput) }
+        return CommandResult.success()
     }
 }

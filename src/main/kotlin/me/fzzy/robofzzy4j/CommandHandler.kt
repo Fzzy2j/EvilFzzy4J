@@ -12,25 +12,18 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 private lateinit var commandMap: HashMap<String, Command>
-private lateinit var cooldowns: HashMap<Long, Cooldown>
 
 lateinit var commandPrefix: String
-
-const val generalCommandCooldownMillis: Long = 1 * 1000
 
 class CommandHandler constructor(prefix: String) {
 
     init {
         commandPrefix = prefix
         commandMap = hashMapOf()
-        cooldowns = hashMapOf()
     }
 
-    fun registerCommand(string: String, command: Command): Boolean {
-        if (string.toLowerCase() == "generalcommands")
-            return false
+    fun registerCommand(string: String, command: Command) {
         commandMap[string.toLowerCase()] = command
-        return true
     }
 
     fun getCommand(string: String): Command? {
@@ -60,9 +53,9 @@ class CommandHandler constructor(prefix: String) {
         var argsList: List<String> = args.toMutableList()
         argsList = argsList.drop(1)
 
+        val user = User.getUser(event.author.longID)
+
         if (commandMap.containsKey(commandString.toLowerCase())) {
-            if (!cooldowns.containsKey(event.author.longID))
-                cooldowns[event.author.longID] = Cooldown()
 
             val command = commandMap[commandString.toLowerCase()]!!
 
@@ -86,39 +79,69 @@ class CommandHandler constructor(prefix: String) {
             val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
 
-            val commandCooldown = if (command.cooldownMillis > generalCommandCooldownMillis) command.cooldownMillis else generalCommandCooldownMillis
-            val timePassedCommand = cooldowns[event.author.longID]!!.getTimePassedMillis(commandString)
-            val timePassedGeneral = cooldowns[event.author.longID]!!.getTimePassedMillis("generalCommands")
-            if (timePassedCommand > commandCooldown && timePassedGeneral > generalCommandCooldownMillis) {
-                cooldowns[event.author.longID]?.triggerCooldown(commandString)
-                cooldowns[event.author.longID]?.triggerCooldown("generalCommands")
+            val timePassedCommand = user.cooldowns.getTimePassedMillis(commandString)
+            if (timePassedCommand > command.cooldownMillis) {
 
-                command.runCommand(event, argsList)
+                if (!user.runningCommand) {
+                    user.runningCommand = true
+                    Thread {
+                        val result = command.runCommand(event, argsList)
+                        if (result.isSuccess()) {
+                            user.cooldowns.triggerCooldown(commandString)
+                        } else {
+                            Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
+                            RequestBuffer.request {
+                                messageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
+                            }
+                        }
+                        user.runningCommand = false
+                    }.start()
+                }
             } else {
-                val timeLeft = (commandCooldown - timePassedCommand) / 1000
-                val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft seconds."
+                val timeLeft = (command.cooldownMillis - timePassedCommand) / 1000
+                val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft more seconds."
                 RequestBuffer.request {
                     val msg = Funcs.sendMessage(event.channel, message)
                     if (msg != null)
-                        CooldownMessage(timeLeft.toInt(), event.channel, event.author.getDisplayName(event.guild), msg).start()
+                        CooldownMessage(timeLeft.toInt(), event.author.getDisplayName(event.guild), msg).start()
                 }
             }
         }
     }
+}
+
+class CommandResult private constructor(private val success: Boolean, private val message: String) {
+
+    companion object {
+        fun success(): CommandResult {
+            return CommandResult(true, "")
+        }
+
+        fun fail(msg: String): CommandResult {
+            return CommandResult(false, msg)
+        }
+    }
+
+    fun isSuccess(): Boolean {
+        return success
+    }
+
+    fun getFailMessage(): String {
+        return message
+    }
 
 }
 
-class CooldownMessage constructor(private var cooldown: Int, private var channel: IChannel, private var userName: String, private var msg: IMessage) : Thread() {
+class CooldownMessage constructor(private var cooldown: Int, private var userName: String, private var msg: IMessage) : Thread() {
     override fun run() {
         while (cooldown > 0) {
-            if (cooldown % 5 == 0) {
-                RequestBuffer.request { msg.edit("$userName! You are on cooldown for $cooldown seconds.") }
-            }
             Thread.sleep(1000L)
             cooldown--
         }
-        RequestBuffer.request { msg.edit("$userName, you are no longer on cooldown.") }
-        Thread.sleep(7000L)
+        if (msg.channel.getMessageHistory(10).contains(msg)) {
+            RequestBuffer.request { msg.edit("$userName, you are no longer on cooldown.") }
+            Thread.sleep(7000L)
+        }
         RequestBuffer.request { msg.delete() }
     }
 }

@@ -5,6 +5,7 @@ import magick.ImageInfo
 import magick.MagickImage
 import magick.PixelPacket
 import me.fzzy.robofzzy4j.*
+import org.omg.CORBA.COMM_FAILURE
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.RequestBuffer
 import java.awt.Font
@@ -25,21 +26,20 @@ class Meme : Command {
     override val usageText: String = "-meme [imageUrl] [top text]|[bottom text]"
     override val allowDM: Boolean = true
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
         var full = ""
         for (text in args) {
-
             val pattern = Pattern.compile("((http:\\/\\/|https:\\/\\/)?(www.)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(\\/([a-zA-Z-_\\/\\.0-9#:?=&;,]*)?)?)")
             val m: Matcher = pattern.matcher(text)
             if (!m.find()) {
                 full += " $text"
             }
         }
-        if (full.isBlank()) {
-            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Invalid syntax structure. $usageText") }
-            return
-        }
+
+        if (full.isBlank())
+            return CommandResult.fail("Invalid syntax structure. $usageText")
+
         val topText = full.substring(1).replace("\n", "").split("|")[0]
         var bottomText: String? = null
         if (full.substring(1).replace("\n", "").split("|").size > 1)
@@ -48,34 +48,27 @@ class Meme : Command {
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
-        val url: URL? = ImageFuncs.getFirstImage(history)
-        if (url == null) {
-            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
-        } else {
-            Thread(Runnable {
-                val file = ImageFuncs.downloadTempFile(url)
-                if (file == null) {
-                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't download image!") }
-                } else {
-                    val info = ImageInfo(file.absolutePath)
-                    val magickImage = MagickImage(info)
-                    val sizeHelper = ImageIO.read(file)
 
-                    if (topText.isNotBlank())
-                        annotateCenter(sizeHelper, magickImage, info, topText.toUpperCase(), false)
+        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image!")
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't download image!")
 
-                    if (bottomText != null)
-                        annotateCenter(sizeHelper, magickImage, info, bottomText.toUpperCase(), true)
+        val info = ImageInfo(file.absolutePath)
+        val magickImage = MagickImage(info)
+        val sizeHelper = ImageIO.read(file)
 
-                    magickImage.fileName = file.absolutePath
-                    magickImage.writeImage(info)
-                    RequestBuffer.request {
-                        Funcs.sendFile(event.channel, file)
-                        file.delete()
-                    }
-                }
-            }).start()
+        if (topText.isNotBlank())
+            annotateCenter(sizeHelper, magickImage, info, topText.toUpperCase(), false)
+
+        if (bottomText != null)
+            annotateCenter(sizeHelper, magickImage, info, bottomText.toUpperCase(), true)
+
+        magickImage.fileName = file.absolutePath
+        magickImage.writeImage(info)
+        RequestBuffer.request {
+            Funcs.sendFile(event.channel, file)
+            file.delete()
         }
+        return CommandResult.success()
     }
 
     fun annotateCenter(sizeHelper: BufferedImage, magickImage: MagickImage, info: ImageInfo, text: String, bottom: Boolean) {

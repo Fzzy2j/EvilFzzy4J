@@ -26,7 +26,7 @@ class Eyes : Command {
     override val usageText: String = "-eyes <eyeType> [imageUrl]"
     override val allowDM: Boolean = true
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
         // Find the specified eyes from the eyes folder
         val eyesFile = File("eyes")
@@ -39,68 +39,62 @@ class Eyes : Command {
                 }
             }
         }
-        if (eyes == null) {
-            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Those eyes don't exist! use -eyetypes to view all the types") }
-        } else {
+        if (eyes == null)
+            return CommandResult.fail("Those eyes don't exist! use -eyetypes to view all the types")
 
-            // Find an image from the last 10 messages sent in this channel, include the one the user sent
-            val history = event.channel.getMessageHistory(10).toMutableList()
-            history.add(0, event.message)
-            val url: URL? = ImageFuncs.getFirstImage(history)
-            if (url == null) {
-                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find an image in the last 10 messages sent in this channel!") }
-            } else {
+        // Find an image from the last 10 messages sent in this channel, include the one the user sent
+        val history = event.channel.getMessageHistory(10).toMutableList()
+        history.add(0, event.message)
 
-                Thread(Runnable {
-                    val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
-                    val file = ImageFuncs.downloadTempFile(url)
+        val url: URL = ImageFuncs.getFirstImage(history)
+                ?: return CommandResult.fail("Couldn't find an image in the last 10 messages sent in this channel!")
 
-                    if (faces != null && file != null) {
-                        val info = ImageInfo(file.name)
-                        val magickImage = MagickImage(info)
+        val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't download image.")
 
-                        val eyeInfo = ImageInfo(eyes.absolutePath)
-                        val eyeMagickImage = MagickImage(eyeInfo)
+        if (faces == null || faces.length() == 0)
+            return CommandResult.fail("No faces detected.")
 
-                        val sizeHelper = ImageIO.read(eyes)
-                        val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
-                        if (faces.length() > 0) {
-                            for (face in faces) {
-                                if (face is JSONObject) {
-                                    val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
-                                    val right = face.getJSONObject("faceLandmarks").getJSONObject("pupilRight")
+        val info = ImageInfo(file.name)
+        val magickImage = MagickImage(info)
 
-                                    // The images need scaling based on how big the eyes are, this is done using the distance between the eyes
-                                    val lx = left.getInt("x")
-                                    val ly = left.getInt("y")
-                                    val rx = right.getInt("x")
-                                    val ry = right.getInt("y")
-                                    var eyeDistance = Math.sqrt(Math.pow((lx - rx).toDouble(), 2.0) + Math.pow((ly - ry).toDouble(), 2.0))
-                                    eyeDistance *= ratio
-                                    val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
-                                    val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
-                                    var resize = eyeMagickImage.scaleImage(width, height)
+        val eyeInfo = ImageInfo(eyes.absolutePath)
+        val eyeMagickImage = MagickImage(eyeInfo)
 
-                                    magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
+        val sizeHelper = ImageIO.read(eyes)
+        val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
+        for (face in faces) {
+            if (face is JSONObject) {
+                val left = face.getJSONObject("faceLandmarks").getJSONObject("pupilLeft")
+                val right = face.getJSONObject("faceLandmarks").getJSONObject("pupilRight")
 
-                                    // If the eye file ends in _mirror the other eye will be flipped
-                                    if (eyes.nameWithoutExtension.endsWith("_mirror"))
-                                        resize = resize.flopImage()
+                // The images need scaling based on how big the eyes are, this is done using the distance between the eyes
+                val lx = left.getInt("x")
+                val ly = left.getInt("y")
+                val rx = right.getInt("x")
+                val ry = right.getInt("y")
+                var eyeDistance = Math.sqrt(Math.pow((lx - rx).toDouble(), 2.0) + Math.pow((ly - ry).toDouble(), 2.0))
+                eyeDistance *= ratio
+                val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
+                val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
+                var resize = eyeMagickImage.scaleImage(width, height)
 
-                                    magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
-                                }
-                            }
+                magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
 
-                            magickImage.fileName = file.absolutePath
-                            magickImage.writeImage(info)
-                            RequestBuffer.request {
-                                Funcs.sendFile(event.channel, file)
-                                file.delete()
-                            }
-                        }
-                    }
-                }).start()
+                // If the eye file ends in _mirror the other eye will be flipped
+                if (eyes.nameWithoutExtension.endsWith("_mirror"))
+                    resize = resize.flopImage()
+
+                magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
             }
         }
+
+        magickImage.fileName = file.absolutePath
+        magickImage.writeImage(info)
+        RequestBuffer.request {
+            Funcs.sendFile(event.channel, file)
+            file.delete()
+        }
+        return CommandResult.success()
     }
 }

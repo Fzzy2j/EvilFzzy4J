@@ -24,7 +24,7 @@ class VoteListener {
     }
 
     fun sendForReview(message: IMessage) {
-        if (message.guild.longID == memeId && !reviewIds.contains(message.longID)) {
+        if (message.guild.longID == MEME_SERVER_ID && !reviewIds.contains(message.longID)) {
             reviewIds.add(message.longID)
             lateinit var sent: IMessage
             if (message.attachments.size == 0) {
@@ -37,9 +37,9 @@ class VoteListener {
             }
             RequestBuilder(cli).shouldBufferRequests(true).doAction {
                 sent = if (message.attachments.size == 0) {
-                    cli.getGuildByID(memeId).getChannelByID(reviewId).sendMessage(message.content)
+                    cli.getGuildByID(MEME_SERVER_ID).getChannelByID(MEME_REVIEW_ID).sendMessage(message.content)
                 } else
-                    cli.getGuildByID(memeId).getChannelByID(reviewId).sendMessage(message.attachments[0].url)
+                    cli.getGuildByID(MEME_SERVER_ID).getChannelByID(MEME_REVIEW_ID).sendMessage(message.attachments[0].url)
                 true
             }.andThen {
                 sent.addReaction(ReactionEmoji.of("upvote", 445376322353496064L))
@@ -61,7 +61,7 @@ class VoteListener {
             } catch (e: NullPointerException) {
             }
             if (reacted && event.user.longID != cli.ourUser.longID) {
-                if (event.channel.longID != reviewId) {
+                if (event.channel.longID != MEME_REVIEW_ID) {
                     if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 60 * 24) {
                         if (event.message.author.longID != event.user.longID) {
                             val score = guild.leaderboard.getOrDefault(event.author.longID, 0)

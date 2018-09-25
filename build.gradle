@@ -13,6 +13,10 @@ repositories {
 allprojects {
     repositories {
         maven { url "https://jitpack.io" }
+        maven {
+            name = 'sponge'
+            url = 'https://repo.spongepowered.org/maven'
+        }
     }
 }
 
@@ -24,8 +28,8 @@ dependencies {
     compile group: 'jmagick', name: 'jmagick', version: '6.6.9'
     compile group: 'org.im4java', name: 'im4java', version: '1.4.0'
     implementation 'com.github.Commit451:YouTubeExtractor:4.2.1'
-    compile group: 'ws.schild', name: 'jave-core', version: '2.4.1'
-
+    compile group: 'ws.schild', name: 'jave-core', version: '2.4.3'
+    compile 'org.spongepowered:configurate-hocon:3.6'
 }
 
 compileKotlin {

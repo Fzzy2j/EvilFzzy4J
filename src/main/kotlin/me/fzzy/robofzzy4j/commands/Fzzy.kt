@@ -20,85 +20,77 @@ class Fzzy : Command {
     override val usageText: String = "-fzzy [imageUrl]"
     override val allowDM: Boolean = true
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>) {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
-        val url: URL? = ImageFuncs.getFirstImage(history)
-        if (url != null) {
-            Thread(Runnable {
-                val file = ImageFuncs.downloadTempFile(url)
-                if (file == null) {
-                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't download image!") }
-                } else {
 
-                    var tempFile: File? = null
-                    if (file.extension == "gif") {
-                        var op = IMOperation()
+        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image.")
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't donload image!")
 
-                        val info = Info(file.name, false)
-                        var delay = info.getProperty("Delay")
-                        if (delay == null){
-                            RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find framerate of image!") }
-                        }
+        var tempFile: File? = null
+        if (file.extension == "gif") {
+            var op = IMOperation()
 
-                        if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
-                            delay = "25x100"
-                        }
+            val info = Info(file.name, false)
+            var delay = info.getProperty("Delay")
+            if (delay == null) {
+                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find framerate of image!") }
+            }
 
-                        val convert = ConvertCmd()
-                        convert.searchPath = "C:\\Program Files (x86)\\ImageMagick-6.9.9-Q16"
+            if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
+                delay = "25x100"
+            }
 
-                        tempFile = File(file.nameWithoutExtension)
-                        tempFile.mkdirs()
+            val convert = ConvertCmd()
 
-                        op.coalesce()
-                        op.addImage(file.name)
-                        op.addImage("${tempFile.nameWithoutExtension}/temp%05d.png")
+            tempFile = File(file.nameWithoutExtension)
+            tempFile.mkdirs()
 
-                        convert.run(op)
+            op.coalesce()
+            op.addImage(file.name)
+            op.addImage("${tempFile.nameWithoutExtension}/temp%05d.png")
 
-                        for (listFile in tempFile.list()) {
-                            resize(File("${tempFile.nameWithoutExtension}/$listFile"))
-                        }
+            convert.run(op)
 
-                        op = IMOperation()
+            for (listFile in tempFile.list()) {
+                resize(File("${tempFile.nameWithoutExtension}/$listFile"))
+            }
 
-                        op.loop(0)
-                        op.dispose(2.toString())
+            op = IMOperation()
 
-                        //Trying to make the file smaller
-                        op.deconstruct()
-                        op.layers("optimize")
-                        op.type("Palette")
-                        op.depth(8)
-                        op.fuzz(4.0, true)
-                        op.dither("none")
+            op.loop(0)
+            op.dispose(2.toString())
 
-                        op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
-                        for (listFile in tempFile.list()) {
-                            op.addImage("${tempFile.nameWithoutExtension}/$listFile")
-                        }
+            //Trying to make the file smaller
+            op.deconstruct()
+            op.layers("optimize")
+            op.type("Palette")
+            op.depth(8)
+            op.fuzz(4.0, true)
+            op.dither("none")
 
-                        op.addImage(file.name)
+            op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
+            for (listFile in tempFile.list()) {
+                op.addImage("${tempFile.nameWithoutExtension}/$listFile")
+            }
 
-                        convert.run(op)
-                    } else
-                        resize(file)
+            op.addImage(file.name)
 
-                    RequestBuffer.request {
-                        try {
-                            Funcs.sendFile(event.channel, file)
-                        }catch (e: Exception) {
-                            messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Could not send generated file!")
-                        }
-                        file.delete()
-                        tempFile?.deleteRecursively()
-                    }
-                }
-            }).start()
+            convert.run(op)
+        } else
+            resize(file)
+
+        RequestBuffer.request {
+            try {
+                Funcs.sendFile(event.channel, file)
+            } catch (e: Exception) {
+            }
+            file.delete()
+            tempFile?.deleteRecursively()
         }
+        return CommandResult.success()
     }
 
     fun resize(file: File) {
