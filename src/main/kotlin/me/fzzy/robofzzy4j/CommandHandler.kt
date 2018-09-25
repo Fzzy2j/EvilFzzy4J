@@ -53,7 +53,7 @@ class CommandHandler constructor(prefix: String) {
         var argsList: List<String> = args.toMutableList()
         argsList = argsList.drop(1)
 
-        val user = User.getUser(event.author.longID)
+        val user = User.getUser(event.author)
 
         if (commandMap.containsKey(commandString.toLowerCase())) {
 

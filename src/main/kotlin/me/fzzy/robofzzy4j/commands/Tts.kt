@@ -29,7 +29,7 @@ class Tts : Command {
                 text += " $arg"
             }
             text = text.substring(1)
-            val fileName = "${System.currentTimeMillis()}.mp3"
+            val fileName = "cache/${System.currentTimeMillis()}.mp3"
             val speech = Funcs.getTextToSpeech(text) ?: return CommandResult.fail("Couldn't receive text to speech")
             FileUtils.writeByteArrayToFile(File(fileName), speech)
             val sound = File(fileName)
