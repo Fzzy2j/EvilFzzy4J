@@ -13,7 +13,7 @@ import kotlin.math.roundToInt
 class Deepfry : Command {
 
     override val cooldownMillis: Long = 6 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description = "Deep fries an image"
     override val usageText: String = "-deepfry [imageUrl]"
     override val allowDM: Boolean = true

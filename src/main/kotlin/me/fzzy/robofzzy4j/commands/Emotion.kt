@@ -10,7 +10,7 @@ import java.net.URL
 class Emotion : Command {
 
     override val cooldownMillis: Long = 6 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description = "Displays the emotion of faces in an image"
     override val usageText: String = "-emotion [imageUrl]"
     override val allowDM: Boolean = true

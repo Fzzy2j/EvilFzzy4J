@@ -21,7 +21,7 @@ import kotlin.math.roundToInt
 class Eyes : Command {
 
     override val cooldownMillis: Long = 6 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description = "Adds different eyes to an image, use -eyetypes to see all the eye types"
     override val usageText: String = "-eyes <eyeType> [imageUrl]"
     override val allowDM: Boolean = true

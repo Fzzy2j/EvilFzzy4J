@@ -17,9 +17,14 @@ import java.util.regex.Pattern
 
 class VoteListener {
 
+    companion object {
+        const val UPVOTE_ID = 445376322353496064L
+        const val DOWNVOTE_ID = 445376330989830147L
+    }
+
     fun getVotes(message: IMessage): Int {
-        val upvotes = message.getReactionByEmoji(ReactionEmoji.of("upvote", 445376322353496064L)).count
-        val downvotes = message.getReactionByEmoji(ReactionEmoji.of("downvote", 445376330989830147L)).count - 1
+        val upvotes = message.getReactionByEmoji(ReactionEmoji.of("upvote", UPVOTE_ID)).count
+        val downvotes = message.getReactionByEmoji(ReactionEmoji.of("downvote", DOWNVOTE_ID)).count - 1
         return upvotes - downvotes
     }
 
@@ -41,20 +46,15 @@ class VoteListener {
                 } else
                     cli.getGuildByID(MEME_SERVER_ID).getChannelByID(MEME_REVIEW_ID).sendMessage(message.attachments[0].url)
                 true
-            }.andThen {
-                sent.addReaction(ReactionEmoji.of("upvote", 445376322353496064L))
-                true
-            }.andThen {
-                sent.addReaction(ReactionEmoji.of("downvote", 445376330989830147L))
-                true
             }.execute()
+            Guild.getGuild(message.guild.longID).allowVotes(sent)
         }
     }
 
     @EventSubscriber
     fun onReactionAdd(event: ReactionAddEvent) {
-        val guild = getGuild(event.guild.longID)
-        if (guild != null && event.reaction != null) {
+        val guild = Guild.getGuild(event.guild.longID)
+        if (event.reaction != null) {
             var reacted = false
             try {
                 reacted = event.reaction.getUserReacted(cli.ourUser)
@@ -64,18 +64,15 @@ class VoteListener {
                 if (event.channel.longID != MEME_REVIEW_ID) {
                     if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 60 * 24) {
                         if (event.message.author.longID != event.user.longID) {
-                            val score = guild.leaderboard.getOrDefault(event.author.longID, 0)
                             when (event.reaction.emoji.name) {
                                 "upvote" -> {
-                                    guild.leaderboard.setValue(event.author.longID, score + 1)
-                                    guild.votes++
+                                    guild.addPoint(event.author, event.channel)
                                     if (getVotes(event.message) >= guild.getAverageVote()) {
                                         sendForReview(event.message)
                                     }
                                 }
                                 "downvote" -> {
-                                    guild.leaderboard.setValue(event.author.longID, score - 1)
-                                    guild.votes--
+                                    guild.subtractPoint(event.author)
                                 }
                             }
                         }
@@ -141,23 +138,18 @@ class VoteListener {
 
     @EventSubscriber
     fun onReactionRemove(event: ReactionRemoveEvent) {
-        val guild = getGuild(event.guild.longID)
-        if (guild != null) {
-            if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 60 * 24) {
-                if (event.reaction.getUserReacted(cli.ourUser) && event.user.longID != cli.ourUser.longID) {
-                    if (event.message.author.longID != event.user.longID) {
-                        val score = guild.leaderboard.getOrDefault(event.author.longID, 0)
-                        when (event.reaction.emoji.name) {
-                            "upvote" -> {
-                                guild.leaderboard.setValue(event.author.longID, score - 1)
-                                guild.votes--
-                            }
-                            "downvote" -> {
-                                guild.leaderboard.setValue(event.author.longID, score + 1)
-                                guild.votes++
-                                if (getVotes(event.message) >= guild.getAverageVote()) {
-                                    sendForReview(event.message)
-                                }
+        val guild = Guild.getGuild(event.guild.longID)
+        if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 60 * 24) {
+            if (event.reaction.getUserReacted(cli.ourUser) && event.user.longID != cli.ourUser.longID) {
+                if (event.message.author.longID != event.user.longID) {
+                    when (event.reaction.emoji.name) {
+                        "upvote" -> {
+                            guild.subtractPoint(event.author)
+                        }
+                        "downvote" -> {
+                            guild.addPoint(event.author, event.channel)
+                            if (getVotes(event.message) >= guild.getAverageVote()) {
+                                sendForReview(event.message)
                             }
                         }
                     }

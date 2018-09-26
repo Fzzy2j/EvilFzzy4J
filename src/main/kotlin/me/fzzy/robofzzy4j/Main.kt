@@ -1,7 +1,6 @@
 package me.fzzy.robofzzy4j
 
 import com.google.common.reflect.TypeToken
-import jdk.nashorn.internal.parser.TokenType
 import me.fzzy.robofzzy4j.thread.IndividualTask
 import me.fzzy.robofzzy4j.thread.Task
 import me.fzzy.robofzzy4j.commands.*
@@ -24,12 +23,10 @@ import java.util.*
 import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
-import java.io.IOException
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 
 
 lateinit var cli: IDiscordClient
-lateinit var guilds: ArrayList<Guild>
 lateinit var commandHandler: CommandHandler
 
 val reviewIds = ArrayList<Long>()
@@ -110,9 +107,6 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("sounds", sounds)
     commandHandler.registerCommand("eyetypes", Eyetypes())
     commandHandler.registerCommand("picturetypes", Picturetypes())
-    commandHandler.registerCommand("mocks", Mocks())
-
-    guilds = ArrayList()
 
     Discord4J.LOGGER.info("Loading reviewIds.")
     reviewIds.clear()
@@ -138,9 +132,6 @@ fun main(args: Array<String>) {
         } catch (e: DiscordException) {
         }
 
-        if (presenceActivityType != null && presenceStatusType != null && presenceText != null)
-            RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
-
         val date = Date(System.currentTimeMillis())
         if (day != date.day && date.hours == 16) {
             day = Date(System.currentTimeMillis()).day
@@ -148,26 +139,7 @@ fun main(args: Array<String>) {
             cli.getChannelByID(MEME_GENERAL_CHANNEL_ID).sendFile(list[random.nextInt(list.size)])
         }
 
-        val iter = guilds.iterator()
-        while (iter.hasNext()) {
-            val guild = iter.next()
-            var exists = false
-            for (guilds in cli.guilds) {
-                if (guilds.longID == guild.longId)
-                    exists = true
-            }
-            if (!exists) {
-                iter.remove()
-                continue
-            }
-
-            guild.save()
-            var i = 0
-            for (id in reviewIds) {
-                dataNode.getNode("reviewIds", i++).value = id
-            }
-            dataManager.save(dataNode)
-        }
+        Guild.saveAll()
     }, 60, true))
 
     messageScheduler = MessageScheduler(scheduler)
@@ -175,10 +147,10 @@ fun main(args: Array<String>) {
     Discord4J.LOGGER.info("Registering events.")
 
     cli = ClientBuilder().withToken(args[0]).build()
-    cli.dispatcher.registerListener(StateListener())
     cli.dispatcher.registerListener(VoteListener())
     cli.dispatcher.registerListener(MessageListener())
     cli.dispatcher.registerListener(VoiceListener())
+    cli.dispatcher.registerListener(StateListener())
     cli.dispatcher.registerListener(sounds)
     cli.dispatcher.registerListener(commandHandler)
     cli.dispatcher.registerListener(Spook())
@@ -187,26 +159,6 @@ fun main(args: Array<String>) {
 
     cli.login()
 }
-
-private var presenceStatusType: StatusType? = null
-private var presenceActivityType: ActivityType? = null
-private var presenceText: String? = null
-
-fun changeStatus(statusType: StatusType, activityType: ActivityType, text: String) {
-    presenceStatusType = statusType
-    presenceActivityType = activityType
-    presenceText = text
-    RequestBuffer.request { cli.changePresence(presenceStatusType, presenceActivityType, presenceText) }
-}
-
-fun getGuild(guildId: Long): Guild? {
-    for (guild in guilds) {
-        if (guild.longId == guildId)
-            return guild
-    }
-    return null
-}
-
 
 
 

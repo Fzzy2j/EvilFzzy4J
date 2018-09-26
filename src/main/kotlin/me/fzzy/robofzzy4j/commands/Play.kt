@@ -19,17 +19,22 @@ import java.util.regex.Pattern
 class Play : Command {
 
     override val cooldownMillis: Long = 1000 * 60 * 5
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = true
     override val description = "Plays audio in the voice channel"
     override val usageText: String = "-play [videoUrl]"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[0])
-        val id = if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]
+        val id: String
+        try {
+            id = if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]
+        } catch(e: Exception) {
+            return CommandResult.fail("Invalid command syntax. $usageText")
+        }
         Discord4J.LOGGER.info("Playing video audio with id: $id")
         val extraction = YouTubeExtractor.Builder().build().extract(id).blockingGet()
-        if (extraction.lengthSeconds!! <= 90) {
+        if (extraction.lengthSeconds!! <= 60 * 5) {
             for (stream in extraction.videoStreams) {
                 if (stream.format == "v3GPP")
                     continue

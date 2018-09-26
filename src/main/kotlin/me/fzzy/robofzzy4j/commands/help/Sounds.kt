@@ -21,7 +21,7 @@ private const val SOUND_COOLDOWN: Long = 30 * 1000
 class Sounds : Command {
 
     override val cooldownMillis: Long = 4 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description: String = "Shows all the sounds the bot can play in the voice channel"
     override val usageText: String = "-sounds"
     override val allowDM: Boolean = true

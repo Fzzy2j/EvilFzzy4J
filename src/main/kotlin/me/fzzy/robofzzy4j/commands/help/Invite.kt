@@ -9,7 +9,7 @@ import sx.blah.discord.util.RequestBuffer
 class Invite : Command {
 
     override val cooldownMillis: Long = 4 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description = "Gives you the invite link for the bot to add it to servers"
     override val usageText: String = "-invite"
     override val allowDM: Boolean = true

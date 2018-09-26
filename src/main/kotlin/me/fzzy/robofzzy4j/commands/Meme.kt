@@ -21,7 +21,7 @@ import kotlin.math.roundToInt
 class Meme : Command {
 
     override val cooldownMillis: Long = 6 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description = "Puts meme text onto an image"
     override val usageText: String = "-meme [imageUrl] [top text]|[bottom text]"
     override val allowDM: Boolean = true

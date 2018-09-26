@@ -10,6 +10,7 @@ import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.roundToInt
 
 private lateinit var commandMap: HashMap<String, Command>
 
@@ -59,16 +60,6 @@ class CommandHandler constructor(prefix: String) {
 
             val command = commandMap[commandString.toLowerCase()]!!
 
-            if (command.attemptDelete) {
-                RequestBuffer.request {
-                    try {
-                        event.message.delete()
-                    } catch (e: MissingPermissionsException) {
-                    } catch (e: DiscordException) {
-                    }
-                }
-            }
-
             if (event.channel.isPrivate) {
                 if (!command.allowDM) {
                     RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
@@ -79,8 +70,11 @@ class CommandHandler constructor(prefix: String) {
             val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
 
+            val guild = Guild.getGuild(event.guild.longID)
             val timePassedCommand = user.cooldowns.getTimePassedMillis(commandString)
-            if (timePassedCommand > command.cooldownMillis) {
+            val trueCooldown = command.cooldownMillis * ((100 - user.getCooldownModifier(guild)) / 100.0).roundToInt()
+
+            if (timePassedCommand > trueCooldown) {
 
                 if (!user.runningCommand) {
                     user.runningCommand = true
@@ -88,7 +82,12 @@ class CommandHandler constructor(prefix: String) {
                         val result = command.runCommand(event, argsList)
                         if (result.isSuccess()) {
                             user.cooldowns.triggerCooldown(commandString)
+                            if (command.votes)
+                                guild.allowVotes(event.message)
+                            else
+                                tryDelete(event.message)
                         } else {
+                            tryDelete(event.message)
                             Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
                             RequestBuffer.request {
                                 messageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
@@ -98,13 +97,24 @@ class CommandHandler constructor(prefix: String) {
                     }.start()
                 }
             } else {
-                val timeLeft = (command.cooldownMillis - timePassedCommand) / 1000
+                tryDelete(event.message)
+                val timeLeft = (trueCooldown - timePassedCommand) / 1000
                 val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft more seconds."
                 RequestBuffer.request {
                     val msg = Funcs.sendMessage(event.channel, message)
                     if (msg != null)
                         CooldownMessage(timeLeft.toInt(), event.author.getDisplayName(event.guild), msg).start()
                 }
+            }
+        }
+    }
+
+    fun tryDelete(msg: IMessage) {
+        RequestBuffer.request {
+            try {
+                msg.delete()
+            } catch (e: MissingPermissionsException) {
+            } catch (e: DiscordException) {
             }
         }
     }
@@ -140,7 +150,7 @@ class CooldownMessage constructor(private var cooldown: Int, private var userNam
         }
         if (msg.channel.getMessageHistory(10).contains(msg)) {
             RequestBuffer.request { msg.edit("$userName, you are no longer on cooldown.") }
-            Thread.sleep(7000L)
+            Thread.sleep(20000L)
         }
         RequestBuffer.request { msg.delete() }
     }

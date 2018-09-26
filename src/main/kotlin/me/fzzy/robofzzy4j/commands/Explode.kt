@@ -16,7 +16,7 @@ import kotlin.math.roundToInt
 class Explode : Command {
 
     override val cooldownMillis: Long = 6 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description = "Scales an image repeatedly, turning it into a gif"
     override val usageText: String = "-explode [imageUrl]"
     override val allowDM: Boolean = true

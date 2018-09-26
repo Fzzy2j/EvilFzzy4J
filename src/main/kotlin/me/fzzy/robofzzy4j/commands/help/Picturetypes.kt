@@ -9,7 +9,7 @@ import java.io.File
 class Picturetypes : Command {
 
     override val cooldownMillis: Long = 4 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description: String = "Shows all the picturess the bot can insert an image into using the -picture command"
     override val usageText: String = "-picturetypes"
     override val allowDM: Boolean = true

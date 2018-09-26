@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j
 
+import me.fzzy.robofzzy4j.listeners.VoteListener
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.client.utils.URIBuilder
 import org.apache.http.entity.StringEntity
@@ -58,7 +59,6 @@ class Funcs {
             }
             return false
         }
-
 
         fun getTextToSpeech(text: String): ByteArray? {
             val voices = listOf(

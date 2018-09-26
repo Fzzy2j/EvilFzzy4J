@@ -9,7 +9,7 @@ import java.io.File
 class Eyetypes : Command {
 
     override val cooldownMillis: Long = 4 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description: String = "Shows all the eyes the bot can place on an image using the -eyes command"
     override val usageText: String = "-eyetypes"
     override val allowDM: Boolean = true

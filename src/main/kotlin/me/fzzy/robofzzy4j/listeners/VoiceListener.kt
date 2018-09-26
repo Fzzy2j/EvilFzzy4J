@@ -11,6 +11,7 @@ import javax.sound.sampled.UnsupportedAudioFileException
 
 class VoiceListener {
 
+    // stop command
     companion object {
         private var tempFile: File? = null
         private var delete = true

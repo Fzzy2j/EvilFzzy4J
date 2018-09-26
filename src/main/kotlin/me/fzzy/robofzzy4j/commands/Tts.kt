@@ -17,7 +17,7 @@ import javax.sound.sampled.UnsupportedAudioFileException
 class Tts : Command {
 
     override val cooldownMillis: Long = 60 * 5 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = true
     override val description = "Joins the voice channel and plays text to speech"
     override val usageText: String = "-tts <text>"
     override val allowDM: Boolean = true
@@ -39,7 +39,8 @@ class Tts : Command {
                     return CommandResult.fail("Audio is already being played!")
             } else
                 return CommandResult.fail("You must be in a voice channel to use this command")
-        }
+        } else
+            return CommandResult.fail("You must provide text for it to say!")
         return CommandResult.success()
     }
 }

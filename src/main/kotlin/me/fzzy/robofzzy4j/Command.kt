@@ -6,7 +6,7 @@ interface Command {
 
     val cooldownMillis: Long
     val description: String
-    val attemptDelete: Boolean
+    val votes: Boolean
     val usageText: String
     val allowDM: Boolean
 

@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 class Fzzy : Command {
 
     override val cooldownMillis: Long = 6 * 1000
-    override val attemptDelete: Boolean = true
+    override val votes: Boolean = false
     override val description = "Downsizes the last image sent in the channel using a seam carving algorithm"
     override val usageText: String = "-fzzy [imageUrl]"
     override val allowDM: Boolean = true
