@@ -56,16 +56,14 @@ class Sounds : Command {
                 }
 
                 if (System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, 0) > SOUND_COOLDOWN) {
-                    if (cli.ourUser.getVoiceStateForGuild(event.guild).channel == null) {
-                        cooldowns[event.author.longID] = System.currentTimeMillis()
+                    cooldowns[event.author.longID] = System.currentTimeMillis()
 
-                        val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
-                        Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} playing sound: ${event.message.content}")
+                    val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
+                    Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} playing sound: ${event.message.content}")
 
-                        val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
-                        if (userVoiceChannel != null) {
-                            VoiceListener.playTempAudio(userVoiceChannel, audioDir[0], false, 1F)
-                        }
+                    val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
+                    if (userVoiceChannel != null) {
+                        VoiceListener.playTempAudio(userVoiceChannel, audioDir[0], false)
                     }
                 } else {
                     val timeLeft = (SOUND_COOLDOWN / 1000) - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())) / 1000)

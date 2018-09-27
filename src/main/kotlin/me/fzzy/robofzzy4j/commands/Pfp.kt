@@ -7,7 +7,7 @@ import sx.blah.discord.util.RequestBuffer
 
 class Pfp : Command {
 
-    override val cooldownMillis: Long = 4 * 1000
+    override val cooldownMillis: Long = 10 * 1000
     override val votes: Boolean = false
     override val description: String = "Displays a users profile picture"
     override val usageText: String = "-pfp <user>"

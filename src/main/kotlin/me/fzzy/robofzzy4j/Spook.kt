@@ -34,8 +34,6 @@ class Spook {
     private val code1Time = Time("code1")
     private val jumpTime = Time("jump")
 
-    private var stage = 0
-
     //TODO
     //Enable Help.kt -code
     //Enable random events in scheduler
@@ -45,10 +43,11 @@ class Spook {
         scheduler.registerTask(IndividualTask({
             if (System.currentTimeMillis() - code1Time.getNext() > 0) {
                 if (!VoiceListener.interupt) {
-                    val add = (random.nextInt(24) + 1) * 1000 * 60 * 60
-                    code1Time.setNext(System.currentTimeMillis() + add + (random.nextInt(60) * 1000 * 60))
+                    if (getStage() == 0) {
+                        val add = (random.nextInt(24) + 1) * 1000 * 60 * 60
+                        code1Time.setNext(System.currentTimeMillis() + add + (random.nextInt(60) * 1000 * 60))
 
-                    /*do {
+                        /*do {
                         currentVoiceChannel = guild().voiceChannels[random.nextInt(guild().voiceChannels.size)]
                     } while (currentVoiceChannel?.connectedUsers?.size != 0)
 
@@ -66,7 +65,8 @@ class Spook {
                     }
                     type = "code1"*/
 
-                    Discord4J.LOGGER.info("CODE 1 WOULD HAPPEN new time: ${SimpleDateFormat("dd:hh:mm:ss aa").format(Date(code1Time.getNext()))}")
+                        Discord4J.LOGGER.info("CODE 1 WOULD HAPPEN new time: ${SimpleDateFormat("dd:hh:mm:ss aa").format(Date(code1Time.getNext()))}")
+                    }
                 } else
                     code1Time.setNext(System.currentTimeMillis() + (1 * 1000 * 60))
             }
@@ -156,7 +156,8 @@ class Spook {
         }
     }
 
-    val sent = arrayListOf<Long>()
+    private val sent1 = arrayListOf<Long>()
+    private val sent2 = arrayListOf<Long>()
 
     @EventSubscriber
     fun onMessage(event: MessageReceivedEvent) {
@@ -164,8 +165,9 @@ class Spook {
             try {
                 val code = event.message.content.split(" ")[1]
                 when {
+                    // Text to speech
                     code.toInt() == 4157 -> { // Code 1
-                        if (!sent.contains(event.author.longID)) {
+                        if (!sent1.contains(event.author.longID)) {
                             val pre = listOf(
                                     "I hate you, but i can't live without you. ",
                                     "Why do i even bother with you. ",
@@ -174,10 +176,22 @@ class Spook {
                             val message = "${pre[random.nextInt(pre.size)]}If you wish to hear my story then so be it, but you must find it hidden within my game. " +
                                     "The next code should be easy for you to spot if you're looking in the right place"
                             event.author.orCreatePMChannel.sendMessage(Zalgo.goZalgo(message, false, true, false, false, true))
-                            sent.add(event.author.longID)
+                            sent1.add(event.author.longID)
                         }
+                        if (getStage() < 1)
+                            setStage(1)
                     }
+                    // Code in pictures
                     code.toInt() == 7395 -> { // Code 2
+                        if (!sent2.contains(event.author.longID)) {
+                            RequestBuffer.request { event.author.orCreatePMChannel.sendFile(File("newsarticle.jpg")) }
+                            sent2.add(event.author.longID)
+                        }
+                        if (getStage() < 2)
+                            setStage(2)
+                    }
+                    // Steam code
+                    code.toInt() == 5948 -> {
 
                     }
                     else -> throw IllegalArgumentException()
@@ -196,13 +210,8 @@ class Spook {
             val url: URL = ImageFuncs.getFirstImage(history) ?: return
             val file = ImageFuncs.downloadTempFile(url) ?: return
 
-            val info = ImageInfo(file.absolutePath)
-            val magickImage = MagickImage(info)
+            slapCodeIn(file)
 
-            slapCodeIn(magickImage, info)
-
-            magickImage.fileName = file.absolutePath
-            magickImage.writeImage(info)
             RequestBuffer.request {
                 Funcs.sendFile(event.channel, file)
                 file.delete()
@@ -237,18 +246,34 @@ class Spook {
         }
     }
 
-    fun slapCodeIn(magickImage: MagickImage, info: ImageInfo) {
-        val aInfo = DrawInfo(info)
-        aInfo.fill = PixelPacket.queryColorDatabase("white")
-        aInfo.textAntialias = true
-        aInfo.opacity = 60
-        aInfo.pointsize = 20.0
-        aInfo.font = "Arial"
-        aInfo.text = Zalgo.goZalgo("7395", false, true, false, false, true)
+    companion object {
+        fun setStage(stage: Int) {
+            Discord4J.LOGGER.info("STAGE CHANGED TO $stage")
+            dataNode.getNode("spook", "stage").value = stage
+            dataManager.save(dataNode)
+        }
 
-        aInfo.geometry = "+10+15"
+        fun getStage(): Int {
+            return dataNode.getNode("spook", "stage").int
+        }
 
-        magickImage.annotateImage(aInfo)
+        fun slapCodeIn(file: File) {
+            val info = ImageInfo(file.name)
+            val magickImage = MagickImage(info)
+            val aInfo = DrawInfo(info)
+            aInfo.fill = PixelPacket.queryColorDatabase("white")
+            aInfo.textAntialias = true
+            aInfo.opacity = 60
+            aInfo.pointsize = 20.0
+            aInfo.font = "Arial"
+            aInfo.text = Zalgo.goZalgo("7395", false, true, false, false, true)
+
+            aInfo.geometry = "+10+15"
+
+            magickImage.annotateImage(aInfo)
+            magickImage.fileName = file.absolutePath
+            magickImage.writeImage(info)
+        }
     }
 
     class Time constructor(private val key: String) {

@@ -54,7 +54,7 @@ class Guild private constructor(private var guildId: Long) {
             }
             names = names.substring(2)
 
-            channel.sendMessage("${user.getDisplayName(getDiscordGuild())} has passed $names on the leaderboard, their cooldown is now " + User.getUser(user).getCooldownModifier(this))
+            channel.sendMessage("${user.getDisplayName(getDiscordGuild())} has passed $names on the leaderboard, their CDR is now ${User.getUser(user).getCooldownModifier(this)}%")
         }
     }
 

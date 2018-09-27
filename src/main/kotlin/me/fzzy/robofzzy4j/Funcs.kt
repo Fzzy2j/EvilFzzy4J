@@ -43,6 +43,10 @@ class Funcs {
         }
 
         fun sendFile(channel: IChannel, file: File): IMessage? {
+            //TODO Temporary Code
+            if (Spook.getStage() == 1) {
+                //Spook.slapCodeIn(file)
+            }
             return try {
                 channel.sendFile(file)
             } catch (e: MissingPermissionsException) {
@@ -63,10 +67,12 @@ class Funcs {
         fun getTextToSpeech(text: String): ByteArray? {
             val voices = listOf(
                     "(en-US, BenjaminRUS)",
-                    "(es-MX, Raul, Apollo)",
                     "(en-GB, HazelRUS)",
-                    "(ms-MY, Rizwan)",
-                    "(zh-HK, TracyRUS)"
+                    "(en-US, ZiraRUS)",
+                    "(en-US, JessaRUS)",
+                    "(en-AU, Catherine)",
+                    "(en-AU, HayleyRUS)",
+                    "(en-CA, Linda)"
             )
 
             val apiurl = "https://speech.platform.bing.com/synthesize"
@@ -185,7 +191,6 @@ class ImageFuncs {
             return null
         }
 
-        private val gotten = ArrayList<URL>()
         fun getFirstImage(list: MutableList<IMessage>): URL? {
             val pattern = Pattern.compile("^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
             var url: URL? = null
@@ -219,12 +224,7 @@ class ImageFuncs {
                     }
                 }
             }
-            return if (url != null && !gotten.contains(url)) {
-                if (gotten.size > 20)
-                    gotten.removeAt(0)
-                gotten.add(url)
-                url
-            } else null
+            return url
         }
     }
 }

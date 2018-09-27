@@ -1,12 +1,12 @@
 package me.fzzy.robofzzy4j.commands
 
-import com.commit451.youtubeextractor.YouTubeExtraction
 import com.commit451.youtubeextractor.YouTubeExtractor
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.Discord4J
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.util.audio.AudioPlayer
 import ws.schild.jave.*
 import java.io.IOException
 import java.io.FileOutputStream
@@ -29,16 +29,16 @@ class Play : Command {
         val id: String
         try {
             id = if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             return CommandResult.fail("Invalid command syntax. $usageText")
         }
-        Discord4J.LOGGER.info("Playing video audio with id: $id")
         val extraction = YouTubeExtractor.Builder().build().extract(id).blockingGet()
-        if (extraction.lengthSeconds!! <= 60 * 5) {
+        if (extraction.lengthSeconds!! <= 60 * 10) {
             for (stream in extraction.videoStreams) {
                 if (stream.format == "v3GPP")
                     continue
 
+                Discord4J.LOGGER.info("Playing video audio with id: $id")
                 val outputFile = File("cache/${System.currentTimeMillis()}.mp4")
 
                 try {
@@ -84,8 +84,8 @@ class Play : Command {
 
                 val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                 if (userVoiceChannel != null) {
-                    if (!VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.15F))
-                        return CommandResult.fail("Audio is already being played!")
+                    VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.3F, 60)
+                            ?: return CommandResult.fail("Audio is already being played!")
                 } else
                     return CommandResult.fail("You must be in a voice channel to use this command")
                 break

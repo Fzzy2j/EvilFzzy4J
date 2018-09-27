@@ -62,7 +62,7 @@ class VoteListener {
             }
             if (reacted && event.user.longID != cli.ourUser.longID) {
                 if (event.channel.longID != MEME_REVIEW_ID) {
-                    if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 60 * 24) {
+                    if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 5) {
                         if (event.message.author.longID != event.user.longID) {
                             when (event.reaction.emoji.name) {
                                 "upvote" -> {
@@ -139,7 +139,7 @@ class VoteListener {
     @EventSubscriber
     fun onReactionRemove(event: ReactionRemoveEvent) {
         val guild = Guild.getGuild(event.guild.longID)
-        if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 60 * 24) {
+        if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 5) {
             if (event.reaction.getUserReacted(cli.ourUser) && event.user.longID != cli.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
                     when (event.reaction.emoji.name) {

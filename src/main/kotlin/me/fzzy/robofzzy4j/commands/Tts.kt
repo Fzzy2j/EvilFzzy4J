@@ -35,7 +35,7 @@ class Tts : Command {
             val sound = File(fileName)
             val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
             if (userVoiceChannel != null) {
-                if (!VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F))
+                if (VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F) == null)
                     return CommandResult.fail("Audio is already being played!")
             } else
                 return CommandResult.fail("You must be in a voice channel to use this command")

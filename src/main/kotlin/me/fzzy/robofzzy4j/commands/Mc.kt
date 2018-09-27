@@ -7,7 +7,7 @@ import sx.blah.discord.util.RequestBuffer
 
 class Mc : Command {
 
-    override val cooldownMillis: Long = 6 * 1000
+    override val cooldownMillis: Long = 40 * 1000
     override val votes: Boolean = false
     override val description = "Generates a minecraft achievement"
     override val usageText: String = "-mc <text>"
