@@ -2,6 +2,7 @@ package me.fzzy.robofzzy4j
 
 import javafx.util.Pair
 import java.util.*
+import kotlin.collections.HashMap
 
 class Leaderboard {
 
@@ -28,20 +29,20 @@ class Leaderboard {
         return valueMap[id]?.key
     }
 
-    fun setValue(id: Long, newValue: Int): List<Long> {
+    fun setValue(id: Long, newValue: Int): LeaderboardChange {
         if (valueMap.containsKey(id)) {
             val prevValue = valueMap[id]!!.value
 
             // Determines if they need to move up or down in the leaderboard
-            if (newValue < prevValue) {
+            return if (newValue < prevValue) {
                 moveDownInLeaderboard(id, newValue)
             } else {
-                return moveUpInLeaderboard(id, newValue)
+                moveUpInLeaderboard(id, newValue)
             }
         } else {
             newEntry(id, newValue)
         }
-        return arrayListOf()
+        return LeaderboardChange()
     }
 
     private fun newEntry(id: Long, newValue: Int) {
@@ -53,14 +54,15 @@ class Leaderboard {
         setValue(id, newValue)
     }
 
-    private fun moveUpInLeaderboard(id: Long, newValue: Int): List<Long> {
+    private fun moveUpInLeaderboard(id: Long, newValue: Int): LeaderboardChange {
         var rank = valueMap[id]!!.key
 
-        val passed = arrayListOf<Long>()
+        val changes = LeaderboardChange()
         // If the new value is greater than the entry 1 rank above it, move it, repeat
         var compare = rankMap[rank - 1]
         while (rank != 1 && newValue > valueMap[compare]!!.value) {
-            passed.add(compare!!)
+            changes.moveDown(compare!!)
+            changes.moveUp(id)
 
             valueMap[compare] = Pair(rank, valueMap[compare]!!.value)
             rankMap[rank] = compare
@@ -69,21 +71,40 @@ class Leaderboard {
             compare = rankMap[rank - 1]
         }
         valueMap[id] = Pair(rank, newValue)
-        return passed
+        return changes
     }
 
-    private fun moveDownInLeaderboard(id: Long, newValue: Int) {
+    private fun moveDownInLeaderboard(id: Long, newValue: Int): LeaderboardChange {
         var rank = valueMap[id]!!.key
 
+        val changes = LeaderboardChange()
         // If the new value is less than the entry 1 rank below it, move it, repeat
         var compare = rankMap[rank + 1]
         while (rank != valueMap.size && newValue < valueMap[compare]!!.value) {
-            valueMap[compare!!] = Pair(rank, valueMap[compare]!!.value)
+            changes.moveUp(compare!!)
+            changes.moveDown(id)
+
+            valueMap[compare] = Pair(rank, valueMap[compare]!!.value)
             rankMap[rank] = compare
             rank++
             rankMap[rank] = id
             compare = rankMap[rank + 1]
         }
         valueMap[id] = Pair(rank, newValue)
+        return changes
+    }
+
+    class LeaderboardChange {
+        val positions = HashMap<Long, Int>()
+
+        fun moveUp(id: Long) {
+            val amt = positions.getOrDefault(id, 0)
+            positions[id] = amt + 1
+        }
+
+        fun moveDown(id: Long) {
+            val amt = positions.getOrDefault(id, 0)
+            positions[id] = amt - 1
+        }
     }
 }

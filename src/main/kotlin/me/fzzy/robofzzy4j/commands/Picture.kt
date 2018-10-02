@@ -42,7 +42,7 @@ class Picture : Command {
         val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image.")
         val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Could not download image!")
 
-        val info = ImageInfo(file.name)
+        val info = ImageInfo(file.absolutePath)
         var magickImage = MagickImage(info)
 
         val pictureInfo = ImageInfo(picture.absolutePath)

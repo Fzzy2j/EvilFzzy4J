@@ -24,21 +24,24 @@ import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
+import sx.blah.discord.handle.impl.obj.ReactionEmoji
 
 
 lateinit var cli: IDiscordClient
 lateinit var commandHandler: CommandHandler
 
-val reviewIds = ArrayList<Long>()
+val savedMemesIds = ArrayList<Long>()
 
 lateinit var faceApiToken: String
 lateinit var speechApiToken: String
 
 const val BOT_PREFIX = "-"
 const val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
-const val MEME_REVIEW_ID = 485256221633413141
+
+val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
+val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
+
 const val MEME_SERVER_ID = 214250278466224128
-const val MEME_GENERAL_CHANNEL_ID = 397151198899339264
 
 lateinit var messageScheduler: MessageScheduler
 
@@ -48,8 +51,6 @@ lateinit var scheduler: Task
 lateinit var auth: Authentication
 
 val random = Random()
-
-var day = -1
 
 private lateinit var guildFile: File
 lateinit var guildManager: ConfigurationLoader<CommentedConfigurationNode>
@@ -98,6 +99,8 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("play", Play())
     commandHandler.registerCommand("tts", Tts())
 
+    commandHandler.registerCommand("getmeme", GetMeme())
+
     commandHandler.registerCommand("leaderboard", LeaderboardCommand())
 
     commandHandler.registerCommand("pfp", Pfp())
@@ -109,9 +112,9 @@ fun main(args: Array<String>) {
     commandHandler.registerCommand("picturetypes", Picturetypes())
 
     Discord4J.LOGGER.info("Loading reviewIds.")
-    reviewIds.clear()
-    for (text in dataNode.getNode("reviewIds").getList(TypeToken.of(String::class.java))) {
-        reviewIds.add(text.toLong())
+    savedMemesIds.clear()
+    for (text in dataNode.getNode("savedMemesIds").getList(TypeToken.of(String::class.java))) {
+        savedMemesIds.add(text.toLong())
     }
 
     for (file in File("cache").listFiles()) {
@@ -130,13 +133,6 @@ fun main(args: Array<String>) {
             if (!cli.isLoggedIn)
                 cli.login()
         } catch (e: DiscordException) {
-        }
-
-        val date = Date(System.currentTimeMillis())
-        if (day != date.day && date.hours == 16) {
-            day = Date(System.currentTimeMillis()).day
-            val list = File("memes").listFiles()
-            cli.getChannelByID(MEME_GENERAL_CHANNEL_ID).sendFile(list[random.nextInt(list.size)])
         }
 
         Guild.saveAll()

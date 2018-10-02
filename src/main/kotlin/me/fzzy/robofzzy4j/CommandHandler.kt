@@ -81,16 +81,20 @@ class CommandHandler constructor(prefix: String) {
                     if (!command.votes)
                         tryDelete(event.message)
                     Thread {
-                        val result = command.runCommand(event, argsList)
-                        if (result.isSuccess()) {
-                            user.cooldowns.triggerCooldown(commandString)
-                            if (command.votes)
-                                guild.allowVotes(event.message)
-                        } else {
-                            Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
-                            RequestBuffer.request {
-                                messageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
+                        try {
+                            val result = command.runCommand(event, argsList)
+                            if (result.isSuccess()) {
+                                user.cooldowns.triggerCooldown(commandString)
+                                if (command.votes)
+                                    guild.allowVotes(event.message)
+                            } else {
+                                Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
+                                RequestBuffer.request {
+                                    messageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
+                                }
                             }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
                         user.runningCommand = false
                     }.start()

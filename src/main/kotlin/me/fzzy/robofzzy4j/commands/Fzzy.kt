@@ -1,6 +1,7 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Guild.Companion.getGuild
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import org.im4java.core.Info
@@ -33,7 +34,7 @@ class Fzzy : Command {
         if (file.extension == "gif") {
             var op = IMOperation()
 
-            val info = Info(file.name, false)
+            val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
                 RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find framerate of image!") }
@@ -45,17 +46,17 @@ class Fzzy : Command {
 
             val convert = ConvertCmd()
 
-            tempFile = File(file.nameWithoutExtension)
+            tempFile = File("cache/${file.nameWithoutExtension}")
             tempFile.mkdirs()
 
             op.coalesce()
-            op.addImage(file.name)
-            op.addImage("${tempFile.nameWithoutExtension}/temp%05d.png")
+            op.addImage(file.absolutePath)
+            op.addImage("cache/${tempFile.nameWithoutExtension}/temp%05d.png")
 
             convert.run(op)
 
             for (listFile in tempFile.list()) {
-                resize(File("${tempFile.nameWithoutExtension}/$listFile"))
+                resize(File("cache/${tempFile.nameWithoutExtension}/$listFile"))
             }
 
             op = IMOperation()
@@ -73,10 +74,10 @@ class Fzzy : Command {
 
             op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
             for (listFile in tempFile.list()) {
-                op.addImage("${tempFile.nameWithoutExtension}/$listFile")
+                op.addImage("cache/${tempFile.nameWithoutExtension}/$listFile")
             }
 
-            op.addImage(file.name)
+            op.addImage(file.absolutePath)
 
             convert.run(op)
         } else

@@ -65,7 +65,7 @@ class VoiceListener {
                 Thread {
                     Thread.sleep((event.track.metadata["fzzyTimeSeconds"] as Int).toLong() * 1000)
                     val track = event.player.currentTrack
-                    if (VoiceListener.getId(track) == getId(event.track))
+                    if (track != null && VoiceListener.getId(track) == getId(event.track))
                         event.player.skip()
                 }.start()
             }

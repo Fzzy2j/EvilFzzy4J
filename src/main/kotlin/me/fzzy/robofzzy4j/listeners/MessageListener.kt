@@ -14,15 +14,6 @@ import java.util.regex.Pattern
 
 class MessageListener {
 
-    @EventSubscriber
-    fun onMessageSend(event: MessageSendEvent) {
-        if (event.guild != null) {
-            if (event.message.attachments.size > 0) {
-                Guild.getGuild(event.guild.longID).allowVotes(event.message)
-            }
-        }
-    }
-
     val respongeMsgs = listOf(
             "No problem %name%!",
             "Anytime %name%!",

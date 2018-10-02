@@ -84,7 +84,7 @@ class Play : Command {
 
                 val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                 if (userVoiceChannel != null) {
-                    VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.3F, 60)
+                    VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.4F, 60)
                             ?: return CommandResult.fail("Audio is already being played!")
                 } else
                     return CommandResult.fail("You must be in a voice channel to use this command")

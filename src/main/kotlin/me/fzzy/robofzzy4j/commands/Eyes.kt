@@ -55,7 +55,7 @@ class Eyes : Command {
         if (faces == null || faces.length() == 0)
             return CommandResult.fail("No faces detected.")
 
-        val info = ImageInfo(file.name)
+        val info = ImageInfo(file.absolutePath)
         val magickImage = MagickImage(info)
 
         val eyeInfo = ImageInfo(eyes.absolutePath)

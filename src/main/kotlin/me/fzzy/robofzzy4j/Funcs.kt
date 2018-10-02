@@ -34,6 +34,7 @@ class Funcs {
                 null
             }
         }
+
         fun sendEmbed(channel: IChannel, embed: EmbedObject): IMessage? {
             return try {
                 channel.sendMessage(embed)
@@ -42,13 +43,16 @@ class Funcs {
             }
         }
 
-        fun sendFile(channel: IChannel, file: File): IMessage? {
+        fun sendFile(channel: IChannel, file: File, votes: Boolean = true): IMessage? {
             //TODO Temporary Code
             if (Spook.getStage() == 1) {
                 //Spook.slapCodeIn(file)
             }
             return try {
-                channel.sendFile(file)
+                val message = channel.sendFile(file)
+                if (votes)
+                    Guild.getGuild(channel.guild.longID).allowVotes(message)
+                message
             } catch (e: MissingPermissionsException) {
                 null
             }
