@@ -25,6 +25,8 @@ import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
+import java.time.DayOfWeek
+import java.time.ZoneId
 
 
 lateinit var cli: IDiscordClient
@@ -135,6 +137,12 @@ fun main(args: Array<String>) {
         } catch (e: DiscordException) {
         }
 
+        val day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        if (day == Calendar.MONDAY && System.currentTimeMillis() - dataNode.getNode("leaderboardResetTimestamp").long > 48 * 60 * 60 * 1000) {
+            dataNode.getNode("leaderboardResetTimestamp").value = System.currentTimeMillis()
+            dataManager.save(dataNode)
+            Guild.clearLeaderboards()
+        }
         Guild.saveAll()
     }, 60, true))
 

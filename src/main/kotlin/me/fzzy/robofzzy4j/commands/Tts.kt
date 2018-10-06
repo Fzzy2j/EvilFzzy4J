@@ -16,7 +16,7 @@ import javax.sound.sampled.UnsupportedAudioFileException
 
 class Tts : Command {
 
-    override val cooldownMillis: Long = 60 * 5 * 1000
+    override val cooldownMillis: Long = 60 * 10 * 1000
     override val votes: Boolean = true
     override val description = "Joins the voice channel and plays text to speech"
     override val usageText: String = "-tts <text>"
@@ -29,18 +29,19 @@ class Tts : Command {
                 text += " $arg"
             }
             text = text.substring(1)
+            if (text.length > 100) return CommandResult.fail("text to speech has to be less than 100 characters")
             val fileName = "cache/${System.currentTimeMillis()}.mp3"
-            val speech = Funcs.getTextToSpeech(text) ?: return CommandResult.fail("Couldn't receive text to speech")
+            val speech = Funcs.getTextToSpeech(text) ?: return CommandResult.fail("the text to speech api didnt work for some reason")
             FileUtils.writeByteArrayToFile(File(fileName), speech)
             val sound = File(fileName)
             val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
             if (userVoiceChannel != null) {
                 if (VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F) == null)
-                    return CommandResult.fail("Audio is already being played!")
+                    return CommandResult.fail("i couldnt play the audio for some reason")
             } else
-                return CommandResult.fail("You must be in a voice channel to use this command")
+                return CommandResult.fail("i cant do that if youre not in a voice channel")
         } else
-            return CommandResult.fail("You must provide text for it to say!")
+            return CommandResult.fail("umm what? $usageText")
         return CommandResult.success()
     }
 }

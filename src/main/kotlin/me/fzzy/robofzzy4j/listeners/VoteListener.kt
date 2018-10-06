@@ -28,7 +28,7 @@ class VoteListener {
         val guild = Guild.getGuild(event.guild.longID)
         if (event.reaction != null) {
             if (event.reaction.getUserReacted(cli.ourUser) && event.user.longID != cli.ourUser.longID) {
-                if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 5) {
+                if (event.channel.getMessageHistory(10).contains(event.message)) {
                     if (event.message.author.longID != event.user.longID) {
                         when (event.reaction.emoji.name) {
                             "upvote" -> {
@@ -47,7 +47,7 @@ class VoteListener {
     @EventSubscriber
     fun onReactionRemove(event: ReactionRemoveEvent) {
         val guild = Guild.getGuild(event.guild.longID)
-        if (System.currentTimeMillis() / 1000 - event.message.timestamp.epochSecond < 60 * 5) {
+        if (event.channel.getMessageHistory(10).contains(event.message)) {
             if (event.reaction.getUserReacted(cli.ourUser) && event.user.longID != cli.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
                     when (event.reaction.emoji.name) {

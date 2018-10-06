@@ -9,7 +9,7 @@ import java.net.URL
 
 class Emotion : Command {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Displays the emotion of faces in an image"
     override val usageText: String = "-emotion [imageUrl]"
@@ -19,12 +19,12 @@ class Emotion : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL? = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image.")
+        val url: URL? = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
         val faces = ImageFuncs.getFacialInfo("emotion", false, false, url.toString())
-                ?: return CommandResult.fail("Couldn't contact API")
+                ?: return CommandResult.fail("the face api isnt working, i dont know why")
 
         if (faces.length() == 0)
-            return CommandResult.fail("No faces detected in image.")
+            return CommandResult.fail("the api couldnt find any faces in that picture")
 
         var finalOutput = ""
         for (face in faces) {

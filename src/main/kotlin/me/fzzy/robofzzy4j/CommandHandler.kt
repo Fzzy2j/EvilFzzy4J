@@ -70,7 +70,7 @@ class CommandHandler constructor(prefix: String) {
             val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
 
-            val guild = Guild.getGuild(event.guild.longID)
+            val guild = Guild.getGuild(event.guild)
             val timePassedCommand = user.cooldowns.getTimePassedMillis(commandString)
             val trueCooldown = command.cooldownMillis * ((100 - user.getCooldownModifier(guild)) / 100.0).roundToInt()
 

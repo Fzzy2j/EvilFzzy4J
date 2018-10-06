@@ -7,7 +7,7 @@ import sx.blah.discord.util.RequestBuffer
 
 class Pfp : Command {
 
-    override val cooldownMillis: Long = 10 * 1000
+    override val cooldownMillis: Long = 30 * 1000
     override val votes: Boolean = false
     override val description: String = "Displays a users profile picture"
     override val usageText: String = "-pfp <user>"
@@ -16,7 +16,7 @@ class Pfp : Command {
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
         if (args.isEmpty())
-            return CommandResult.fail("Invalid syntax. $usageText")
+            return CommandResult.fail("thats not how you use that command $usageText")
 
         var toCheck = ""
         for (text in args) {
@@ -39,7 +39,7 @@ class Pfp : Command {
             }
         }
         if (finalUser == null)
-            return CommandResult.fail("User not found!")
+            return CommandResult.fail("who is that?")
 
         RequestBuffer.request { Funcs.sendMessage(event.channel, finalUser.avatarURL) }
 

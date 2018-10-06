@@ -15,9 +15,12 @@ import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelMoveE
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IVoiceChannel
+import sx.blah.discord.util.DiscordException
+import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
 import sx.blah.discord.util.audio.events.TrackFinishEvent
+import java.awt.Color
 import java.io.File
 import java.io.IOException
 import java.net.URL
@@ -38,6 +41,7 @@ class Spook {
     //Enable Help.kt -code
     //Enable random events in scheduler
     //Allow -code use
+    //Enable slapCodeIn on ImageFuncs.kt
 
     init {
         scheduler.registerTask(IndividualTask({
@@ -169,9 +173,9 @@ class Spook {
                     code.toInt() == 4157 -> { // Code 1
                         if (!sent1.contains(event.author.longID)) {
                             val pre = listOf(
-                                    "I hate you, but i can't live without you. ",
+                                    "Don't test me. ",
                                     "Why do i even bother with you. ",
-                                    "Why am i the one that's dead. "
+                                    "Death is sweet. "
                             )
                             val message = "${pre[random.nextInt(pre.size)]}If you wish to hear my story then so be it, but you must find it hidden within my game. " +
                                     "The next code should be easy for you to spot if you're looking in the right place"
@@ -183,7 +187,11 @@ class Spook {
                     }
                     // Code in pictures
                     code.toInt() == 7395 -> { // Code 2
+                        RequestBuffer.request { cli.getUserByID(66104132028604416).orCreatePMChannel.sendMessage("Set Steam Code") }
+                        event.guild.setUserNickname(cli.ourUser, Zalgo.goZalgo(cli.ourUser.name, false, true, false, false, true))
                         if (!sent2.contains(event.author.longID)) {
+                            val zalgo = Zalgo.goZalgo("I will reveal a piece of my past to you, as a reward.", false, true, false, false, true)
+                            RequestBuffer.request { event.author.orCreatePMChannel.sendMessage(zalgo) }
                             RequestBuffer.request { event.author.orCreatePMChannel.sendFile(File("newsarticle.jpg")) }
                             sent2.add(event.author.longID)
                         }
@@ -192,7 +200,19 @@ class Spook {
                     }
                     // Steam code
                     code.toInt() == 5948 -> {
-
+                        for (role in event.guild.roles) {
+                            val color = role.color
+                            try {
+                                RequestBuffer.request {
+                                    role.changeColor(Color.RED)
+                                    scheduler.registerTask(IndividualTask({
+                                        RequestBuffer.request { role.changeColor(color) }
+                                    }, 10, false))
+                                }
+                            } catch (e: MissingPermissionsException) {
+                            } catch (e: DiscordException) {
+                            }
+                        }
                     }
                     else -> throw IllegalArgumentException()
                 }
@@ -201,21 +221,13 @@ class Spook {
             }
             RequestBuffer.request { event.message.delete() }
         }
-        if (event.message.content.startsWith("-tests") && event.message.author.longID == 66104132028604416) {
+        if (event.message.content.startsWith("-test") && event.message.author.longID == 66104132028604416) {
             Discord4J.LOGGER.info("test command")
-
-            val history = event.channel.getMessageHistory(10).toMutableList()
-            history.add(0, event.message)
-
-            val url: URL = ImageFuncs.getFirstImage(history) ?: return
-            val file = ImageFuncs.downloadTempFile(url) ?: return
-
-            slapCodeIn(file)
-
-            RequestBuffer.request {
-                Funcs.sendFile(event.channel, file)
-                file.delete()
-            }
+            val channel = cli.getVoiceChannelByID(494207794992513038)
+            VoiceListener.interupt = true
+            currentVoiceChannel = channel
+            type = "jump"
+            channel.join()
         }
     }
 
@@ -258,7 +270,7 @@ class Spook {
         }
 
         fun slapCodeIn(file: File) {
-            val info = ImageInfo(file.name)
+            val info = ImageInfo(file.absolutePath)
             val magickImage = MagickImage(info)
             val aInfo = DrawInfo(info)
             aInfo.fill = PixelPacket.queryColorDatabase("white")
@@ -266,13 +278,33 @@ class Spook {
             aInfo.opacity = 60
             aInfo.pointsize = 20.0
             aInfo.font = "Arial"
-            aInfo.text = Zalgo.goZalgo("7395", false, true, false, false, true)
+            val alph = "abcdefghijklmnopqrstuvwxyz"
+            if (random.nextInt(100) < 5) {
+                aInfo.fill = PixelPacket.queryColorDatabase("red")
+                var text = ""
+                for (rows in 0..7) {
+                    for (letter in 0..50) {
+                        text += alph[random.nextInt(alph.length)]
+                    }
+                    text += "\n"
+                }
+                aInfo.text = Zalgo.goZalgo(text.toUpperCase(), false, true, false, false, true)
+                aInfo.pointsize = (random.nextInt(20) + 70).toDouble()
 
-            aInfo.geometry = "+10+15"
+                magickImage.annotateImage(aInfo)
+                magickImage.fileName = file.absolutePath
+                magickImage.writeImage(info)
+            } else {
+                aInfo.text = Zalgo.goZalgo("7395", false, true, false, false, true)
 
-            magickImage.annotateImage(aInfo)
-            magickImage.fileName = file.absolutePath
-            magickImage.writeImage(info)
+                aInfo.geometry = "+10+15"
+
+                if (getStage() == 1) {
+                    magickImage.annotateImage(aInfo)
+                    magickImage.fileName = file.absolutePath
+                    magickImage.writeImage(info)
+                }
+            }
         }
     }
 

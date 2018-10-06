@@ -15,8 +15,6 @@ import javax.sound.sampled.UnsupportedAudioFileException
 
 class VoiceListener {
 
-    private class QueueInstance constructor(var channel: IVoiceChannel, var file: File, var delete: Boolean, var volume: Float)
-
     companion object {
 
         var interupt = false

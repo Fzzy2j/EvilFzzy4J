@@ -18,7 +18,7 @@ import java.util.regex.Pattern
 
 class Play : Command {
 
-    override val cooldownMillis: Long = 1000 * 60 * 5
+    override val cooldownMillis: Long = 1000 * 60 * 10
     override val votes: Boolean = true
     override val description = "Plays audio in the voice channel"
     override val usageText: String = "-play [videoUrl]"
@@ -30,7 +30,7 @@ class Play : Command {
         try {
             id = if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]
         } catch (e: Exception) {
-            return CommandResult.fail("Invalid command syntax. $usageText")
+            return CommandResult.fail("thats not how you use that command $usageText")
         }
         val extraction = YouTubeExtractor.Builder().build().extract(id).blockingGet()
         if (extraction.lengthSeconds!! <= 60 * 10) {
@@ -84,14 +84,14 @@ class Play : Command {
 
                 val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                 if (userVoiceChannel != null) {
-                    VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.4F, 60)
-                            ?: return CommandResult.fail("Audio is already being played!")
+                    VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.3F, 60)
+                            ?: return CommandResult.fail("i couldnt play that audio for some reason")
                 } else
-                    return CommandResult.fail("You must be in a voice channel to use this command")
+                    return CommandResult.fail("i cant do that unless youre in a voice channel")
                 break
             }
         } else
-            return CommandResult.fail("That video is too long!")
+            return CommandResult.fail("videos longer than 10 minutes take too long for me to download, so i dont allow them. sorry.")
         return CommandResult.success()
     }
 }

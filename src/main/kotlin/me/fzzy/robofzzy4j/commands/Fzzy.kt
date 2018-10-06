@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 
 class Fzzy : Command {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Downsizes the last image sent in the channel using a seam carving algorithm"
     override val usageText: String = "-fzzy [imageUrl]"
@@ -27,8 +27,8 @@ class Fzzy : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image.")
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't donload image!")
+        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("i couldnt find any images in the last 10 messages")
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the iamge")
 
         var tempFile: File? = null
         if (file.extension == "gif") {
@@ -37,7 +37,7 @@ class Fzzy : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find framerate of image!") }
+                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {

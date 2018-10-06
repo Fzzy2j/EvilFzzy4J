@@ -35,6 +35,12 @@ class Guild private constructor(private var guildId: Long) {
             return getGuild(guild.longID)
         }
 
+        fun clearLeaderboards() {
+            for (guild in guilds) {
+                guild.leaderboard.clear()
+            }
+        }
+
         fun saveAll() {
             for (guild in guilds) {
                 guild.save()
@@ -179,19 +185,18 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun save() {
-        if (leaderboard.valueMap.size > 0) {
-            var i = 0
-            for ((key, value) in leaderboard.valueMap) {
-                guildNode.getNode(guildId.toString(), "votes", i, "id").value = key
-                guildNode.getNode(guildId.toString(), "votes", i, "value").value = value.value
-                i++
-            }
-
-            guildNode.getNode(guildId.toString(), "totalVotes").value = votes
-            guildNode.getNode(guildId.toString(), "totalPosts").value = posts
-
-            guildManager.save(guildNode)
+        guildNode.getNode(guildId.toString(), "votes").value = null
+        var i = 0
+        for ((key, value) in leaderboard.valueMap) {
+            guildNode.getNode(guildId.toString(), "votes", i, "id").value = key
+            guildNode.getNode(guildId.toString(), "votes", i, "value").value = value.value
+            i++
         }
+
+        guildNode.getNode(guildId.toString(), "totalVotes").value = votes
+        guildNode.getNode(guildId.toString(), "totalPosts").value = posts
+
+        guildManager.save(guildNode)
     }
 
     fun load() {

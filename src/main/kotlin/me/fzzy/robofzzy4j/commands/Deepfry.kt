@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
 
 class Deepfry : Command {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Deep fries an image"
     override val usageText: String = "-deepfry [imageUrl]"
@@ -23,8 +23,8 @@ class Deepfry : Command {
         history.add(0, event.message)
 
         val url: URL = ImageFuncs.getFirstImage(history)
-                ?: return CommandResult.fail("Couldn't find an image in the last 10 messages sent in this channel!")
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't download image!")
+                ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image for some reason")
 
         val sizeHelper = ImageIO.read(file)
         val width = sizeHelper.width
@@ -32,7 +32,7 @@ class Deepfry : Command {
         var op = IMOperation()
         val convert = ConvertCmd()
 
-        op.addImage(file.name)
+        op.addImage(file.absolutePath)
         op.quality(6.0)
         op.contrast()
         op.addImage("noise.png")
@@ -41,17 +41,17 @@ class Deepfry : Command {
         op.composite()
         op.enhance()
         op.resize((width / 1.6).roundToInt(), (height / 3.0).roundToInt(), '!')
-        op.addImage(file.name)
+        op.addImage(file.absolutePath)
 
         convert.run(op)
 
         op = IMOperation()
 
-        op.addImage(file.name)
+        op.addImage(file.absolutePath)
         op.quality(5.0)
         op.sharpen(10.0)
         op.resize(width, height, '!')
-        op.addImage(file.name)
+        op.addImage(file.absolutePath)
 
         convert.run(op)
 

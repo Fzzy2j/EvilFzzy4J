@@ -11,7 +11,7 @@ class StateListener {
 
     @EventSubscriber
     fun onReady(event: ReadyEvent) {
-        RequestBuffer.request { cli.changePresence(StatusType.DND, ActivityType.PLAYING, "with fire ${BOT_PREFIX}help") }
+        RequestBuffer.request { cli.changePresence(StatusType.DND, ActivityType.LISTENING, "the rain ${BOT_PREFIX}help") }
     }
 
 }

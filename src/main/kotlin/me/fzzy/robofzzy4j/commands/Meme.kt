@@ -20,7 +20,7 @@ import kotlin.math.roundToInt
 
 class Meme : Command {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Puts meme text onto an image"
     override val usageText: String = "-meme [imageUrl] [top text]|[bottom text]"
@@ -38,7 +38,7 @@ class Meme : Command {
         }
 
         if (full.isBlank())
-            return CommandResult.fail("Invalid syntax structure. $usageText")
+            return CommandResult.fail("i dont know what you mean $usageText")
 
         val topText = full.substring(1).replace("\n", "").split("|")[0]
         var bottomText: String? = null
@@ -49,8 +49,8 @@ class Meme : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image!")
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't download image!")
+        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
 
         val info = ImageInfo(file.absolutePath)
         val magickImage = MagickImage(info)

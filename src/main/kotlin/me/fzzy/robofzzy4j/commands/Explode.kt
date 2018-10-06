@@ -15,7 +15,7 @@ import kotlin.math.roundToInt
 
 class Explode : Command {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Scales an image repeatedly, turning it into a gif"
     override val usageText: String = "-explode [imageUrl]"
@@ -28,32 +28,32 @@ class Explode : Command {
         history.add(0, event.message)
 
         val url: URL = ImageFuncs.getFirstImage(history)
-                ?: return CommandResult.fail("Couldn't find an image!")
+                ?: return CommandResult.fail("theres no image in the last 10 messages?")
 
-        var file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't download image")
+        var file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         var tempFile: File? = null
-        val finalSize = 0.1
+        val finalSize = 0.3
         val convert = ConvertCmd()
 
         if (file.extension == "gif") {
             var op = IMOperation()
 
-            val info = Info(file.name, false)
+            val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "Couldn't find framerate of image!") }
+                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "this image has no framerate to it, i cant work with it") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
                 delay = "25x100"
             }
 
-            tempFile = File(file.nameWithoutExtension)
+            tempFile = File("cache/${file.nameWithoutExtension}")
             tempFile.mkdirs()
 
             op.coalesce()
-            op.addImage(file.name)
-            op.addImage("${tempFile.nameWithoutExtension}/temp%05d.png")
+            op.addImage(file.absolutePath)
+            op.addImage("${tempFile.absolutePath}/temp%05d.png")
 
             convert.run(op)
 
@@ -64,7 +64,7 @@ class Explode : Command {
                 // https://www.desmos.com/calculator/gztrr4yh2w
                 val initialSize = 1.0
                 val sizeAmt = -(i / (fileList.size.toDouble() / (initialSize - finalSize))) + initialSize
-                resize(File("${tempFile.nameWithoutExtension}/$listFile"), sizeAmt)
+                resize(File("${tempFile.absolutePath}/$listFile"), sizeAmt)
             }
 
             op = IMOperation()
@@ -81,7 +81,7 @@ class Explode : Command {
             op.dispose(2.toString())
             op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
             for (listFile in tempFile.list()) {
-                op.addImage("${tempFile.nameWithoutExtension}/$listFile")
+                op.addImage("${tempFile.absolutePath}/$listFile")
             }
 
             op.addImage(file.absolutePath)
@@ -103,7 +103,7 @@ class Explode : Command {
             op.loop(0)
             op.dispose(2.toString())
             op.delay(10, 100)
-            val tempPath = File(file.nameWithoutExtension)
+            val tempPath = File("cache/${file.nameWithoutExtension}")
             tempPath.mkdirs()
             val frameCount = 20
             for (i in 0..frameCount) {
@@ -117,7 +117,7 @@ class Explode : Command {
                 resize(warpFile, sizeAmt)
                 op.addImage("${tempPath.name}/$child")
             }
-            val result = File("${file.nameWithoutExtension}.gif")
+            val result = File("cache/${file.nameWithoutExtension}.gif")
             op.addImage(result.absolutePath)
 
             file.delete()

@@ -13,7 +13,7 @@ import javax.imageio.ImageIO
 
 class Picture : Command {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Inserts an image into another, use -picturetypes to see all the picture types"
     override val usageText: String = "-picture <pictureType> [imageUrl]"
@@ -33,14 +33,14 @@ class Picture : Command {
             }
         }
         if (picture == null)
-            return CommandResult.fail("That picture doesn't exist! use -picturetypes to view all the types")
+            return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes")
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("Couldn't find image.")
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Could not download image!")
+        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download that image")
 
         val info = ImageInfo(file.absolutePath)
         var magickImage = MagickImage(info)

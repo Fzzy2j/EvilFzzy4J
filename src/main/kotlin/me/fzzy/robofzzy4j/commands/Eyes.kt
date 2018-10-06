@@ -20,7 +20,7 @@ import kotlin.math.roundToInt
 
 class Eyes : Command {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Adds different eyes to an image, use -eyetypes to see all the eye types"
     override val usageText: String = "-eyes <eyeType> [imageUrl]"
@@ -40,20 +40,20 @@ class Eyes : Command {
             }
         }
         if (eyes == null)
-            return CommandResult.fail("Those eyes don't exist! use -eyetypes to view all the types")
+            return CommandResult.fail("i dont have eyes with that name, ill tell you which ones i know if you type -eyetypes")
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
         val url: URL = ImageFuncs.getFirstImage(history)
-                ?: return CommandResult.fail("Couldn't find an image in the last 10 messages sent in this channel!")
+                ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
 
         val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("Couldn't download image.")
+        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
 
         if (faces == null || faces.length() == 0)
-            return CommandResult.fail("No faces detected.")
+            return CommandResult.fail("the api couldnt find any faces in that picture")
 
         val info = ImageInfo(file.absolutePath)
         val magickImage = MagickImage(info)
