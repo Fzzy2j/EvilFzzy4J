@@ -84,7 +84,7 @@ class Play : Command {
 
                 val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                 if (userVoiceChannel != null) {
-                    VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.3F, 60)
+                    VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.3F, 60, 40, event.messageID)
                             ?: return CommandResult.fail("i couldnt play that audio for some reason")
                 } else
                     return CommandResult.fail("i cant do that unless youre in a voice channel")

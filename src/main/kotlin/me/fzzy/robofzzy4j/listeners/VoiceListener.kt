@@ -19,7 +19,7 @@ class VoiceListener {
 
         var interupt = false
 
-        fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, messageId: Long = 0): UUID? {
+        fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
             if (!interupt) {
                 val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
                 if (!channel.connectedUsers.contains(cli.ourUser) && audioP.currentTrack == null)
@@ -32,6 +32,7 @@ class VoiceListener {
                     track.metadata["fzzyVolume"] = volume
                     track.metadata["fzzyId"] = id
                     track.metadata["fzzyTimeSeconds"] = playTimeSeconds
+                    track.metadata["fzzyTimeAdjustment"] = playTimeAdjustment
                     track.metadata["fzzyMessageId"] = messageId
                     return id
                 } catch (e: IOException) {
@@ -61,11 +62,18 @@ class VoiceListener {
         }
         if (event.track.metadata.containsKey("fzzyTimeSeconds")) {
             if (event.track.metadata["fzzyTimeSeconds"] as Int > 0) {
+                val startTime = System.currentTimeMillis()
                 Thread {
-                    Thread.sleep((event.track.metadata["fzzyTimeSeconds"] as Int).toLong() * 1000)
-                    val track = event.player.currentTrack
-                    if (track != null && VoiceListener.getId(track) == getId(event.track))
-                        event.player.skip()
+                    while (true) {
+                        Thread.sleep(1000)
+                        val voteAdjust = VoteListener.getVotes(cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)) * event.track.metadata["fzzyTimeAdjustment"] as Int
+                        if (System.currentTimeMillis() - startTime > (event.track.metadata["fzzyTimeSeconds"] as Int + voteAdjust) * 1000) {
+                            val track = event.player.currentTrack
+                            if (track != null && VoiceListener.getId(track) == getId(event.track))
+                                event.player.skip()
+                            break
+                        }
+                    }
                 }.start()
             }
         }

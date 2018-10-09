@@ -29,7 +29,7 @@ class Tts : Command {
                 text += " $arg"
             }
             text = text.substring(1)
-            if (text.length > 200) return CommandResult.fail("text to speech has to be less than 100 characters")
+            if (text.length > 200) return CommandResult.fail("text to speech has to be less than 200 characters")
             val fileName = "cache/${System.currentTimeMillis()}.mp3"
             val speech = Funcs.getTextToSpeech(text) ?: return CommandResult.fail("the text to speech api didnt work for some reason")
             FileUtils.writeByteArrayToFile(File(fileName), speech)

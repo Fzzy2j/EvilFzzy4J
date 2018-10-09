@@ -103,7 +103,7 @@ class CommandHandler constructor(prefix: String) {
                 tryDelete(event.message)
                 val timeLeft = (trueCooldown - timePassedCommand)
                 val endDate = Date(System.currentTimeMillis() + timeLeft)
-                val format = SimpleDateFormat("hh:mm").format(endDate)
+                val format = SimpleDateFormat("hh:mm.ss").format(endDate)
 
                 val messages = arrayOf(
                         "%user% youll be off cooldown at %time%",
@@ -112,7 +112,7 @@ class CommandHandler constructor(prefix: String) {
                 )
                 RequestBuffer.request {
                     Funcs.sendMessage(event.channel, messages[random.nextInt(messages.size)]
-                            .replace("%user%", event.author.getDisplayName(event.guild))
+                            .replace("%user%", event.author.getDisplayName(event.guild).toLowerCase())
                             .replace("%time%", if (format.startsWith("0")) format.substring(1) else format)
                     )
                 }
