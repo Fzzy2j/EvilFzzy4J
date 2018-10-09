@@ -9,13 +9,13 @@ import me.fzzy.robofzzy4j.thread.IndividualTask
 import me.fzzy.robofzzy4j.util.Zalgo
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
+import sx.blah.discord.api.internal.DiscordClientImpl
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelJoinEvent
 import sx.blah.discord.handle.impl.events.guild.voice.user.UserVoiceChannelMoveEvent
-import sx.blah.discord.handle.obj.IChannel
-import sx.blah.discord.handle.obj.IGuild
-import sx.blah.discord.handle.obj.IVoiceChannel
+import sx.blah.discord.handle.obj.*
 import sx.blah.discord.util.DiscordException
+import sx.blah.discord.util.Image
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
@@ -42,6 +42,7 @@ class Spook {
     //Enable random events in scheduler
     //Allow -code use
     //Enable slapCodeIn on ImageFuncs.kt
+    //Change presence in StateListener.kt
 
     init {
         scheduler.registerTask(IndividualTask({
@@ -76,10 +77,11 @@ class Spook {
             }
             if (System.currentTimeMillis() - jumpTime.getNext() > 0) {
                 if (!VoiceListener.interupt) {
-                    val add = (random.nextInt(24) + 1) * 1000 * 60 * 60
-                    jumpTime.setNext(System.currentTimeMillis() + add + (random.nextInt(60) * 1000 * 60))
+                    if (getStage() > 0) {
+                        val add = (random.nextInt(24) + 1) * 1000 * 60 * 60
+                        jumpTime.setNext(System.currentTimeMillis() + add + (random.nextInt(60) * 1000 * 60))
 
-                    /*val meme = cli.getGuildByID(MEME_SERVER_ID)
+                        /*val meme = cli.getGuildByID(MEME_SERVER_ID)
                     var corrupt: String
                     do {
                         val name = meme.voiceChannels[random.nextInt(meme.voiceChannels.size)].name
@@ -93,7 +95,8 @@ class Spook {
                     type = "jump"
                     newChannel.join()*/
 
-                    Discord4J.LOGGER.info("JUMP WOULD HAPPEN new time: ${SimpleDateFormat("dd:hh:mm:ss aa").format(Date(jumpTime.getNext()))}")
+                        Discord4J.LOGGER.info("JUMP WOULD HAPPEN new time: ${SimpleDateFormat("dd:hh:mm:ss aa").format(Date(jumpTime.getNext()))}")
+                    }
                 } else
                     jumpTime.setNext(System.currentTimeMillis() + (1 * 1000 * 60))
             }
@@ -179,11 +182,15 @@ class Spook {
                             )
                             val message = "${pre[random.nextInt(pre.size)]}If you wish to hear my story then so be it, but you must find it hidden within my game. " +
                                     "The next code should be easy for you to spot if you're looking in the right place"
-                            event.author.orCreatePMChannel.sendMessage(Zalgo.goZalgo(message, false, true, false, false, true))
+                            RequestBuffer.request { event.author.orCreatePMChannel.sendMessage(Zalgo.goZalgo(message, false, true, false, false, true)) }
                             sent1.add(event.author.longID)
                         }
-                        if (getStage() < 1)
+                        if (getStage() < 1) {
                             setStage(1)
+                            RequestBuffer.request { cli.changeUsername("Evil Fzzy") }
+                            RequestBuffer.request { cli.changeAvatar(Image.forFile(File("evilfzzypfp.jpg"))) }
+                            RequestBuffer.request { cli.changePresence(StatusType.DND, ActivityType.PLAYING, "with fire ${BOT_PREFIX}help") }
+                        }
                     }
                     // Code in pictures
                     code.toInt() == 7395 -> { // Code 2

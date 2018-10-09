@@ -19,7 +19,7 @@ class VoiceListener {
 
         var interupt = false
 
-        fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0): UUID? {
+        fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, messageId: Long = 0): UUID? {
             if (!interupt) {
                 val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
                 if (!channel.connectedUsers.contains(cli.ourUser) && audioP.currentTrack == null)
@@ -32,6 +32,7 @@ class VoiceListener {
                     track.metadata["fzzyVolume"] = volume
                     track.metadata["fzzyId"] = id
                     track.metadata["fzzyTimeSeconds"] = playTimeSeconds
+                    track.metadata["fzzyMessageId"] = messageId
                     return id
                 } catch (e: IOException) {
                     // File not found

@@ -101,12 +101,20 @@ class CommandHandler constructor(prefix: String) {
                 }
             } else {
                 tryDelete(event.message)
-                val timeLeft = (trueCooldown - timePassedCommand) / 1000
-                val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft more seconds."
+                val timeLeft = (trueCooldown - timePassedCommand)
+                val endDate = Date(System.currentTimeMillis() + timeLeft)
+                val format = SimpleDateFormat("hh:mm").format(endDate)
+
+                val messages = arrayOf(
+                        "%user% youll be off cooldown at %time%",
+                        "your cooldown will be over at %time% %user%",
+                        "you gotta slow down %user%, your cooldown will end at %time%"
+                )
                 RequestBuffer.request {
-                    val msg = Funcs.sendMessage(event.channel, message)
-                    if (msg != null)
-                        CooldownMessage(timeLeft.toInt(), event.author.getDisplayName(event.guild), msg).start()
+                    Funcs.sendMessage(event.channel, messages[random.nextInt(messages.size)]
+                            .replace("%user%", event.author.getDisplayName(event.guild))
+                            .replace("%time%", if (format.startsWith("0")) format.substring(1) else format)
+                    )
                 }
             }
         }
@@ -143,18 +151,4 @@ class CommandResult private constructor(private val success: Boolean, private va
         return message
     }
 
-}
-
-class CooldownMessage constructor(private var cooldown: Int, private var userName: String, private var msg: IMessage) : Thread() {
-    override fun run() {
-        while (cooldown > 0) {
-            Thread.sleep(1000L)
-            cooldown--
-        }
-        if (msg.channel.getMessageHistory(10).contains(msg)) {
-            RequestBuffer.request { msg.edit("$userName, you are no longer on cooldown.") }
-            Thread.sleep(20000L)
-        }
-        RequestBuffer.request { msg.delete() }
-    }
 }

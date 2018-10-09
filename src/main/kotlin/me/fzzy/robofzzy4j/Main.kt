@@ -14,10 +14,7 @@ import org.im4java.process.ProcessStarter
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
-import sx.blah.discord.handle.obj.ActivityType
-import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.DiscordException
-import sx.blah.discord.util.RequestBuffer
 import java.io.File
 import java.util.*
 import ninja.leaping.configurate.ConfigurationNode
@@ -25,8 +22,6 @@ import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
-import java.time.DayOfWeek
-import java.time.ZoneId
 
 
 lateinit var cli: IDiscordClient

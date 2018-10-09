@@ -66,12 +66,20 @@ class Sounds : Command {
                         VoiceListener.playTempAudio(userVoiceChannel, audioDir[0], false)
                     }
                 } else {
-                    val timeLeft = (SOUND_COOLDOWN / 1000) - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())) / 1000)
-                    val message = "${event.author.getDisplayName(event.guild)}! You are on cooldown for $timeLeft seconds."
+                    val timeLeft = SOUND_COOLDOWN - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())))
+                    val endDate = Date(System.currentTimeMillis() + timeLeft)
+                    val format = SimpleDateFormat("hh:mm").format(endDate)
+
+                    val messages = arrayOf(
+                            "%user% youll be off cooldown at %time%",
+                            "your cooldown will be over at %time% %user%",
+                            "you gotta slow down %user%, your cooldown will end at %time%"
+                    )
                     RequestBuffer.request {
-                        val msg = Funcs.sendMessage(event.channel, message)
-                        if (msg != null)
-                            CooldownMessage(timeLeft.toInt(), event.author.getDisplayName(event.guild), msg).start()
+                        Funcs.sendMessage(event.channel, messages[random.nextInt(messages.size)]
+                                .replace("%user%", event.author.getDisplayName(event.guild))
+                                .replace("%time%", if (format.startsWith("0")) format.substring(1) else format)
+                        )
                     }
                 }
             }
