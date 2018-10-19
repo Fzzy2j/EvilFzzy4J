@@ -185,27 +185,27 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun save() {
-        guildNode.getNode(guildId.toString(), "votes").value = null
+        guildNode.getNode("id$guildId", "votes").value = null
         var i = 0
         for ((key, value) in leaderboard.valueMap) {
-            guildNode.getNode(guildId.toString(), "votes", i, "id").value = key
-            guildNode.getNode(guildId.toString(), "votes", i, "value").value = value.value
+            guildNode.getNode("id$guildId", "votes", i, "id").value = key
+            guildNode.getNode("id$guildId", "votes", i, "value").value = value.value
             i++
         }
 
-        guildNode.getNode(guildId.toString(), "totalVotes").value = votes
-        guildNode.getNode(guildId.toString(), "totalPosts").value = posts
+        guildNode.getNode("id$guildId", "totalVotes").value = votes
+        guildNode.getNode("id$guildId", "totalPosts").value = posts
 
         guildManager.save(guildNode)
     }
 
     fun load() {
         leaderboard = Leaderboard()
-        for (node in guildNode.getNode(guildId.toString(), "votes").childrenList) {
+        for (node in guildNode.getNode("id$guildId", "votes").childrenList) {
             leaderboard.setValue(node.getNode("id").long, node.getNode("value").int)
         }
-        votes = guildNode.getNode(guildId.toString(), "totalVotes").int
-        posts = guildNode.getNode(guildId.toString(), "totalPosts").int
+        votes = guildNode.getNode("id$guildId", "totalVotes").int
+        posts = guildNode.getNode("id$guildId", "totalPosts").int
     }
 
 }

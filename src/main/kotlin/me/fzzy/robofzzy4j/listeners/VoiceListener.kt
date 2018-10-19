@@ -66,7 +66,12 @@ class VoiceListener {
                 Thread {
                     while (true) {
                         Thread.sleep(1000)
-                        val voteAdjust = VoteListener.getVotes(cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)) * event.track.metadata["fzzyTimeAdjustment"] as Int
+                        val message = cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
+                        val voteAdjust = try {
+                            VoteListener.getVotes(message) * event.track.metadata["fzzyTimeAdjustment"] as Int
+                        } catch (e: Exception) {
+                            -60 * 200
+                        }
                         if (System.currentTimeMillis() - startTime > (event.track.metadata["fzzyTimeSeconds"] as Int + voteAdjust) * 1000) {
                             val track = event.player.currentTrack
                             if (track != null && VoiceListener.getId(track) == getId(event.track))

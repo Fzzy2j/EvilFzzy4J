@@ -30,77 +30,69 @@ import javax.sound.sampled.UnsupportedAudioFileException
 
 class Spook {
 
-    private val testVoice = 494207794992513038
-
     private var currentVoiceChannel: IVoiceChannel? = null
 
     private val code1Time = Time("code1")
     private val jumpTime = Time("jump")
 
     //TODO
-    //Enable Help.kt -code
-    //Enable random events in scheduler
-    //Allow -code use
-    //Enable slapCodeIn on ImageFuncs.kt
     //Change presence in StateListener.kt
 
+    fun doCode1() {
+        VoiceListener.interupt = true
+        val audioP = AudioPlayer.getAudioPlayerForGuild(currentVoiceChannel?.guild)
+
+        currentVoiceChannel!!.join()
+        audioP.clear()
+        try {
+            audioP.queue(File("blizzard.mp3"))
+        } catch (e: IOException) {
+            // File not found
+        } catch (e: UnsupportedAudioFileException) {
+            e.printStackTrace()
+        }
+        type = "code1"
+        leaveOnFinish = false
+
+        Discord4J.LOGGER.info("CODE 1 HAPPENED new time: ${SimpleDateFormat("dd:hh:mm:ss aa").format(Date(code1Time.getNext()))}")
+    }
+
+    fun doJump() {
+
+        VoiceListener.interupt = true
+        type = "jump"
+        currentVoiceChannel!!.join()
+
+        Discord4J.LOGGER.info("JUMP HAPPENED, new time: ${SimpleDateFormat("dd:hh:mm:ss aa").format(Date(jumpTime.getNext()))}")
+    }
+
     init {
-        scheduler.registerTask(IndividualTask({
+        /*scheduler.registerTask(IndividualTask({
             if (System.currentTimeMillis() - code1Time.getNext() > 0) {
                 if (!VoiceListener.interupt) {
                     if (getStage() == 0) {
-                        val add = (random.nextInt(24) + 1) * 1000 * 60 * 60
+                        val add = (random.nextInt(24) + 4) * 1000 * 60 * 60
                         code1Time.setNext(System.currentTimeMillis() + add + (random.nextInt(60) * 1000 * 60))
-
-                        /*do {
-                        currentVoiceChannel = guild().voiceChannels[random.nextInt(guild().voiceChannels.size)]
-                    } while (currentVoiceChannel?.connectedUsers?.size != 0)
-
-                    VoiceListener.interupt = true
-                    val audioP = AudioPlayer.getAudioPlayerForGuild(currentVoiceChannel?.guild)
-
-                    currentVoiceChannel?.join()
-                    audioP.clear()
-                    try {
-                        audioP.queue(File("blizzard.mp3"))
-                    } catch (e: IOException) {
-                        // File not found
-                    } catch (e: UnsupportedAudioFileException) {
-                        e.printStackTrace()
-                    }
-                    type = "code1"*/
-
-                        Discord4J.LOGGER.info("CODE 1 WOULD HAPPEN new time: ${SimpleDateFormat("dd:hh:mm:ss aa").format(Date(code1Time.getNext()))}")
+                        do {
+                            currentVoiceChannel = guild().voiceChannels[random.nextInt(guild().voiceChannels.size)]
+                        } while (currentVoiceChannel?.connectedUsers?.size != 0)
+                        doCode1()
                     }
                 } else
                     code1Time.setNext(System.currentTimeMillis() + (1 * 1000 * 60))
             }
             if (System.currentTimeMillis() - jumpTime.getNext() > 0) {
                 if (!VoiceListener.interupt) {
-                    if (getStage() > 0) {
-                        val add = (random.nextInt(24) + 1) * 1000 * 60 * 60
-                        jumpTime.setNext(System.currentTimeMillis() + add + (random.nextInt(60) * 1000 * 60))
-
-                        /*val meme = cli.getGuildByID(MEME_SERVER_ID)
-                    var corrupt: String
+                    val add = (random.nextInt(24) + 4) * 1000 * 60 * 60
+                    jumpTime.setNext(System.currentTimeMillis() + add + (random.nextInt(60) * 1000 * 60))
                     do {
-                        val name = meme.voiceChannels[random.nextInt(meme.voiceChannels.size)].name
-                        corrupt = Zalgo.goZalgo(name, false, true, false, false, true)
-                    } while (corrupt.length > 100)
-
-                    val newChannel = meme.createVoiceChannel(corrupt)
-                    newChannel.changeCategory(cli.getGuildByID(MEME_SERVER_ID).getCategoryByID(493253233066770443))
-                    VoiceListener.interupt = true
-                    currentVoiceChannel = newChannel
-                    type = "jump"
-                    newChannel.join()*/
-
-                        Discord4J.LOGGER.info("JUMP WOULD HAPPEN new time: ${SimpleDateFormat("dd:hh:mm:ss aa").format(Date(jumpTime.getNext()))}")
-                    }
+                        currentVoiceChannel = guild().voiceChannels[random.nextInt(guild().voiceChannels.size)]
+                    } while (currentVoiceChannel?.connectedUsers?.size != 0)
+                    doJump()
                 } else
                     jumpTime.setNext(System.currentTimeMillis() + (1 * 1000 * 60))
             }
-        }, 60, true))
+        }, 60, true))*/
     }
 
     fun guild(): IGuild {
@@ -109,10 +101,13 @@ class Spook {
 
     private var type = ""
 
+    private var activated = false
+
     fun activate() {
         if (type == "code1") {
             Thread {
-                Thread.sleep(6000)
+                activated = true
+                Thread.sleep(20000)
                 val audioP = AudioPlayer.getAudioPlayerForGuild(currentVoiceChannel?.guild)
                 audioP.clear()
                 try {
@@ -126,6 +121,7 @@ class Spook {
             }.start()
         }
         if (type == "jump") {
+            activated = true
             val audioP = AudioPlayer.getAudioPlayerForGuild(currentVoiceChannel?.guild)
             val sounds = listOf(
                     "sudden.mp3",
@@ -149,6 +145,7 @@ class Spook {
     fun onVoiceMove(event: UserVoiceChannelMoveEvent) {
         if (currentVoiceChannel != null && !event.user.isBot) {
             if (event.newChannel.longID == currentVoiceChannel?.longID) {
+                Discord4J.LOGGER.info("${event.user.name} join with spook bot")
                 activate()
             }
         }
@@ -158,6 +155,7 @@ class Spook {
     fun onVoiceJoin(event: UserVoiceChannelJoinEvent) {
         if (currentVoiceChannel != null && !event.user.isBot) {
             if (event.voiceChannel.longID == currentVoiceChannel?.longID) {
+                Discord4J.LOGGER.info("${event.user.name} join with spook bot")
                 activate()
             }
         }
@@ -165,10 +163,11 @@ class Spook {
 
     private val sent1 = arrayListOf<Long>()
     private val sent2 = arrayListOf<Long>()
+    private val sent3 = arrayListOf<Long>()
 
     @EventSubscriber
     fun onMessage(event: MessageReceivedEvent) {
-        if (event.message.content.startsWith("-code ") && event.message.author.longID == 66104132028604416) {
+        if (event.message.content.startsWith("-code ")) {
             try {
                 val code = event.message.content.split(" ")[1]
                 when {
@@ -176,9 +175,9 @@ class Spook {
                     code.toInt() == 4157 -> { // Code 1
                         if (!sent1.contains(event.author.longID)) {
                             val pre = listOf(
-                                    "Don't test me. ",
-                                    "Why do i even bother with you. ",
-                                    "Death is sweet. "
+                                    "Don't test me.... ",
+                                    "Why do i even bother with you.... ",
+                                    "Death is sweet..... "
                             )
                             val message = "${pre[random.nextInt(pre.size)]}If you wish to hear my story then so be it, but you must find it hidden within my game. " +
                                     "The next code should be easy for you to spot if you're looking in the right place"
@@ -187,7 +186,7 @@ class Spook {
                         }
                         if (getStage() < 1) {
                             setStage(1)
-                            RequestBuffer.request { cli.changeUsername("Evil Fzzy") }
+                            RequestBuffer.request { event.guild.setUserNickname(cli.ourUser, "Evil Fzzy") }
                             RequestBuffer.request { cli.changeAvatar(Image.forFile(File("evilfzzypfp.jpg"))) }
                             RequestBuffer.request { cli.changePresence(StatusType.DND, ActivityType.PLAYING, "with fire ${BOT_PREFIX}help") }
                         }
@@ -197,7 +196,7 @@ class Spook {
                         RequestBuffer.request { cli.getUserByID(66104132028604416).orCreatePMChannel.sendMessage("Set Steam Code") }
                         event.guild.setUserNickname(cli.ourUser, Zalgo.goZalgo(cli.ourUser.name, false, true, false, false, true))
                         if (!sent2.contains(event.author.longID)) {
-                            val zalgo = Zalgo.goZalgo("I will reveal a piece of my past to you, as a reward.", false, true, false, false, true)
+                            val zalgo = Zalgo.goZalgo("I will reveal a piece of my past to you, as a reward for finding a code.", false, true, false, false, true)
                             RequestBuffer.request { event.author.orCreatePMChannel.sendMessage(zalgo) }
                             RequestBuffer.request { event.author.orCreatePMChannel.sendFile(File("newsarticle.jpg")) }
                             sent2.add(event.author.longID)
@@ -207,17 +206,26 @@ class Spook {
                     }
                     // Steam code
                     code.toInt() == 5948 -> {
-                        for (role in event.guild.roles) {
-                            val color = role.color
-                            try {
+                        if (!sent3.contains(event.author.longID)) {
+                            val zalgo = Zalgo.goZalgo("I see you are still curious. The last code will be in a special place, I'm sure you'll know it when you see it"
+                                    , false, true, false, false, true)
+                            RequestBuffer.request { event.author.orCreatePMChannel.sendMessage(zalgo) }
+                            sent3.add(event.author.longID)
+                        }
+                        if (getStage() < 3) {
+                            setStage(3)
+                            for (role in event.guild.roles) {
+                                val color = role.color
                                 RequestBuffer.request {
-                                    role.changeColor(Color.RED)
-                                    scheduler.registerTask(IndividualTask({
-                                        RequestBuffer.request { role.changeColor(color) }
-                                    }, 10, false))
+                                    try {
+                                        role.changeColor(Color.RED)
+                                        scheduler.registerTask(IndividualTask({
+                                            RequestBuffer.request { role.changeColor(color) }
+                                        }, 10, false))
+                                    } catch (e: MissingPermissionsException) {
+                                    } catch (e: DiscordException) {
+                                    }
                                 }
-                            } catch (e: MissingPermissionsException) {
-                            } catch (e: DiscordException) {
                             }
                         }
                     }
@@ -230,11 +238,8 @@ class Spook {
         }
         if (event.message.content.startsWith("-test") && event.message.author.longID == 66104132028604416) {
             Discord4J.LOGGER.info("test command")
-            val channel = cli.getVoiceChannelByID(494207794992513038)
-            VoiceListener.interupt = true
-            currentVoiceChannel = channel
-            type = "jump"
-            channel.join()
+            currentVoiceChannel = cli.getVoiceChannelByID(500397764157636634)
+            doCode1()
         }
     }
 
@@ -247,10 +252,9 @@ class Spook {
                 leaveOnFinish = false
                 cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
                 VoiceListener.interupt = false
-                if (type == "jump") {
-                    currentVoiceChannel?.delete()
-                }
                 currentVoiceChannel = null
+                type = ""
+                activated = false
             } else {
                 val audioP = AudioPlayer.getAudioPlayerForGuild(guild())
                 try {
@@ -261,7 +265,6 @@ class Spook {
                     e.printStackTrace()
                 }
             }
-            type = ""
         }
     }
 

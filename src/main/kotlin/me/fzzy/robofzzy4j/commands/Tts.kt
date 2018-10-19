@@ -29,14 +29,13 @@ class Tts : Command {
                 text += " $arg"
             }
             text = text.substring(1)
-            if (text.length > 200) return CommandResult.fail("text to speech has to be less than 200 characters")
             val fileName = "cache/${System.currentTimeMillis()}.mp3"
             val speech = Funcs.getTextToSpeech(text) ?: return CommandResult.fail("the text to speech api didnt work for some reason")
             FileUtils.writeByteArrayToFile(File(fileName), speech)
             val sound = File(fileName)
             val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
             if (userVoiceChannel != null) {
-                if (VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F) == null)
+                if (VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F, 40, 20, event.messageID) == null)
                     return CommandResult.fail("i couldnt play the audio for some reason")
             } else
                 return CommandResult.fail("i cant do that if youre not in a voice channel")

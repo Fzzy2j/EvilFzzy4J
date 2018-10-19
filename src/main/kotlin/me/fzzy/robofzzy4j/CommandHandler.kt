@@ -92,6 +92,7 @@ class CommandHandler constructor(prefix: String) {
                                 RequestBuffer.request {
                                     messageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
                                 }
+                                tryDelete(event.message)
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -103,7 +104,7 @@ class CommandHandler constructor(prefix: String) {
                 tryDelete(event.message)
                 val timeLeft = (trueCooldown - timePassedCommand)
                 val endDate = Date(System.currentTimeMillis() + timeLeft)
-                val format = SimpleDateFormat("hh:mm.ss").format(endDate)
+                val format = SimpleDateFormat("hh:mm.ssaa").format(endDate)
 
                 val messages = arrayOf(
                         "%user% youll be off cooldown at %time%",

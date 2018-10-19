@@ -115,7 +115,7 @@ class Explode : Command {
                 val initialSize = 1.0
                 val sizeAmt = -(i / (frameCount.toDouble() / (initialSize - finalSize))) + initialSize
                 resize(warpFile, sizeAmt)
-                op.addImage("${tempPath.name}/$child")
+                op.addImage(warpFile.absolutePath)
             }
             val result = File("cache/${file.nameWithoutExtension}.gif")
             op.addImage(result.absolutePath)

@@ -68,7 +68,7 @@ class Sounds : Command {
                 } else {
                     val timeLeft = SOUND_COOLDOWN - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())))
                     val endDate = Date(System.currentTimeMillis() + timeLeft)
-                    val format = SimpleDateFormat("hh:mm.ss").format(endDate)
+                    val format = SimpleDateFormat("hh:mm.ssaa").format(endDate)
 
                     val messages = arrayOf(
                             "%user% youll be off cooldown at %time%",
