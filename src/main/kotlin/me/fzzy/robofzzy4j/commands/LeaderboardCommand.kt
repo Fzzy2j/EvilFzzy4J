@@ -1,12 +1,11 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
-import me.fzzy.robofzzy4j.Funcs.Companion.sendEmbed
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.EmbedBuilder
 import sx.blah.discord.util.RequestBuffer
 
-class LeaderboardCommand : Command {
+object LeaderboardCommand : Command {
 
     override val cooldownMillis: Long = 10 * 1000
     override val votes: Boolean = false
@@ -34,7 +33,7 @@ class LeaderboardCommand : Command {
         builder.withColor(0, 200, 255)
         builder.withThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
 
-        RequestBuffer.request { sendEmbed(event.channel, builder.build()) }
+        RequestBuffer.request { Funcs.sendEmbed(event.channel, builder.build()) }
         return CommandResult.success()
     }
 

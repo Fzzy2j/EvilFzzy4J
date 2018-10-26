@@ -6,7 +6,7 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedE
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 
-class Picturetypes : Command {
+object Picturetypes : Command {
 
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false

@@ -7,7 +7,7 @@ import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.RequestBuffer
 
-class StateListener {
+object StateListener {
 
     @EventSubscriber
     fun onReady(event: ReadyEvent) {

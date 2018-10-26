@@ -12,16 +12,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
-private lateinit var commandMap: HashMap<String, Command>
 
-lateinit var commandPrefix: String
+object CommandHandler {
 
-class CommandHandler constructor(prefix: String) {
-
-    init {
-        commandPrefix = prefix
-        commandMap = hashMapOf()
-    }
+    private var commandMap: HashMap<String, Command> = hashMapOf()
 
     fun registerCommand(string: String, command: Command) {
         commandMap[string.toLowerCase()] = command
@@ -48,7 +42,7 @@ class CommandHandler constructor(prefix: String) {
         val args = event.message.content.split(" ")
         if (args.isEmpty())
             return
-        if (!args[0].startsWith(commandPrefix))
+        if (!args[0].startsWith(BOT_PREFIX))
             return
         val commandString = args[0].substring(1)
         var argsList: List<String> = args.toMutableList()
@@ -62,7 +56,7 @@ class CommandHandler constructor(prefix: String) {
 
             if (event.channel.isPrivate) {
                 if (!command.allowDM) {
-                    RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
+                    RequestBuffer.request { MessageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
                     return
                 }
             }
@@ -90,7 +84,7 @@ class CommandHandler constructor(prefix: String) {
                             } else {
                                 Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
                                 RequestBuffer.request {
-                                    messageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
+                                    MessageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
                                 }
                                 tryDelete(event.message)
                             }
@@ -104,7 +98,7 @@ class CommandHandler constructor(prefix: String) {
                 tryDelete(event.message)
                 val timeLeft = (trueCooldown - timePassedCommand)
                 val endDate = Date(System.currentTimeMillis() + timeLeft)
-                val format = SimpleDateFormat("hh:mm.ssaa").format(endDate)
+                val format = SimpleDateFormat("hh:mm.ssaa").format(endDate).toLowerCase()
 
                 val messages = arrayOf(
                         "%user% youll be off cooldown at %time%",

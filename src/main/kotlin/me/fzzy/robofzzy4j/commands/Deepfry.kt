@@ -10,7 +10,7 @@ import java.net.URL
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
-class Deepfry : Command {
+object Deepfry : Command {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false

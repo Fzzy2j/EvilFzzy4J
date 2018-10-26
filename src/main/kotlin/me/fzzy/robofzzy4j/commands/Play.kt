@@ -16,7 +16,7 @@ import java.net.URL
 import java.util.regex.Pattern
 
 
-class Play : Command {
+object Play : Command {
 
     override val cooldownMillis: Long = 1000 * 60 * 10
     override val votes: Boolean = true

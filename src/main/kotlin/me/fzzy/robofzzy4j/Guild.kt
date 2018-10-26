@@ -58,28 +58,40 @@ class Guild private constructor(private var guildId: Long) {
     private var posts = 0
     private var votes = 0
 
-    private var updates: IMessage? = null
+    private var changes: Leaderboard.LeaderboardChange? = null
 
-    fun handleChanges(changes: Leaderboard.LeaderboardChange, channel: IChannel) {
-        if (changes.positions.isEmpty())
+    fun handleChanges(change: Leaderboard.LeaderboardChange, channel: IChannel) {
+        if (change.positions.isEmpty())
             return
 
-        if (updates == null || (System.currentTimeMillis() / 1000) - updates?.timestamp!!.epochSecond > 60 * 3) {
-            RequestBuffer.request {
-                var message = "```diff\n"
-                for ((id, amt) in changes.positions) {
-                    val name = cli.getUserByID(id).getDisplayName(getDiscordGuild())
-                    val rank = leaderboard.getRank(id)
-                    message += if (amt >= 0)
-                        "+ $name #$rank CDR=${User.getUser(id).getCooldownModifier(this)}%\n"
-                    else
-                        "- $name #$rank CDR=${User.getUser(id).getCooldownModifier(this)}%\n"
-                }
-                message += "```"
+        if (changes == null) changes = change
 
-                channel.sendMessage(message)
+        val messages = channel.getMessageHistory(5)
+        var existingMessage: IMessage? = null
+
+        for (history in messages) {
+            if (history.content.startsWith("```diff\n--- Leaderboard Changes\n") && history.author.longID == cli.ourUser.longID) {
+                existingMessage = history
+                break
             }
         }
+        if (existingMessage == null) changes = change else changes?.add(change)
+
+        var message = "```diff\n--- Leaderboard Changes\n"
+        for ((id, amt) in Funcs.sortHashMapByValues(changes!!.positions)) {
+            if (amt == 0) continue
+            val name = cli.getUserByID(id).getDisplayName(getDiscordGuild())
+            val rank = leaderboard.getRank(id)
+            message += if (amt > 0)
+                "+ $name #$rank CDR=${User.getUser(id).getCooldownModifier(this)}%\n"
+            else
+                "- $name #$rank CDR=${User.getUser(id).getCooldownModifier(this)}%\n"
+        }
+        message += "```"
+        if (existingMessage != null)
+            RequestBuffer.request { existingMessage.edit(message) }
+        else
+            RequestBuffer.request { channel.sendMessage(message) }
     }
 
     fun addPoint(message: IMessage, user: IUser, channel: IChannel) {

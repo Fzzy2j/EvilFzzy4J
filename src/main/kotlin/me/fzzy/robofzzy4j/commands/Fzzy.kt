@@ -13,7 +13,7 @@ import java.net.URL
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
-class Fzzy : Command {
+object Fzzy : Command {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
@@ -37,7 +37,7 @@ class Fzzy : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {

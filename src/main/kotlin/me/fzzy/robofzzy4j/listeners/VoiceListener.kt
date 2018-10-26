@@ -13,42 +13,40 @@ import java.io.IOException
 import java.util.*
 import javax.sound.sampled.UnsupportedAudioFileException
 
-class VoiceListener {
+object VoiceListener {
 
-    companion object {
 
-        var interupt = false
+    var interupt = false
 
-        fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
-            if (!interupt) {
-                val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
-                if (!channel.connectedUsers.contains(cli.ourUser) && audioP.currentTrack == null)
-                    channel.join()
+    fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
+        if (!interupt) {
+            val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
+            if (!channel.connectedUsers.contains(cli.ourUser) && audioP.currentTrack == null)
+                channel.join()
 
-                try {
-                    val id = UUID.randomUUID()
-                    val track = audioP.queue(file)
-                    track.metadata["fzzyChannel"] = channel.longID
-                    track.metadata["fzzyVolume"] = volume
-                    track.metadata["fzzyId"] = id
-                    track.metadata["fzzyTimeSeconds"] = playTimeSeconds
-                    track.metadata["fzzyTimeAdjustment"] = playTimeAdjustment
-                    track.metadata["fzzyMessageId"] = messageId
-                    return id
-                } catch (e: IOException) {
-                    // File not found
-                } catch (e: UnsupportedAudioFileException) {
-                    e.printStackTrace()
-                }
-                if (delete)
-                    file.delete()
+            try {
+                val id = UUID.randomUUID()
+                val track = audioP.queue(file)
+                track.metadata["fzzyChannel"] = channel.longID
+                track.metadata["fzzyVolume"] = volume
+                track.metadata["fzzyId"] = id
+                track.metadata["fzzyTimeSeconds"] = playTimeSeconds
+                track.metadata["fzzyTimeAdjustment"] = playTimeAdjustment
+                track.metadata["fzzyMessageId"] = messageId
+                return id
+            } catch (e: IOException) {
+                // File not found
+            } catch (e: UnsupportedAudioFileException) {
+                e.printStackTrace()
             }
-            return null
+            if (delete)
+                file.delete()
         }
+        return null
+    }
 
-        fun getId(track: AudioPlayer.Track): UUID? {
-            return track.metadata["fzzyId"] as UUID
-        }
+    fun getId(track: AudioPlayer.Track): UUID? {
+        return track.metadata["fzzyId"] as UUID
     }
 
     @EventSubscriber

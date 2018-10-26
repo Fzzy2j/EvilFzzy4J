@@ -18,7 +18,7 @@ import java.util.regex.Pattern
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
-class Meme : Command {
+object Meme : Command {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false

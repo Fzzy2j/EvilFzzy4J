@@ -5,7 +5,7 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedE
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 
-class GetMeme : Command {
+object GetMeme : Command {
 
     override val cooldownMillis: Long = 60 * 1000
     override val votes: Boolean = false

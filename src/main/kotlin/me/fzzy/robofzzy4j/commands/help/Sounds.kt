@@ -16,9 +16,10 @@ import java.util.*
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.UnsupportedAudioFileException
 
-private const val SOUND_COOLDOWN: Long = 30 * 1000
 
-class Sounds : Command {
+object Sounds : Command {
+
+    private const val SOUND_COOLDOWN: Long = 30 * 1000
 
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
@@ -68,7 +69,7 @@ class Sounds : Command {
                 } else {
                     val timeLeft = SOUND_COOLDOWN - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())))
                     val endDate = Date(System.currentTimeMillis() + timeLeft)
-                    val format = SimpleDateFormat("hh:mm.ssaa").format(endDate)
+                    val format = SimpleDateFormat("hh:mm.ssaa").format(endDate).toLowerCase()
 
                     val messages = arrayOf(
                             "%user% youll be off cooldown at %time%",

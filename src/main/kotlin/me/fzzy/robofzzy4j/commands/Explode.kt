@@ -13,7 +13,7 @@ import java.net.URL
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
-class Explode : Command {
+object Explode : Command {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
@@ -41,7 +41,7 @@ class Explode : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { messageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "this image has no framerate to it, i cant work with it") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "this image has no framerate to it, i cant work with it") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {

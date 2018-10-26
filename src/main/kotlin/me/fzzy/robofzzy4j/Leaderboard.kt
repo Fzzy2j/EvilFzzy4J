@@ -106,5 +106,11 @@ class Leaderboard {
             val amt = positions.getOrDefault(id, 0)
             positions[id] = amt - 1
         }
+
+        fun add(change: LeaderboardChange) {
+            for ((id, c) in change.positions) {
+                positions[id] = positions.getOrDefault(id, 0) + c
+            }
+        }
     }
 }

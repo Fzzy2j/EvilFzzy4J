@@ -5,7 +5,7 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedE
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 
-class Mc : Command {
+object Mc : Command {
 
     override val cooldownMillis: Long = 60 * 1000
     override val votes: Boolean = false

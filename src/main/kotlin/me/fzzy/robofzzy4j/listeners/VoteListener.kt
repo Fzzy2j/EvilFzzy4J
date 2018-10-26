@@ -6,21 +6,18 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.Reactio
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
 import sx.blah.discord.handle.obj.IMessage
 
-class VoteListener {
+object VoteListener {
 
-    companion object {
-
-        fun getVotes(message: IMessage): Int {
-            var upvotes = 0
-            for  (user in message.getReactionByEmoji(UPVOTE_EMOJI).users) {
-                if (user.longID != message.author.longID) upvotes++
-            }
-            var downvotes = 0
-            for  (user in message.getReactionByEmoji(DOWNVOTE_EMOJI).users) {
-                if (user.longID != message.author.longID) downvotes++
-            }
-            return upvotes - downvotes
+    fun getVotes(message: IMessage): Int {
+        var upvotes = 0
+        for (user in message.getReactionByEmoji(UPVOTE_EMOJI).users) {
+            if (user.longID != message.author.longID) upvotes++
         }
+        var downvotes = 0
+        for (user in message.getReactionByEmoji(DOWNVOTE_EMOJI).users) {
+            if (user.longID != message.author.longID) downvotes++
+        }
+        return upvotes - downvotes
     }
 
     @EventSubscriber

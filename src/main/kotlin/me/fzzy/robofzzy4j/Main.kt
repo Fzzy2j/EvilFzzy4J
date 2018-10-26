@@ -25,7 +25,6 @@ import sx.blah.discord.handle.impl.obj.ReactionEmoji
 
 
 lateinit var cli: IDiscordClient
-lateinit var commandHandler: CommandHandler
 
 val savedMemesIds = ArrayList<Long>()
 
@@ -40,11 +39,7 @@ val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
 
 const val MEME_SERVER_ID = 214250278466224128
 
-lateinit var messageScheduler: MessageScheduler
-
 // Threads
-lateinit var scheduler: Task
-
 lateinit var auth: Authentication
 
 val random = Random()
@@ -80,33 +75,30 @@ fun main(args: Array<String>) {
     auth = Authentication(speechApiToken)
     ProcessStarter.setGlobalSearchPath("C:\\Program Files\\ImageMagick-7.0.8-Q16")
 
-    val sounds = Sounds()
-
     Discord4J.LOGGER.info("Registering commands.")
 
-    commandHandler = CommandHandler(BOT_PREFIX)
-    commandHandler.registerCommand("fzzy", Fzzy())
-    commandHandler.registerCommand("eyes", Eyes())
-    commandHandler.registerCommand("picture", Picture())
-    commandHandler.registerCommand("emotion", Emotion())
-    commandHandler.registerCommand("deepfry", Deepfry())
-    commandHandler.registerCommand("mc", Mc())
-    commandHandler.registerCommand("explode", Explode())
-    commandHandler.registerCommand("meme", Meme())
-    commandHandler.registerCommand("play", Play())
-    commandHandler.registerCommand("tts", Tts())
+    CommandHandler.registerCommand("fzzy", Fzzy)
+    CommandHandler.registerCommand("eyes", Eyes)
+    CommandHandler.registerCommand("picture", Picture)
+    CommandHandler.registerCommand("emotion", Emotion)
+    CommandHandler.registerCommand("deepfry", Deepfry)
+    CommandHandler.registerCommand("mc", Mc)
+    CommandHandler.registerCommand("explode", Explode)
+    CommandHandler.registerCommand("meme", Meme)
+    CommandHandler.registerCommand("play", Play)
+    CommandHandler.registerCommand("tts", Tts)
 
-    commandHandler.registerCommand("getmeme", GetMeme())
+    CommandHandler.registerCommand("getmeme", GetMeme)
 
-    commandHandler.registerCommand("leaderboard", LeaderboardCommand())
+    CommandHandler.registerCommand("leaderboard", LeaderboardCommand)
 
-    commandHandler.registerCommand("pfp", Pfp())
+    CommandHandler.registerCommand("pfp", Pfp)
 
-    commandHandler.registerCommand("help", Help())
-    commandHandler.registerCommand("invite", Invite())
-    commandHandler.registerCommand("sounds", sounds)
-    commandHandler.registerCommand("eyetypes", Eyetypes())
-    commandHandler.registerCommand("picturetypes", Picturetypes())
+    CommandHandler.registerCommand("help", Help)
+    CommandHandler.registerCommand("invite", Invite)
+    CommandHandler.registerCommand("sounds", Sounds)
+    CommandHandler.registerCommand("eyetypes", Eyetypes)
+    CommandHandler.registerCommand("picturetypes", Picturetypes)
 
     Discord4J.LOGGER.info("Loading reviewIds.")
     savedMemesIds.clear()
@@ -120,12 +112,11 @@ fun main(args: Array<String>) {
 
     Discord4J.LOGGER.info("Starting scheduler.")
 
-    scheduler = Task()
-    scheduler.start()
+    Task.start()
 
     Discord4J.LOGGER.info("Starting auto-saver.")
 
-    scheduler.registerTask(IndividualTask({
+    Task.registerTask(IndividualTask({
         try {
             if (!cli.isLoggedIn)
                 cli.login()
@@ -141,17 +132,16 @@ fun main(args: Array<String>) {
         Guild.saveAll()
     }, 60, true))
 
-    messageScheduler = MessageScheduler(scheduler)
-
     Discord4J.LOGGER.info("Registering events.")
 
     cli = ClientBuilder().withToken(args[0]).build()
-    cli.dispatcher.registerListener(VoteListener())
-    cli.dispatcher.registerListener(MessageListener())
-    cli.dispatcher.registerListener(VoiceListener())
-    cli.dispatcher.registerListener(StateListener())
-    cli.dispatcher.registerListener(sounds)
-    cli.dispatcher.registerListener(commandHandler)
+    cli.dispatcher.registerListener(VoteListener)
+    cli.dispatcher.registerListener(MessageListener)
+    cli.dispatcher.registerListener(VoiceListener)
+    cli.dispatcher.registerListener(StateListener)
+    cli.dispatcher.registerListener(Sounds)
+    cli.dispatcher.registerListener(CommandHandler)
+
     cli.dispatcher.registerListener(Spook())
 
     Discord4J.LOGGER.info("Logging in.")

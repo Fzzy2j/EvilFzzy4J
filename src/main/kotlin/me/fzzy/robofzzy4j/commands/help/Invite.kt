@@ -6,7 +6,7 @@ import me.fzzy.robofzzy4j.cli
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.RequestBuffer
 
-class Invite : Command {
+object Invite : Command {
 
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false

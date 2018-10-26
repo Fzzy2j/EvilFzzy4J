@@ -6,6 +6,7 @@ import magick.MagickImage
 import magick.PixelPacket
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.thread.IndividualTask
+import me.fzzy.robofzzy4j.thread.Task
 import me.fzzy.robofzzy4j.util.Zalgo
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
@@ -219,7 +220,7 @@ class Spook {
                                 RequestBuffer.request {
                                     try {
                                         role.changeColor(Color.RED)
-                                        scheduler.registerTask(IndividualTask({
+                                        Task.registerTask(IndividualTask({
                                             RequestBuffer.request { role.changeColor(color) }
                                         }, 10, false))
                                     } catch (e: MissingPermissionsException) {
@@ -232,7 +233,7 @@ class Spook {
                     else -> throw IllegalArgumentException()
                 }
             } catch (e: Exception) {
-                messageScheduler.sendTempMessage(2000, event.channel, Zalgo.goZalgo("???", false, true, false, false, true))
+                MessageScheduler.sendTempMessage(2000, event.channel, Zalgo.goZalgo("???", false, true, false, false, true))
             }
             RequestBuffer.request { event.message.delete() }
         }

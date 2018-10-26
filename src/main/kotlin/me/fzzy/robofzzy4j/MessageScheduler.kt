@@ -8,12 +8,12 @@ import sx.blah.discord.handle.obj.IMessage
 import java.io.File
 import java.util.*
 
-class MessageScheduler constructor(task: Task) {
+object MessageScheduler {
 
     private var tempMessages: HashMap<IMessage?, Long> = hashMapOf()
 
     init {
-        task.registerTask(IndividualTask({
+        Task.registerTask(IndividualTask({
             val iter = tempMessages.iterator()
             while (iter.hasNext()) {
                 val i = iter.next()

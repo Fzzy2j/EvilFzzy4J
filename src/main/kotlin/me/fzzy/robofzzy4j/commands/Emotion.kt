@@ -7,7 +7,7 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.net.URL
 
-class Emotion : Command {
+object Emotion : Command {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false

@@ -14,7 +14,7 @@ import java.io.IOException
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.UnsupportedAudioFileException
 
-class Tts : Command {
+object Tts : Command {
 
     override val cooldownMillis: Long = 60 * 10 * 1000
     override val votes: Boolean = true

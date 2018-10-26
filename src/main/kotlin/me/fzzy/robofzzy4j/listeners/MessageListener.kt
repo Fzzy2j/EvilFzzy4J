@@ -12,7 +12,7 @@ import java.lang.NullPointerException
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-class MessageListener {
+object MessageListener {
 
     val respongeMsgs = listOf(
             "No problem %name%!",

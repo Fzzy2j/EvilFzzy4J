@@ -4,7 +4,7 @@ import java.util.*
 
 class IndividualTask constructor(var toRun: () -> Unit, var intervalSeconds: Int, var repeat: Boolean)
 
-class Task : Thread() {
+object Task : Thread() {
 
     private var tasks: HashMap<IndividualTask, Long> = hashMapOf()
 
