@@ -6,6 +6,7 @@ import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.Discord4J
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IVoiceChannel
 import sx.blah.discord.util.audio.AudioPlayer
 import ws.schild.jave.*
 import java.io.IOException
@@ -25,10 +26,15 @@ object Play : Command {
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-        val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[0])
+        val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel?: return CommandResult.fail("i cant do that unless youre in a voice channel")
+        return play(userVoiceChannel, args[0], event.messageID)
+    }
+
+    fun play(channel: IVoiceChannel, videoUrl: String, messageId: Long = 0): CommandResult {
+        val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(videoUrl)
         val id: String
         try {
-            id = if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]
+            id = if (matcher.find()) matcher.group(0) else videoUrl.split(".be/")[1]
         } catch (e: Exception) {
             return CommandResult.fail("thats not how you use that command $usageText")
         }
@@ -82,12 +88,8 @@ object Play : Command {
 
                 outputFile.delete()
 
-                val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
-                if (userVoiceChannel != null) {
-                    VoiceListener.playTempAudio(userVoiceChannel, target, true, 0.3F, 60, 40, event.messageID)
+                    VoiceListener.playTempAudio(channel, target, true, 0.3F, 60, 40, messageId)
                             ?: return CommandResult.fail("i couldnt play that audio for some reason")
-                } else
-                    return CommandResult.fail("i cant do that unless youre in a voice channel")
                 break
             }
         } else

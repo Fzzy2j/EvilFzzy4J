@@ -49,6 +49,8 @@ object VoiceListener {
         return track.metadata["fzzyId"] as UUID
     }
 
+    val overrides = arrayListOf<Long>()
+
     @EventSubscriber
     fun onTrackBegin(event: TrackStartEvent) {
         if (event.track.metadata.containsKey("fzzyVolume"))
@@ -65,11 +67,20 @@ object VoiceListener {
                     while (true) {
                         Thread.sleep(1000)
                         val message = cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
+
+                        if (message != null) {
+                            if (overrides.contains(message.longID)) {
+                                overrides.remove(message.longID)
+                                break
+                            }
+                        }
+
                         val voteAdjust = try {
                             VoteListener.getVotes(message) * event.track.metadata["fzzyTimeAdjustment"] as Int
                         } catch (e: Exception) {
                             -60 * 200
                         }
+
                         if (System.currentTimeMillis() - startTime > (event.track.metadata["fzzyTimeSeconds"] as Int + voteAdjust) * 1000) {
                             val track = event.player.currentTrack
                             if (track != null && VoiceListener.getId(track) == getId(event.track))

@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.DiscordException
@@ -72,21 +73,25 @@ object CommandHandler {
 
                 if (!user.runningCommand) {
                     user.runningCommand = true
-                    if (!command.votes)
-                        tryDelete(event.message)
                     Thread {
                         try {
-                            val result = command.runCommand(event, argsList)
+                            val result = try {
+                                command.runCommand(event, argsList)
+                            } catch (e: java.lang.Exception) {
+                                CommandResult.fail("Command failed $e")
+                            }
                             if (result.isSuccess()) {
                                 user.cooldowns.triggerCooldown(commandString)
                                 if (command.votes)
                                     guild.allowVotes(event.message)
+                                else
+                                    notifyProcessSuccess(event.message)
                             } else {
                                 Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
                                 RequestBuffer.request {
                                     MessageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
                                 }
-                                tryDelete(event.message)
+                                notifyProcessFail(event.message)
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -95,7 +100,7 @@ object CommandHandler {
                     }.start()
                 }
             } else {
-                tryDelete(event.message)
+                notifyProcessFail(event.message)
                 val timeLeft = (trueCooldown - timePassedCommand)
                 val endDate = Date(System.currentTimeMillis() + timeLeft)
                 val format = SimpleDateFormat("hh:mm.ssaa").format(endDate).toLowerCase()
@@ -115,10 +120,20 @@ object CommandHandler {
         }
     }
 
-    fun tryDelete(msg: IMessage) {
+    fun notifyProcessSuccess(msg: IMessage) {
         RequestBuffer.request {
             try {
-                msg.delete()
+                msg.addReaction(GREENTICK_EMOJI)
+            } catch (e: MissingPermissionsException) {
+            } catch (e: DiscordException) {
+            }
+        }
+    }
+
+    fun notifyProcessFail(msg: IMessage) {
+        RequestBuffer.request {
+            try {
+                msg.addReaction(REDTICK_EMOJI)
             } catch (e: MissingPermissionsException) {
             } catch (e: DiscordException) {
             }

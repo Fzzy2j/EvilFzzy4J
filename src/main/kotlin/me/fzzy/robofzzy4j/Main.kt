@@ -36,6 +36,8 @@ const val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
 
 val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
 val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
+val GREENTICK_EMOJI = ReactionEmoji.of("commandSuccess", 506378148170956811)!!
+val REDTICK_EMOJI = ReactionEmoji.of("commandFail", 506378140659220486)!!
 
 const val MEME_SERVER_ID = 214250278466224128
 
@@ -99,6 +101,7 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("sounds", Sounds)
     CommandHandler.registerCommand("eyetypes", Eyetypes)
     CommandHandler.registerCommand("picturetypes", Picturetypes)
+    CommandHandler.registerCommand("override", Override)
 
     Discord4J.LOGGER.info("Loading reviewIds.")
     savedMemesIds.clear()

@@ -12,4 +12,11 @@ class Cooldown {
         return System.currentTimeMillis() - cooldowns.getOrDefault(key, 0)
     }
 
+    fun deleteCooldown(key: String) {
+        cooldowns.remove(key)
+    }
+
+    fun clearCooldowns() {
+        cooldowns.clear()
+    }
 }
