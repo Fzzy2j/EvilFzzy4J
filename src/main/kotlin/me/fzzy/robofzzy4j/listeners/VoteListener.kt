@@ -23,17 +23,15 @@ object VoteListener {
     @EventSubscriber
     fun onReactionAdd(event: ReactionAddEvent) {
         val guild = Guild.getGuild(event.guild.longID)
-        if (event.reaction != null) {
+        if (event.channel.getMessageHistory(10).contains(event.message)) {
             if (event.reaction.getUserReacted(cli.ourUser) && event.user.longID != cli.ourUser.longID) {
-                if (event.channel.getMessageHistory(10).contains(event.message)) {
-                    if (event.message.author.longID != event.user.longID) {
-                        when (event.reaction.emoji.name) {
-                            "upvote" -> {
-                                guild.addPoint(event.message, event.author, event.channel)
-                            }
-                            "downvote" -> {
-                                guild.subtractPoint(event.author, event.channel)
-                            }
+                if (event.message.author.longID != event.user.longID) {
+                    when (event.reaction.emoji.name) {
+                        "upvote" -> {
+                            guild.addPoint(event.message, event.author, event.channel)
+                        }
+                        "downvote" -> {
+                            guild.subtractPoint(event.author, event.channel)
                         }
                     }
                 }

@@ -73,6 +73,7 @@ object CommandHandler {
 
                 if (!user.runningCommand) {
                     user.runningCommand = true
+                    if (!command.votes) tryDelete(event.message)
                     Thread {
                         try {
                             val result = try {
@@ -84,14 +85,12 @@ object CommandHandler {
                                 user.cooldowns.triggerCooldown(commandString)
                                 if (command.votes)
                                     guild.allowVotes(event.message)
-                                else
-                                    notifyProcessSuccess(event.message)
                             } else {
                                 Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
                                 RequestBuffer.request {
                                     MessageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
                                 }
-                                notifyProcessFail(event.message)
+                                tryDelete(event.message)
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -100,7 +99,7 @@ object CommandHandler {
                     }.start()
                 }
             } else {
-                notifyProcessFail(event.message)
+                tryDelete(event.message)
                 val timeLeft = (trueCooldown - timePassedCommand)
                 val endDate = Date(System.currentTimeMillis() + timeLeft)
                 val format = SimpleDateFormat("hh:mm.ssaa").format(endDate).toLowerCase()
@@ -120,20 +119,10 @@ object CommandHandler {
         }
     }
 
-    fun notifyProcessSuccess(msg: IMessage) {
+    fun tryDelete(msg: IMessage) {
         RequestBuffer.request {
             try {
-                msg.addReaction(GREENTICK_EMOJI)
-            } catch (e: MissingPermissionsException) {
-            } catch (e: DiscordException) {
-            }
-        }
-    }
-
-    fun notifyProcessFail(msg: IMessage) {
-        RequestBuffer.request {
-            try {
-                msg.addReaction(REDTICK_EMOJI)
+                    msg.delete()
             } catch (e: MissingPermissionsException) {
             } catch (e: DiscordException) {
             }

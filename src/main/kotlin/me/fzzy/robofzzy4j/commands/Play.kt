@@ -30,7 +30,7 @@ object Play : Command {
         return play(userVoiceChannel, args[0], event.messageID)
     }
 
-    fun play(channel: IVoiceChannel, videoUrl: String, messageId: Long = 0): CommandResult {
+    fun play(channel: IVoiceChannel, videoUrl: String, messageId: Long): CommandResult {
         val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(videoUrl)
         val id: String
         try {

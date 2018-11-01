@@ -18,8 +18,6 @@ object Help : Command {
         for ((_, command) in CommandHandler.getAllCommands()) {
             helpMsg += "${command.usageText} : ${command.cooldownMillis / 1000} seconds : ${command.description}\n"
         }
-        if (cli.getGuildByID(MEME_SERVER_ID).users.contains(event.author))
-            helpMsg += "# -code : ${Zalgo.goZalgo("Try me", false, true, false, false, true)}"
         helpMsg += "```"
         RequestBuffer.request { event.author.orCreatePMChannel.sendMessage(helpMsg) }
         return CommandResult.success()

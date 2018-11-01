@@ -31,7 +31,8 @@ object Override : Command {
             "play" -> {
                 for (voice in event.guild.voiceChannels) {
                     if (voice.name.toLowerCase().startsWith(args[1].toLowerCase())) {
-                        return Play.play(voice, args[2])
+                        VoiceListener.overrides.add(event.messageID)
+                        return Play.play(voice, args[2], event.messageID)
                     }
                 }
             }

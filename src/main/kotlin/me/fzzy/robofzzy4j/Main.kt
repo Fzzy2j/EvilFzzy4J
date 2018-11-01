@@ -145,8 +145,6 @@ fun main(args: Array<String>) {
     cli.dispatcher.registerListener(Sounds)
     cli.dispatcher.registerListener(CommandHandler)
 
-    cli.dispatcher.registerListener(Spook())
-
     Discord4J.LOGGER.info("Logging in.")
 
     cli.login()

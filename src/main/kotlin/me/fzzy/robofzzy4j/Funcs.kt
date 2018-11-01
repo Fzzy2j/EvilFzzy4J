@@ -40,10 +40,6 @@ object Funcs {
     }
 
     fun sendFile(channel: IChannel, file: File, votes: Boolean = true): IMessage? {
-        //TODO Temporary Code
-        if (Spook.getStage() >= 1) {
-            Spook.slapCodeIn(file)
-        }
         return try {
             val message = channel.sendFile(file)
             if (votes)
