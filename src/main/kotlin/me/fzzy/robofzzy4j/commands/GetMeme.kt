@@ -18,7 +18,7 @@ object GetMeme : Command {
         val files = File("memes", event.guild.longID.toString()).listFiles()
         if (files == null || files.isEmpty())
             return CommandResult.fail("there havent been any worthy memes in this server, sorry")
-        val file = files[random.nextInt(files.size)]
+        val file = files[RoboFzzy.random.nextInt(files.size)]
 
         RequestBuffer.request {
             Funcs.sendFile(event.channel, file, false)

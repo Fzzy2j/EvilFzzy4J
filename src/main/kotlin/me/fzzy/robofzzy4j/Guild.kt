@@ -70,7 +70,7 @@ class Guild private constructor(private var guildId: Long) {
         var existingMessage: IMessage? = null
 
         for (history in messages) {
-            if (history.content.startsWith("```diff\n--- Leaderboard Changes\n") && history.author.longID == cli.ourUser.longID) {
+            if (history.content.startsWith("```diff\n--- Leaderboard Changes\n") && history.author.longID == RoboFzzy.cli.ourUser.longID) {
                 existingMessage = history
                 break
             }
@@ -80,7 +80,7 @@ class Guild private constructor(private var guildId: Long) {
         var message = "```diff\n--- Leaderboard Changes\n"
         for ((id, amt) in Funcs.sortHashMapByValues(changes!!.positions)) {
             if (amt == 0) continue
-            val name = cli.getUserByID(id).getDisplayName(getDiscordGuild())
+            val name = RoboFzzy.cli.getUserByID(id).getDisplayName(getDiscordGuild())
             val rank = leaderboard.getRank(id)
             message += if (amt > 0)
                 "+ $name #$rank CDR=${User.getUser(id).getCooldownModifier(this)}%\n"
@@ -100,8 +100,8 @@ class Guild private constructor(private var guildId: Long) {
         votes++
 
         if (VoteListener.getVotes(message) > getAverageVote()) {
-            if (message.guild.longID == MEME_SERVER_ID && !savedMemesIds.contains(message.longID)) {
-                savedMemesIds.add(message.longID)
+            if (!RoboFzzy.savedMemesIds.contains(message.longID)) {
+                RoboFzzy.savedMemesIds.add(message.longID)
                 if (message.attachments.size == 0) {
                     if (!(message.content.toLowerCase().endsWith(".png")
                                     || message.content.toLowerCase().endsWith(".jpg")
@@ -171,11 +171,11 @@ class Guild private constructor(private var guildId: Long) {
     fun allowVotes(msg: IMessage) {
         posts++
         votes++
-        RequestBuilder(cli).shouldBufferRequests(true).doAction {
-            msg.addReaction(UPVOTE_EMOJI)
+        RequestBuilder(RoboFzzy.cli).shouldBufferRequests(true).doAction {
+            msg.addReaction(RoboFzzy.UPVOTE_EMOJI)
             true
         }.andThen {
-            msg.addReaction(DOWNVOTE_EMOJI)
+            msg.addReaction(RoboFzzy.DOWNVOTE_EMOJI)
             true
         }.execute()
     }
@@ -193,31 +193,31 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun getDiscordGuild(): IGuild {
-        return cli.getGuildByID(longId)
+        return RoboFzzy.cli.getGuildByID(longId)
     }
 
     fun save() {
-        guildNode.getNode("id$guildId", "votes").value = null
+        RoboFzzy.guildNode.getNode("id$guildId", "votes").value = null
         var i = 0
         for ((key, value) in leaderboard.valueMap) {
-            guildNode.getNode("id$guildId", "votes", i, "id").value = key
-            guildNode.getNode("id$guildId", "votes", i, "value").value = value.value
+            RoboFzzy.guildNode.getNode("id$guildId", "votes", i, "id").value = key
+            RoboFzzy.guildNode.getNode("id$guildId", "votes", i, "value").value = value.value
             i++
         }
 
-        guildNode.getNode("id$guildId", "totalVotes").value = votes
-        guildNode.getNode("id$guildId", "totalPosts").value = posts
+        RoboFzzy.guildNode.getNode("id$guildId", "totalVotes").value = votes
+        RoboFzzy.guildNode.getNode("id$guildId", "totalPosts").value = posts
 
-        guildManager.save(guildNode)
+        RoboFzzy.guildManager.save(RoboFzzy.guildNode)
     }
 
     fun load() {
         leaderboard = Leaderboard()
-        for (node in guildNode.getNode("id$guildId", "votes").childrenList) {
+        for (node in RoboFzzy.guildNode.getNode("id$guildId", "votes").childrenList) {
             leaderboard.setValue(node.getNode("id").long, node.getNode("value").int)
         }
-        votes = guildNode.getNode("id$guildId", "totalVotes").int
-        posts = guildNode.getNode("id$guildId", "totalPosts").int
+        votes = RoboFzzy.guildNode.getNode("id$guildId", "totalVotes").int
+        posts = RoboFzzy.guildNode.getNode("id$guildId", "totalPosts").int
     }
 
 }

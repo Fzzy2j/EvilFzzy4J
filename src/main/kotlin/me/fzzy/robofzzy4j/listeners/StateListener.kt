@@ -11,7 +11,7 @@ object StateListener {
 
     @EventSubscriber
     fun onReady(event: ReadyEvent) {
-        RequestBuffer.request { cli.changePresence(StatusType.DND, ActivityType.LISTENING, "the rain ${BOT_PREFIX}help") }
+        RequestBuffer.request { RoboFzzy.cli.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${RoboFzzy.BOT_PREFIX}help") }
     }
 
 }

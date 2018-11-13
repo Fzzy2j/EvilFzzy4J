@@ -52,9 +52,9 @@ object Funcs {
 
     fun mentionsByName(msg: IMessage): Boolean {
         val check = msg.content.toLowerCase().replace(" ", "")
-        val checkAgainst = "${cli.ourUser.name} ${cli.ourUser.getDisplayName(msg.guild)}".split(" ")
+        val checkAgainst = "${RoboFzzy.cli.ourUser.name} ${RoboFzzy.cli.ourUser.getDisplayName(msg.guild)}".split(" ")
         for (input in checkAgainst) {
-            if (check.contains("thank") && (check.contains(input.toLowerCase().replace(" ", "")) || msg.mentions.contains(cli.ourUser)))
+            if (check.contains("thank") && (check.contains(input.toLowerCase().replace(" ", "")) || msg.mentions.contains(RoboFzzy.cli.ourUser)))
                 return true
         }
         return false
@@ -73,7 +73,7 @@ object Funcs {
 
         val apiurl = "https://speech.platform.bing.com/synthesize"
         val input = "<speak version='1.0' xml:lang='en-US'>" +
-                "<voice xml:lang='en-US' name='Microsoft Server Speech Text to Speech Voice ${voices[random.nextInt(voices.size)]}'>" +
+                "<voice xml:lang='en-US' name='Microsoft Server Speech Text to Speech Voice ${voices[RoboFzzy.random.nextInt(voices.size)]}'>" +
                 text +
                 "</voice>" +
                 "</speak>"
@@ -88,7 +88,7 @@ object Funcs {
             urlConnection.requestMethod = "POST"
             urlConnection.setRequestProperty("Content-Type", "application/ssml+xml")
             urlConnection.setRequestProperty("X-MICROSOFT-OutputFormat", "audio-16khz-64kbitrate-mono-mp3")
-            urlConnection.setRequestProperty("Authorization", "Bearer ${auth.GetAccessToken()}")
+            urlConnection.setRequestProperty("Authorization", "Bearer ${RoboFzzy.auth.GetAccessToken()}")
             urlConnection.setRequestProperty("Accept", "*/*")
             val ssmlBytes = input.toByteArray()
             urlConnection.setRequestProperty("content-length", ssmlBytes.size.toString())
@@ -191,7 +191,7 @@ object ImageFuncs {
             val request = HttpPost(uri)
 
             request.setHeader("Content-Type", "application/json")
-            request.setHeader("Ocp-Apim-Subscription-Key", faceApiToken)
+            request.setHeader("Ocp-Apim-Subscription-Key", RoboFzzy.faceApiToken)
 
             val reqEntity = StringEntity("{\"url\":\"$url\"}")
             request.entity = reqEntity

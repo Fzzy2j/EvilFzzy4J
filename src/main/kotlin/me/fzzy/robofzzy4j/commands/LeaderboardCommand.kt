@@ -21,14 +21,14 @@ object LeaderboardCommand : Command {
             if (id != null) {
                 val value = guild.leaderboard.getOrDefault(id, 0)
 
-                val title = "#$i - ${cli.getUserByID(id).getDisplayName(cli.getGuildByID(event.guild.longID))} | ${User.getUser(id).getCooldownModifier(guild)}% CDR"
+                val title = "#$i - ${RoboFzzy.cli.getUserByID(id).getDisplayName(RoboFzzy.cli.getGuildByID(event.guild.longID))} | ${User.getUser(id).getCooldownModifier(guild)}% CDR"
                 val description = "$value points"
                 builder.appendField(title, description, false)
             }
         }
 
-        builder.withAuthorName("LEADERBOARD")
-        builder.withAuthorIcon(cli.ourUser.avatarURL)
+        builder.withAuthorName("LEADERBOARD - resets every monday")
+        builder.withAuthorIcon(RoboFzzy.cli.ourUser.avatarURL)
 
         builder.withColor(0, 200, 255)
         builder.withThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")

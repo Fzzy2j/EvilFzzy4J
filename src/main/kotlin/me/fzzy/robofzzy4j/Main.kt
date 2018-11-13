@@ -22,39 +22,41 @@ import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
+object RoboFzzy {
+    lateinit var cli: IDiscordClient
 
-lateinit var cli: IDiscordClient
+    val savedMemesIds = ArrayList<Long>()
 
-val savedMemesIds = ArrayList<Long>()
+    lateinit var faceApiToken: String
+    lateinit var speechApiToken: String
 
-lateinit var faceApiToken: String
-lateinit var speechApiToken: String
+    const val BOT_PREFIX = "-"
+    const val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
 
-const val BOT_PREFIX = "-"
-const val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
+    val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
+    val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
 
-val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
-val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
-val GREENTICK_EMOJI = ReactionEmoji.of("commandSuccess", 506378148170956811)!!
-val REDTICK_EMOJI = ReactionEmoji.of("commandFail", 506378140659220486)!!
+    // Threads
+    lateinit var auth: Authentication
 
-const val MEME_SERVER_ID = 214250278466224128
+    val random = Random()
 
-// Threads
-lateinit var auth: Authentication
+    internal lateinit var guildFile: File
+    lateinit var guildManager: ConfigurationLoader<CommentedConfigurationNode>
+    lateinit var guildNode: ConfigurationNode
 
-val random = Random()
+    internal lateinit var dataFile: File
+    lateinit var dataManager: ConfigurationLoader<CommentedConfigurationNode>
+    lateinit var dataNode: ConfigurationNode
 
-private lateinit var guildFile: File
-lateinit var guildManager: ConfigurationLoader<CommentedConfigurationNode>
-lateinit var guildNode: ConfigurationNode
+    const val CONFIG_DIR: String = "data/"
+    const val THREAD_COUNT = 12
 
-private lateinit var dataFile: File
-lateinit var dataManager: ConfigurationLoader<CommentedConfigurationNode>
-lateinit var dataNode: ConfigurationNode
-
-const val CONFIG_DIR: String = "data/"
+    lateinit var executor: ExecutorService
+}
 
 fun main(args: Array<String>) {
     if (args.size != 3) {
@@ -62,19 +64,21 @@ fun main(args: Array<String>) {
         return
     }
 
+    RoboFzzy.executor = Executors.newFixedThreadPool(RoboFzzy.THREAD_COUNT)
+
     Discord4J.LOGGER.info("Bot Starting.")
 
-    guildFile = File(CONFIG_DIR + File.separator + "guilds.conf")
-    dataFile = File(CONFIG_DIR + File.separator + "data.conf")
-    guildFile.parentFile.mkdirs()
-    guildManager = HoconConfigurationLoader.builder().setPath(guildFile.toPath()).build()
-    dataManager = HoconConfigurationLoader.builder().setPath(dataFile.toPath()).build()
-    guildNode = guildManager.load()
-    dataNode = dataManager.load()
+    RoboFzzy.guildFile = File(RoboFzzy.CONFIG_DIR + File.separator + "guilds.conf")
+    RoboFzzy.dataFile = File(RoboFzzy.CONFIG_DIR + File.separator + "data.conf")
+    RoboFzzy.guildFile.parentFile.mkdirs()
+    RoboFzzy.guildManager = HoconConfigurationLoader.builder().setPath(RoboFzzy.guildFile.toPath()).build()
+    RoboFzzy.dataManager = HoconConfigurationLoader.builder().setPath(RoboFzzy.dataFile.toPath()).build()
+    RoboFzzy.guildNode = RoboFzzy.guildManager.load()
+    RoboFzzy.dataNode = RoboFzzy.dataManager.load()
 
-    faceApiToken = args[1]
-    speechApiToken = args[2]
-    auth = Authentication(speechApiToken)
+    RoboFzzy.faceApiToken = args[1]
+    RoboFzzy.speechApiToken = args[2]
+    RoboFzzy.auth = Authentication(RoboFzzy.speechApiToken)
     ProcessStarter.setGlobalSearchPath("C:\\Program Files\\ImageMagick-7.0.8-Q16")
 
     Discord4J.LOGGER.info("Registering commands.")
@@ -104,9 +108,9 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("override", Override)
 
     Discord4J.LOGGER.info("Loading reviewIds.")
-    savedMemesIds.clear()
-    for (text in dataNode.getNode("savedMemesIds").getList(TypeToken.of(String::class.java))) {
-        savedMemesIds.add(text.toLong())
+    RoboFzzy.savedMemesIds.clear()
+    for (text in RoboFzzy.dataNode.getNode("savedMemesIds").getList(TypeToken.of(String::class.java))) {
+        RoboFzzy.savedMemesIds.add(text.toLong())
     }
 
     for (file in File("cache").listFiles()) {
@@ -121,15 +125,15 @@ fun main(args: Array<String>) {
 
     Task.registerTask(IndividualTask({
         try {
-            if (!cli.isLoggedIn)
-                cli.login()
+            if (!RoboFzzy.cli.isLoggedIn)
+                RoboFzzy.cli.login()
         } catch (e: DiscordException) {
         }
 
         val day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        if (day == Calendar.MONDAY && System.currentTimeMillis() - dataNode.getNode("leaderboardResetTimestamp").long > 48 * 60 * 60 * 1000) {
-            dataNode.getNode("leaderboardResetTimestamp").value = System.currentTimeMillis()
-            dataManager.save(dataNode)
+        if (day == Calendar.MONDAY && System.currentTimeMillis() - RoboFzzy.dataNode.getNode("leaderboardResetTimestamp").long > 48 * 60 * 60 * 1000) {
+            RoboFzzy.dataNode.getNode("leaderboardResetTimestamp").value = System.currentTimeMillis()
+            RoboFzzy.dataManager.save(RoboFzzy.dataNode)
             Guild.clearLeaderboards()
         }
         Guild.saveAll()
@@ -137,17 +141,17 @@ fun main(args: Array<String>) {
 
     Discord4J.LOGGER.info("Registering events.")
 
-    cli = ClientBuilder().withToken(args[0]).build()
-    cli.dispatcher.registerListener(VoteListener)
-    cli.dispatcher.registerListener(MessageListener)
-    cli.dispatcher.registerListener(VoiceListener)
-    cli.dispatcher.registerListener(StateListener)
-    cli.dispatcher.registerListener(Sounds)
-    cli.dispatcher.registerListener(CommandHandler)
+    RoboFzzy.cli = ClientBuilder().withToken(args[0]).build()
+    RoboFzzy.cli.dispatcher.registerListener(VoteListener)
+    RoboFzzy.cli.dispatcher.registerListener(MessageListener)
+    RoboFzzy.cli.dispatcher.registerListener(VoiceListener)
+    RoboFzzy.cli.dispatcher.registerListener(StateListener)
+    RoboFzzy.cli.dispatcher.registerListener(Sounds)
+    RoboFzzy.cli.dispatcher.registerListener(CommandHandler)
 
     Discord4J.LOGGER.info("Logging in.")
 
-    cli.login()
+    RoboFzzy.cli.login()
 }
 
 

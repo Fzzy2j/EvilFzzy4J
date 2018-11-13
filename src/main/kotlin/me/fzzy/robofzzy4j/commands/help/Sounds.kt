@@ -15,6 +15,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.UnsupportedAudioFileException
+import kotlin.math.roundToInt
 
 
 object Sounds : Command {
@@ -42,7 +43,7 @@ object Sounds : Command {
     @EventSubscriber
     fun onMessageReceived(event: MessageReceivedEvent) {
         if (event.guild != null) {
-            if (event.message.content.startsWith(BOT_PREFIX)) {
+            if (event.message.content.startsWith(RoboFzzy.BOT_PREFIX)) {
                 val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
 
                 if (audioDir == null || audioDir.isEmpty())
@@ -67,19 +68,17 @@ object Sounds : Command {
                         VoiceListener.playTempAudio(userVoiceChannel, audioDir[0], false)
                     }
                 } else {
-                    val timeLeft = SOUND_COOLDOWN - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())))
-                    val endDate = Date(System.currentTimeMillis() + timeLeft)
-                    val format = SimpleDateFormat("hh:mm.ssaa").format(endDate).toLowerCase()
+                    val timeLeft = Math.ceil((SOUND_COOLDOWN - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())))) / 1000.0 / 60.0).roundToInt()
 
                     val messages = arrayOf(
-                            "%user% youll be off cooldown at %time%",
-                            "your cooldown will be over at %time% %user%",
-                            "you gotta slow down %user%, your cooldown will end at %time%"
+                            "%user% you can use that command in %time%",
+                            "you can use that command in %time% %user%",
+                            "you gotta slow down %user%, you can use that command in %time%"
                     )
                     RequestBuffer.request {
-                        Funcs.sendMessage(event.channel, messages[random.nextInt(messages.size)]
-                                .replace("%user%", event.author.getDisplayName(event.guild).toLowerCase())
-                                .replace("%time%", if (format.startsWith("0")) format.substring(1) else format)
+                        MessageScheduler.sendTempMessage(1000 * 60, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
+                                .replace("%user%", event.author.name.toLowerCase())
+                                .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
                         )
                     }
                 }

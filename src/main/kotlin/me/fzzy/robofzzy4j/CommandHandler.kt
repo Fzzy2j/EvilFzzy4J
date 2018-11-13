@@ -43,7 +43,7 @@ object CommandHandler {
         val args = event.message.content.split(" ")
         if (args.isEmpty())
             return
-        if (!args[0].startsWith(BOT_PREFIX))
+        if (!args[0].startsWith(RoboFzzy.BOT_PREFIX))
             return
         val commandString = args[0].substring(1)
         var argsList: List<String> = args.toMutableList()
@@ -57,7 +57,7 @@ object CommandHandler {
 
             if (event.channel.isPrivate) {
                 if (!command.allowDM) {
-                    RequestBuffer.request { MessageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
+                    RequestBuffer.request { MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
                     return
                 }
             }
@@ -65,16 +65,19 @@ object CommandHandler {
             val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
 
-            val guild = Guild.getGuild(event.guild)
-            val timePassedCommand = user.cooldowns.getTimePassedMillis(commandString)
-            val trueCooldown = command.cooldownMillis * ((100 - user.getCooldownModifier(guild)) / 100.0).roundToInt()
+            var trueCooldown = command.cooldownMillis
+            val timePassedCommand = user.cooldown.getTimePassedMillis()
+            if (event.guild != null) {
+                val guild = Guild.getGuild(event.guild)
+                trueCooldown = command.cooldownMillis * ((100 - user.getCooldownModifier(guild)) / 100.0).roundToInt()
+            }
 
             if (timePassedCommand > trueCooldown) {
 
                 if (!user.runningCommand) {
                     user.runningCommand = true
                     if (!command.votes) tryDelete(event.message)
-                    Thread {
+                    RoboFzzy.executor.submit {
                         try {
                             val result = try {
                                 command.runCommand(event, argsList)
@@ -82,9 +85,9 @@ object CommandHandler {
                                 CommandResult.fail("Command failed $e")
                             }
                             if (result.isSuccess()) {
-                                user.cooldowns.triggerCooldown(commandString)
-                                if (command.votes)
-                                    guild.allowVotes(event.message)
+                                user.cooldown.triggerCooldown()
+                                if (command.votes && event.guild != null)
+                                    Guild.getGuild(event.guild).allowVotes(event.message)
                             } else {
                                 Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
                                 RequestBuffer.request {
@@ -96,23 +99,21 @@ object CommandHandler {
                             e.printStackTrace()
                         }
                         user.runningCommand = false
-                    }.start()
+                    }
                 }
             } else {
                 tryDelete(event.message)
-                val timeLeft = (trueCooldown - timePassedCommand)
-                val endDate = Date(System.currentTimeMillis() + timeLeft)
-                val format = SimpleDateFormat("hh:mm.ssaa").format(endDate).toLowerCase()
+                val timeLeft = Math.ceil((trueCooldown - timePassedCommand) / 1000.0 / 60.0).roundToInt()
 
                 val messages = arrayOf(
-                        "%user% youll be off cooldown at %time%",
-                        "your cooldown will be over at %time% %user%",
-                        "you gotta slow down %user%, your cooldown will end at %time%"
+                        "%user% you can use that command in %time%",
+                        "you can use that command in %time% %user%",
+                        "sorry %user%, i cant let you use that command for another %time%"
                 )
                 RequestBuffer.request {
-                    Funcs.sendMessage(event.channel, messages[random.nextInt(messages.size)]
-                            .replace("%user%", event.author.getDisplayName(event.guild).toLowerCase())
-                            .replace("%time%", if (format.startsWith("0")) format.substring(1) else format)
+                    MessageScheduler.sendTempMessage(1000 * 60, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
+                            .replace("%user%", event.author.name.toLowerCase())
+                            .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
                     )
                 }
             }
@@ -122,7 +123,7 @@ object CommandHandler {
     fun tryDelete(msg: IMessage) {
         RequestBuffer.request {
             try {
-                    msg.delete()
+                msg.delete()
             } catch (e: MissingPermissionsException) {
             } catch (e: DiscordException) {
             }

@@ -22,11 +22,12 @@ object Play : Command {
     override val cooldownMillis: Long = 1000 * 60 * 10
     override val votes: Boolean = true
     override val description = "Plays audio in the voice channel"
-    override val usageText: String = "-play [videoUrl]"
+    override val usageText: String = "-play <videoUrl>"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel?: return CommandResult.fail("i cant do that unless youre in a voice channel")
+        if (args.size != 1) return CommandResult.fail("thats not how you use that command $usageText")
         return play(userVoiceChannel, args[0], event.messageID)
     }
 

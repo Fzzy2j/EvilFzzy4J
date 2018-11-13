@@ -1,6 +1,6 @@
 package me.fzzy.robofzzy4j.listeners
 
-import me.fzzy.robofzzy4j.cli
+import me.fzzy.robofzzy4j.RoboFzzy
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IVoiceChannel
@@ -21,7 +21,7 @@ object VoiceListener {
     fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
         if (!interupt) {
             val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
-            if (!channel.connectedUsers.contains(cli.ourUser) && audioP.currentTrack == null)
+            if (!channel.connectedUsers.contains(RoboFzzy.cli.ourUser) && audioP.currentTrack == null)
                 channel.join()
 
             try {
@@ -56,9 +56,9 @@ object VoiceListener {
         if (event.track.metadata.containsKey("fzzyVolume"))
             event.player.volume = event.track.metadata["fzzyVolume"] as Float
         if (event.track.metadata.containsKey("fzzyChannel")) {
-            val channel = cli.getVoiceChannelByID(event.track.metadata["fzzyChannel"] as Long)
-            if (!channel.connectedUsers.contains(cli.ourUser))
-                cli.ourUser.moveToVoiceChannel(channel)
+            val channel = RoboFzzy.cli.getVoiceChannelByID(event.track.metadata["fzzyChannel"] as Long)
+            if (!channel.connectedUsers.contains(RoboFzzy.cli.ourUser))
+                RoboFzzy.cli.ourUser.moveToVoiceChannel(channel)
         }
         if (event.track.metadata.containsKey("fzzyTimeSeconds")) {
             if (event.track.metadata["fzzyTimeSeconds"] as Int > 0) {
@@ -66,7 +66,7 @@ object VoiceListener {
                 Thread {
                     while (true) {
                         Thread.sleep(1000)
-                        val message = cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
+                        val message = RoboFzzy.cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
 
                         if (message != null) {
                             if (overrides.contains(message.longID)) {
@@ -96,14 +96,14 @@ object VoiceListener {
     @EventSubscriber
     fun onTrackSkip(event: TrackSkipEvent) {
         if (event.nextTrack == null && !interupt) {
-            cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
+            RoboFzzy.cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
         }
     }
 
     @EventSubscriber
     fun onTrackEnd(event: TrackFinishEvent) {
         if (!event.newTrack.isPresent && !interupt) {
-            cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
+            RoboFzzy.cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
         }
     }
 

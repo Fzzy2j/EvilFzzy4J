@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
 
 object Override : Command {
@@ -13,7 +14,7 @@ object Override : Command {
     override val allowDM = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-        if (event.author.longID != cli.applicationOwner.longID) return CommandResult.fail("This command is only for the bot owner!")
+        if (event.author.longID != RoboFzzy.cli.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${RoboFzzy.cli.applicationOwner.name}")
 
         when (args[0].toLowerCase()) {
             "volume" -> {
@@ -26,14 +27,9 @@ object Override : Command {
                 AudioPlayer.getAudioPlayerForGuild(event.guild).skip()
             }
             "cooldowns" -> {
-                User.getUser(args[1].toLong()).cooldowns.clearCooldowns()
-            }
-            "play" -> {
-                for (voice in event.guild.voiceChannels) {
-                    if (voice.name.toLowerCase().startsWith(args[1].toLowerCase())) {
-                        VoiceListener.overrides.add(event.messageID)
-                        return Play.play(voice, args[2], event.messageID)
-                    }
+                User.getUser(args[1].toLong()).cooldown.clearCooldown()
+                RequestBuffer.request {
+                    event.channel.sendMessage("okay ${event.author.name.toLowerCase()}! i reset ${RoboFzzy.cli.getUserByID(args[1].toLong()).name.toLowerCase()}s cooldown value just like you asked")
                 }
             }
             "allowvotes" -> {

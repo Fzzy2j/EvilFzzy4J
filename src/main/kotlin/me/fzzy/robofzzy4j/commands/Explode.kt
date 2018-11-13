@@ -10,6 +10,7 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 import java.net.URL
+import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
@@ -41,7 +42,7 @@ object Explode : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "this image has no framerate to it, i cant work with it") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "this image has no framerate to it, i cant work with it") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
@@ -58,14 +59,22 @@ object Explode : Command {
             convert.run(op)
 
             val fileList = tempFile.list()
+            val futureList = arrayListOf<Future<*>>()
+            val frames = hashMapOf<Int, String>()
             for (i in 0 until fileList.size) {
-                val listFile = fileList[i]
+                futureList.add(RoboFzzy.executor.submit {
+                    val listFile = fileList[i]
 
-                // https://www.desmos.com/calculator/gztrr4yh2w
-                val initialSize = 1.0
-                val sizeAmt = -(i / (fileList.size.toDouble() / (initialSize - finalSize))) + initialSize
-                resize(File("${tempFile.absolutePath}/$listFile"), sizeAmt)
+                    // https://www.desmos.com/calculator/gztrr4yh2w
+                    val initialSize = 1.0
+                    val sizeAmt = -(i / (fileList.size.toDouble() / (initialSize - finalSize))) + initialSize
+                    resize(File("${tempFile.absolutePath}/$listFile"), sizeAmt)
+                })
             }
+            for (future in futureList)
+                future.get()
+            for (i in 0 until fileList.size)
+                op.addImage(frames[i])
 
             op = IMOperation()
 
@@ -106,17 +115,25 @@ object Explode : Command {
             val tempPath = File("cache/${file.nameWithoutExtension}")
             tempPath.mkdirs()
             val frameCount = 20
+            val futureList = arrayListOf<Future<*>>()
+            val frames = hashMapOf<Int, String>()
             for (i in 0..frameCount) {
-                val child = "temp$i.${file.extension}"
-                val warpFile = File(tempPath, child)
-                FileUtils.copyFile(file, warpFile)
+                futureList.add(RoboFzzy.executor.submit {
+                    val child = "temp$i.${file.extension}"
+                    val warpFile = File(tempPath, child)
+                    FileUtils.copyFile(file, warpFile)
 
-                // https://www.desmos.com/calculator/gztrr4yh2w
-                val initialSize = 1.0
-                val sizeAmt = -(i / (frameCount.toDouble() / (initialSize - finalSize))) + initialSize
-                resize(warpFile, sizeAmt)
-                op.addImage(warpFile.absolutePath)
+                    // https://www.desmos.com/calculator/gztrr4yh2w
+                    val initialSize = 1.0
+                    val sizeAmt = -(i / (frameCount.toDouble() / (initialSize - finalSize))) + initialSize
+                    resize(warpFile, sizeAmt)
+                    frames[i] = warpFile.absolutePath
+                })
             }
+            for (future in futureList)
+                future.get()
+            for (i in 0..frameCount)
+                op.addImage(frames[i])
             val result = File("cache/${file.nameWithoutExtension}.gif")
             op.addImage(result.absolutePath)
 

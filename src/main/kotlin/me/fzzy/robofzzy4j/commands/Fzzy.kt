@@ -2,6 +2,8 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.Guild.Companion.getGuild
+import me.fzzy.robofzzy4j.util.seam.BufferedImagePicture
+import me.fzzy.robofzzy4j.util.seam.SeamCarver
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import org.im4java.core.Info
@@ -10,6 +12,7 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 import java.net.URL
+import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
@@ -27,7 +30,8 @@ object Fzzy : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("i couldnt find any images in the last 10 messages")
+        val url: URL = ImageFuncs.getFirstImage(history)
+                ?: return CommandResult.fail("i couldnt find any images in the last 10 messages")
         val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the iamge")
 
         var tempFile: File? = null
@@ -37,7 +41,7 @@ object Fzzy : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
@@ -55,9 +59,14 @@ object Fzzy : Command {
 
             convert.run(op)
 
+            val futureList = arrayListOf<Future<*>>()
             for (listFile in tempFile.list()) {
-                resize(File("cache/${tempFile.nameWithoutExtension}/$listFile"))
+                futureList.add(RoboFzzy.executor.submit {
+                    resize(File("cache/${tempFile.nameWithoutExtension}/$listFile"))
+                })
             }
+            for (future in futureList)
+                future.get()
 
             op = IMOperation()
 
@@ -95,6 +104,13 @@ object Fzzy : Command {
     }
 
     fun resize(file: File) {
+        /*val picture = BufferedImagePicture.readFromFile(file.absolutePath)
+        val carver = SeamCarver()
+        val startTime = System.currentTimeMillis()
+        val resize = carver.resize(picture, picture.width / 3, picture.height / 3)
+        println("carved in ${System.currentTimeMillis() - startTime}ms")
+        return resize*/
+        val startTime = System.currentTimeMillis()
         val sizeHelper = ImageIO.read(file)
         val op = IMOperation()
         val convert = ConvertCmd()
@@ -118,6 +134,7 @@ object Fzzy : Command {
         op.addImage(file.absolutePath)
 
         convert.run(op)
+        println("carved in ${System.currentTimeMillis() - startTime}ms")
     }
 
 }

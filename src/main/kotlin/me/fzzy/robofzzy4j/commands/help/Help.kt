@@ -16,7 +16,7 @@ object Help : Command {
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var helpMsg = "```md\n# <> = required | [] = optional\n\n"
         for ((_, command) in CommandHandler.getAllCommands()) {
-            helpMsg += "${command.usageText} : ${command.cooldownMillis / 1000} seconds : ${command.description}\n"
+            helpMsg += "${command.usageText}\n${command.description} : ${command.cooldownMillis / 1000} second cooldown\n\n"
         }
         helpMsg += "```"
         RequestBuffer.request { event.author.orCreatePMChannel.sendMessage(helpMsg) }

@@ -26,9 +26,9 @@ object MessageListener {
     fun onMessageReceived(event: MessageReceivedEvent) {
         if (Funcs.mentionsByName(event.message)) {
             for (msg in event.channel.getMessageHistory(3)) {
-                if (msg.author.longID == cli.ourUser.longID) {
+                if (msg.author.longID == RoboFzzy.cli.ourUser.longID) {
                     RequestBuffer.request {
-                        event.channel.sendMessage(respongeMsgs[random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild)))
+                        event.channel.sendMessage(respongeMsgs[RoboFzzy.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild)))
                     }
                     break
                 }

@@ -25,7 +25,7 @@ class User private constructor(val id: Long) {
         }
     }
 
-    val cooldowns: Cooldown = Cooldown()
+    val cooldown: Cooldown = Cooldown()
 
     var runningCommand = false
 
