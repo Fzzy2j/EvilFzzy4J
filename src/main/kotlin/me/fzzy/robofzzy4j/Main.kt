@@ -93,6 +93,7 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("meme", Meme)
     CommandHandler.registerCommand("play", Play)
     CommandHandler.registerCommand("tts", Tts)
+    CommandHandler.registerCommand("vote", Vote)
 
     CommandHandler.registerCommand("getmeme", GetMeme)
 
@@ -148,6 +149,7 @@ fun main(args: Array<String>) {
     RoboFzzy.cli.dispatcher.registerListener(StateListener)
     RoboFzzy.cli.dispatcher.registerListener(Sounds)
     RoboFzzy.cli.dispatcher.registerListener(CommandHandler)
+    RoboFzzy.cli.dispatcher.registerListener(Vote)
 
     Discord4J.LOGGER.info("Logging in.")
 

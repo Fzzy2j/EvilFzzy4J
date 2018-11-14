@@ -2,8 +2,6 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.Guild.Companion.getGuild
-import me.fzzy.robofzzy4j.util.seam.BufferedImagePicture
-import me.fzzy.robofzzy4j.util.seam.SeamCarver
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import org.im4java.core.Info
@@ -104,12 +102,6 @@ object Fzzy : Command {
     }
 
     fun resize(file: File) {
-        /*val picture = BufferedImagePicture.readFromFile(file.absolutePath)
-        val carver = SeamCarver()
-        val startTime = System.currentTimeMillis()
-        val resize = carver.resize(picture, picture.width / 3, picture.height / 3)
-        println("carved in ${System.currentTimeMillis() - startTime}ms")
-        return resize*/
         val startTime = System.currentTimeMillis()
         val sizeHelper = ImageIO.read(file)
         val op = IMOperation()

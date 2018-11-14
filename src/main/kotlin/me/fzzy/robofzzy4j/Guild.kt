@@ -88,10 +88,10 @@ class Guild private constructor(private var guildId: Long) {
                 "- $name #$rank CDR=${User.getUser(id).getCooldownModifier(this)}%\n"
         }
         message += "```"
-        if (existingMessage != null)
+        /*if (existingMessage != null)
             RequestBuffer.request { existingMessage.edit(message) }
         else
-            RequestBuffer.request { channel.sendMessage(message) }
+            RequestBuffer.request { channel.sendMessage(message) }*/
     }
 
     fun addPoint(message: IMessage, user: IUser, channel: IChannel) {

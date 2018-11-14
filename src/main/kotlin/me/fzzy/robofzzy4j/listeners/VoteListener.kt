@@ -5,6 +5,7 @@ import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionAddEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
 import sx.blah.discord.handle.obj.IMessage
+import sx.blah.discord.handle.obj.IUser
 
 object VoteListener {
 
@@ -18,6 +19,22 @@ object VoteListener {
             if (user.longID != message.author.longID) downvotes++
         }
         return upvotes - downvotes
+    }
+
+    fun getUpvoters(message: IMessage): List<IUser> {
+        val list = arrayListOf<IUser>()
+        for (user in message.getReactionByEmoji(RoboFzzy.UPVOTE_EMOJI).users) {
+            if (user.longID != message.author.longID) list.add(user)
+        }
+        return list
+    }
+
+    fun getDownvoters(message: IMessage): List<IUser> {
+        val list = arrayListOf<IUser>()
+        for (user in message.getReactionByEmoji(RoboFzzy.DOWNVOTE_EMOJI).users) {
+            if (user.longID != message.author.longID) list.add(user)
+        }
+        return list
     }
 
     @EventSubscriber
