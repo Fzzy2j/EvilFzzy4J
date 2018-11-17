@@ -14,6 +14,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 import java.util.regex.Pattern
+import javax.persistence.Entity
 import kotlin.math.roundToInt
 
 class Guild private constructor(private var guildId: Long) {
@@ -96,7 +97,8 @@ class Guild private constructor(private var guildId: Long) {
 
     fun addPoint(message: IMessage, user: IUser, channel: IChannel) {
         val score = leaderboard.getOrDefault(user.longID, 0)
-        handleChanges(leaderboard.setValue(user.longID, score + 1), channel)
+        if (!user.isBot)
+            handleChanges(leaderboard.setValue(user.longID, score + 1), channel)
         votes++
 
         if (VoteListener.getVotes(message) > getAverageVote()) {
@@ -164,7 +166,8 @@ class Guild private constructor(private var guildId: Long) {
 
     fun subtractPoint(user: IUser, channel: IChannel) {
         val score = leaderboard.getOrDefault(user.longID, 0)
-        handleChanges(leaderboard.setValue(user.longID, score - 1), channel)
+        if (!user.isBot)
+            handleChanges(leaderboard.setValue(user.longID, score - 1), channel)
         votes--
     }
 
@@ -214,7 +217,12 @@ class Guild private constructor(private var guildId: Long) {
     fun load() {
         leaderboard = Leaderboard()
         for (node in RoboFzzy.guildNode.getNode("id$guildId", "votes").childrenList) {
-            leaderboard.setValue(node.getNode("id").long, node.getNode("value").int)
+            if (try {
+                        !RoboFzzy.cli.getUserByID(node.getNode("id").long).isBot
+                    } catch (e: Exception) {
+                        true
+                    })
+                leaderboard.setValue(node.getNode("id").long, node.getNode("value").int)
         }
         votes = RoboFzzy.guildNode.getNode("id$guildId", "totalVotes").int
         posts = RoboFzzy.guildNode.getNode("id$guildId", "totalPosts").int

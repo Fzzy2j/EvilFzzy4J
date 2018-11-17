@@ -11,6 +11,7 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.Reactio
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
+import sx.blah.discord.handle.obj.IUser
 import sx.blah.discord.util.RequestBuffer
 
 object Vote : Command {
@@ -25,7 +26,7 @@ object Vote : Command {
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         if (args.isEmpty()) return CommandResult.fail("i should really put a message on that $usageText")
-        updateOrSendAttendanceMessage(event.channel, args.joinToString(" "))
+        sendAttendanceMessage(event.channel, args.joinToString(" "))
         return CommandResult.success()
     }
 
@@ -42,38 +43,35 @@ object Vote : Command {
         return msg.substring(BEGINNING.length, msg.indexOf("\n\nYeah\n"))
     }
 
-    fun updateOrSendAttendanceMessage(channel: IChannel, message: String = "") {
-        val msg = getAttendanceMessage(channel)
-        var content = message
-        if (msg != null) {
-            content = extractMessage(msg.content)
-        }
-        var t = "$BEGINNING$content"
+    fun updateAttendanceMessage(msg: IMessage, message: String = extractMessage(msg.content)) {
+        val yeahs = VoteListener.getUpvoters(msg)
+        val nos = VoteListener.getDownvoters(msg)
+        RequestBuffer.request { msg.edit(generateVoteMessage(message, yeahs, nos)) }
+    }
+
+    fun sendAttendanceMessage(channel: IChannel, message: String) {
+        RequestBuffer.request { Guild.getGuild(channel.guild).allowVotes(channel.sendMessage(generateVoteMessage(message))) }
+    }
+
+    fun generateVoteMessage(message: String, yeahs: List<IUser> = listOf(), nos: List<IUser> = listOf()): String {
+        var t = "$BEGINNING$message"
         t += "\n\nYeah\n"
-        if (msg != null) {
-            for (attend in VoteListener.getUpvoters(msg)) {
-                t += "+ ${attend.name}\n"
-            }
+        for (attend in yeahs) {
+            t += "+ ${attend.name}\n"
         }
         t += "\n\nNo\n"
-        if (msg != null) {
-            for (noshow in VoteListener.getDownvoters(msg)) {
-                t += "- ${noshow.name}\n"
-            }
+        for (noshow in nos) {
+            t += "- ${noshow.name}\n"
         }
         t += "```"
-        if (msg == null) {
-            RequestBuffer.request { Guild.getGuild(channel.guild).allowVotes(channel.sendMessage(t)) }
-        } else {
-            RequestBuffer.request { msg.edit(t) }
-        }
+        return t
     }
 
     @EventSubscriber
     fun onReactionAdd(event: ReactionAddEvent) {
         if (event.message.author.longID == RoboFzzy.cli.ourUser.longID && !event.user.isBot) {
             if (getAttendanceMessage(event.channel) != null)
-                updateOrSendAttendanceMessage(event.channel)
+                updateAttendanceMessage(event.message)
         }
     }
 
@@ -81,7 +79,7 @@ object Vote : Command {
     fun onReactionRemove(event: ReactionRemoveEvent) {
         if (event.message.author.longID == RoboFzzy.cli.ourUser.longID && !event.user.isBot) {
             if (getAttendanceMessage(event.channel) != null)
-                updateOrSendAttendanceMessage(event.channel)
+                updateAttendanceMessage(event.message)
         }
     }
 }

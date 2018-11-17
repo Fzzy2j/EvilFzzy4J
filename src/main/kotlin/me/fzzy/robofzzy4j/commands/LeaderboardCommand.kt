@@ -2,6 +2,7 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.EmbedBuilder
 import sx.blah.discord.util.RequestBuffer
 
@@ -12,6 +13,8 @@ object LeaderboardCommand : Command {
     override val description = "shows the vote leaderboard"
     override val usageText: String = "-leaderboard"
     override val allowDM: Boolean = false
+
+    const val title = "LEADERBOARD - resets every monday"
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         val builder = EmbedBuilder()
@@ -27,13 +30,25 @@ object LeaderboardCommand : Command {
             }
         }
 
-        builder.withAuthorName("LEADERBOARD - resets every monday")
-        builder.withAuthorIcon(RoboFzzy.cli.ourUser.avatarURL)
+        builder.withTitle(title)
 
         builder.withColor(0, 200, 255)
         builder.withThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
 
-        RequestBuffer.request { Funcs.sendEmbed(event.channel, builder.build()) }
+        var existingLeaderboard: IMessage? = null
+        for (msg in event.channel.getMessageHistory(5)) {
+            if (msg.embeds.isEmpty()) continue
+            if (msg.author.longID != RoboFzzy.cli.ourUser.longID) continue
+            if (msg.embeds[0].title == title) {
+                existingLeaderboard = msg
+                break
+            }
+        }
+
+        if (existingLeaderboard != null)
+            RequestBuffer.request { existingLeaderboard.edit(builder.build()) }
+        else
+            RequestBuffer.request { Funcs.sendEmbed(event.channel, builder.build()) }
         return CommandResult.success()
     }
 

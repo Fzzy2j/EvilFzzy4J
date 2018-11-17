@@ -21,6 +21,7 @@ import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
+import org.hibernate.cfg.Configuration
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
