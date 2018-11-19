@@ -14,7 +14,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 import java.util.regex.Pattern
-import javax.persistence.Entity
 import kotlin.math.roundToInt
 
 class Guild private constructor(private var guildId: Long) {

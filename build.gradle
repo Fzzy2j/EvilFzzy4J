@@ -20,6 +20,13 @@ allprojects {
     }
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'me.fzzy.robofzzy4j.MainKt'
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
 dependencies {
     compile 'com.google.api-client:google-api-client:1.23.0'
     compile 'com.google.oauth-client:google-oauth-client-jetty:1.23.0'

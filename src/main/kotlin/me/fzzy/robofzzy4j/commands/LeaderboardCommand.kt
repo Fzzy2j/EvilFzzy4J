@@ -14,7 +14,7 @@ object LeaderboardCommand : Command {
     override val usageText: String = "-leaderboard"
     override val allowDM: Boolean = false
 
-    const val title = "LEADERBOARD - resets every monday"
+    private const val title = "LEADERBOARD - resets every monday"
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         val builder = EmbedBuilder()

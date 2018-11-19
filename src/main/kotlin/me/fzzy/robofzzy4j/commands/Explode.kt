@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import org.im4java.core.Info
+import org.im4java.core.MogrifyCmd
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
@@ -71,8 +72,12 @@ object Explode : Command {
                     resize(File("${tempFile.absolutePath}/$listFile"), sizeAmt)
                 })
             }
-            for (future in futureList)
+            var progress = 0
+            futureList.forEach { future ->
                 future.get()
+                progress++
+                println("${(progress / futureList.size) * 100}%")
+            }
             for (i in 0 until fileList.size)
                 op.addImage(frames[i])
 
@@ -94,6 +99,7 @@ object Explode : Command {
             }
 
             op.addImage(file.absolutePath)
+
 
             convert.run(op)
         } else {
@@ -130,8 +136,12 @@ object Explode : Command {
                     frames[i] = warpFile.absolutePath
                 })
             }
-            for (future in futureList)
+            var progress = 0
+            futureList.forEach { future ->
                 future.get()
+                progress++
+                println("${(progress / futureList.size) * 100}%")
+            }
             for (i in 0..frameCount)
                 op.addImage(frames[i])
             val result = File("cache/${file.nameWithoutExtension}.gif")
@@ -148,6 +158,7 @@ object Explode : Command {
             try {
                 Funcs.sendFile(event.channel, file)
             } catch (e: Exception) {
+                event.channel.sendMessage("i couldnt send the file, sorry")
             }
             file.delete()
             tempFile?.deleteRecursively()
