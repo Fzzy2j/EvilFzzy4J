@@ -6,7 +6,6 @@ import me.fzzy.robofzzy4j.thread.Task
 import me.fzzy.robofzzy4j.commands.*
 import me.fzzy.robofzzy4j.commands.help.*
 import me.fzzy.robofzzy4j.listeners.MessageListener
-import me.fzzy.robofzzy4j.listeners.StateListener
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.listeners.VoteListener
 import me.fzzy.robofzzy4j.thread.Authentication
@@ -22,6 +21,9 @@ import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
+import sx.blah.discord.handle.obj.ActivityType
+import sx.blah.discord.handle.obj.StatusType
+import sx.blah.discord.util.RequestBuffer
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -138,6 +140,7 @@ fun main(args: Array<String>) {
             Guild.clearLeaderboards()
         }
         Guild.saveAll()
+        RequestBuffer.request { RoboFzzy.cli.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${RoboFzzy.BOT_PREFIX}help") }
     }, 60, true))
 
     Discord4J.LOGGER.info("Registering events.")
@@ -146,7 +149,6 @@ fun main(args: Array<String>) {
     RoboFzzy.cli.dispatcher.registerListener(VoteListener)
     RoboFzzy.cli.dispatcher.registerListener(MessageListener)
     RoboFzzy.cli.dispatcher.registerListener(VoiceListener)
-    RoboFzzy.cli.dispatcher.registerListener(StateListener)
     RoboFzzy.cli.dispatcher.registerListener(Sounds)
     RoboFzzy.cli.dispatcher.registerListener(CommandHandler)
     RoboFzzy.cli.dispatcher.registerListener(Vote)
