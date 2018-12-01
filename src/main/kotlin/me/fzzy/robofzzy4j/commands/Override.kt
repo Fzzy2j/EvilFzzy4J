@@ -2,6 +2,8 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.thread.IndividualTask
+import me.fzzy.robofzzy4j.thread.Task
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
@@ -27,9 +29,19 @@ object Override : Command {
                 AudioPlayer.getAudioPlayerForGuild(event.guild).skip()
             }
             "cooldowns" -> {
-                User.getUser(args[1].toLong()).cooldown.clearCooldown()
+                Task.registerTask(IndividualTask({
+                    User.getUser(args[1].toLong()).cooldown.clearCooldown()
+                }, 1, false))
+                val messages = listOf(
+                        "okay %author%! i reset %target%s cooldown!",
+                        "i guess ill do that if you want me to. i reset %target%s cooldown",
+                        "already done. %target%s cooldown is reset"
+                )
                 RequestBuffer.request {
-                    event.channel.sendMessage("okay ${event.author.name.toLowerCase()}! i reset ${RoboFzzy.cli.getUserByID(args[1].toLong()).name.toLowerCase()}s cooldown value just like you asked")
+                    event.channel.sendMessage(messages[RoboFzzy.random.nextInt(messages.size)]
+                            .replace("%target%", RoboFzzy.cli.getUserByID(args[1].toLong()).name.toLowerCase())
+                            .replace("%author%", event.author.name.toLowerCase())
+                    )
                 }
             }
             "allowvotes" -> {

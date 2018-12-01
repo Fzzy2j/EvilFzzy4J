@@ -30,12 +30,12 @@ object Tts : Command {
             text = text.substring(1)
             val fileName = "cache/${System.currentTimeMillis()}.mp3"
             val speech = Funcs.getTextToSpeech(text) ?: return CommandResult.fail("the text to speech api didnt work for some reason")
-            FileUtils.writeByteArrayToFile(File(fileName), speech)
             val sound = File(fileName)
+            FileUtils.writeByteArrayToFile(sound, speech)
             val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
             if (userVoiceChannel != null) {
                 if (VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F, 40, 20, event.messageID) == null)
-                    return CommandResult.fail("i couldnt play the audio for some reason")
+                    return CommandResult.fail("im sorry, something went wrong when i tried to do that")
             } else
                 return CommandResult.fail("i cant do that if youre not in a voice channel")
         } else

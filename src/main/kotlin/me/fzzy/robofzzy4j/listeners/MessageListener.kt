@@ -15,11 +15,12 @@ import java.util.regex.Pattern
 object MessageListener {
 
     val respongeMsgs = listOf(
-            "No problem %name%!",
-            "Anytime %name%!",
+            "just trying to help %name%",
+            "no problem %name%!",
+            "anytime %name%!",
             ":D",
             ":3",
-            ":^)"
+            "<3"
     )
 
     @EventSubscriber

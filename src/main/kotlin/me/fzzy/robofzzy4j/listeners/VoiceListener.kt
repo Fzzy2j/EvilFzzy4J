@@ -1,6 +1,8 @@
 package me.fzzy.robofzzy4j.listeners
 
 import me.fzzy.robofzzy4j.RoboFzzy
+import me.fzzy.robofzzy4j.thread.IndividualTask
+import me.fzzy.robofzzy4j.thread.Task
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IVoiceChannel
@@ -10,6 +12,7 @@ import sx.blah.discord.util.audio.events.TrackSkipEvent
 import sx.blah.discord.util.audio.events.TrackStartEvent
 import java.io.File
 import java.io.IOException
+import java.lang.NullPointerException
 import java.util.*
 import javax.sound.sampled.UnsupportedAudioFileException
 
@@ -21,6 +24,7 @@ object VoiceListener {
     fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
         if (!interupt) {
             val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
+            if (!file.exists()) return null
             if (!channel.connectedUsers.contains(RoboFzzy.cli.ourUser) && audioP.currentTrack == null)
                 channel.join()
 
@@ -34,10 +38,9 @@ object VoiceListener {
                 track.metadata["fzzyTimeAdjustment"] = playTimeAdjustment
                 track.metadata["fzzyMessageId"] = messageId
                 return id
-            } catch (e: IOException) {
-                // File not found
-            } catch (e: UnsupportedAudioFileException) {
+            } catch (e: Exception) {
                 e.printStackTrace()
+                Task.registerTask(IndividualTask({ channel.leave() }, 2, false))
             }
             if (delete)
                 file.delete()
