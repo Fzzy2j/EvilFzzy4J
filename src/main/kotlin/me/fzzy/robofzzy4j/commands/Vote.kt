@@ -22,7 +22,7 @@ object Vote : Command {
     override val usageText: String = "-vote [message]"
     override val allowDM: Boolean = false
 
-    private const val BEGINNING = "```diff\n- Votes - "
+    private const val BEGINNING = "```diff\n- Vote - "
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         if (args.isEmpty()) return CommandResult.fail("i should really put a message on that $usageText")

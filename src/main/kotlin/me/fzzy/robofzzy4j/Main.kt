@@ -117,7 +117,7 @@ fun main(args: Array<String>) {
     }
 
     for (file in File("cache").listFiles()) {
-        file.delete()
+        file.deleteRecursively()
     }
 
     Discord4J.LOGGER.info("Starting scheduler.")
@@ -127,11 +127,6 @@ fun main(args: Array<String>) {
     Discord4J.LOGGER.info("Starting auto-saver.")
 
     Task.registerTask(IndividualTask({
-        try {
-            if (!RoboFzzy.cli.isLoggedIn)
-                RoboFzzy.cli.login()
-        } catch (e: DiscordException) {
-        }
 
         val day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
         if (day == Calendar.MONDAY && System.currentTimeMillis() - RoboFzzy.dataNode.getNode("leaderboardResetTimestamp").long > 48 * 60 * 60 * 1000) {
@@ -157,6 +152,5 @@ fun main(args: Array<String>) {
 
     RoboFzzy.cli.login()
 }
-
 
 

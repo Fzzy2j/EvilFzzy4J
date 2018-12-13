@@ -18,7 +18,6 @@ import javax.sound.sampled.UnsupportedAudioFileException
 
 object VoiceListener {
 
-
     var interupt = false
 
     fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {

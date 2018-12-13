@@ -111,7 +111,7 @@ object CommandHandler {
                         "sorry %user%, i cant let you use that command for another %time%"
                 )
                 RequestBuffer.request {
-                    MessageScheduler.sendTempMessage(1000 * 60, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
+                    MessageScheduler.sendTempMessage(trueCooldown - timePassedCommand, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
                             .replace("%user%", event.author.name.toLowerCase())
                             .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
                     )

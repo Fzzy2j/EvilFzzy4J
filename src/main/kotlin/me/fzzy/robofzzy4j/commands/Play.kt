@@ -1,13 +1,13 @@
 package me.fzzy.robofzzy4j.commands
 
 import com.commit451.youtubeextractor.YouTubeExtractor
+import com.google.api.client.auth.oauth2.Credential
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.Discord4J
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IVoiceChannel
-import sx.blah.discord.util.audio.AudioPlayer
 import ws.schild.jave.*
 import java.io.IOException
 import java.io.FileOutputStream
@@ -26,19 +26,23 @@ object Play : Command {
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-        val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel?: return CommandResult.fail("i cant do that unless youre in a voice channel")
-        if (args.size != 1) return CommandResult.fail("thats not how you use that command $usageText")
-        return play(userVoiceChannel, args[0], event.messageID)
+
+        val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
+                ?: return CommandResult.fail("i cant do that unless youre in a voice channel")
+        if (args.isEmpty()) return CommandResult.fail("thats not how you use that command $usageText")
+
+        val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[0])
+
+        var id = try {
+            if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]
+        } catch (e: Exception) {
+            return CommandResult.fail("i couldnt get that videos id")
+        }
+
+        return play(userVoiceChannel, id, event.messageID)
     }
 
-    fun play(channel: IVoiceChannel, videoUrl: String, messageId: Long): CommandResult {
-        val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(videoUrl)
-        val id: String
-        try {
-            id = if (matcher.find()) matcher.group(0) else videoUrl.split(".be/")[1]
-        } catch (e: Exception) {
-            return CommandResult.fail("thats not how you use that command $usageText")
-        }
+    fun play(channel: IVoiceChannel, id: String, messageId: Long, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {
         val extraction = YouTubeExtractor.Builder().build().extract(id).blockingGet()
         if (extraction.lengthSeconds!! <= 60 * 10) {
             for (stream in extraction.videoStreams) {
@@ -89,8 +93,8 @@ object Play : Command {
 
                 outputFile.delete()
 
-                    VoiceListener.playTempAudio(channel, target, true, 0.3F, 60, 40, messageId)
-                            ?: return CommandResult.fail("i couldnt play that audio for some reason")
+                VoiceListener.playTempAudio(channel, target, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
+                        ?: return CommandResult.fail("i couldnt play that audio for some reason")
                 break
             }
         } else
