@@ -13,7 +13,6 @@ import org.im4java.process.ProcessStarter
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
-import sx.blah.discord.util.DiscordException
 import java.io.File
 import java.util.*
 import ninja.leaping.configurate.ConfigurationNode
