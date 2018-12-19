@@ -9,7 +9,7 @@ import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
 
 object Override : Command {
-    override val cooldownMillis = 2000L
+    override val cooldownMillis = 0L
     override val description = "Only for bot owner, for modifying values in the bot"
     override val votes = false
     override val usageText = "-override <command>"

@@ -19,6 +19,8 @@ import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
+import sx.blah.discord.api.events.EventSubscriber
+import sx.blah.discord.handle.impl.events.ReadyEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
@@ -57,6 +59,15 @@ object RoboFzzy {
     const val THREAD_COUNT = 12
 
     lateinit var executor: ExecutorService
+
+    @EventSubscriber
+    fun onReady(event: ReadyEvent) {
+        Discord4J.LOGGER.info("list of current guilds:")
+        for (guild in event.client.guilds) {
+            Discord4J.LOGGER.info(guild.name)
+        }
+        RequestBuffer.request { RoboFzzy.cli.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${RoboFzzy.BOT_PREFIX}help") }
+    }
 }
 
 fun main(args: Array<String>) {
@@ -146,6 +157,7 @@ fun main(args: Array<String>) {
     RoboFzzy.cli.dispatcher.registerListener(Sounds)
     RoboFzzy.cli.dispatcher.registerListener(CommandHandler)
     RoboFzzy.cli.dispatcher.registerListener(Vote)
+    RoboFzzy.cli.dispatcher.registerListener(RoboFzzy)
 
     Discord4J.LOGGER.info("Logging in.")
 

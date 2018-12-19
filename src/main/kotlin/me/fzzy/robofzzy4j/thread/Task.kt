@@ -2,7 +2,7 @@ package me.fzzy.robofzzy4j.thread
 
 import java.util.*
 
-class IndividualTask constructor(var toRun: () -> Unit, var intervalSeconds: Int, var repeat: Boolean)
+class IndividualTask constructor(var toRun: () -> Unit, var delaySeconds: Int, var repeat: Boolean)
 
 object Task : Thread() {
 
@@ -18,7 +18,7 @@ object Task : Thread() {
             Thread.sleep(1000)
 
             for ((task, time) in tasks) {
-                if ((System.currentTimeMillis() - time) / 1000 > task.intervalSeconds) {
+                if ((System.currentTimeMillis() - time) / 1000 > task.delaySeconds) {
                     try {
                         task.toRun.invoke()
                     } catch (e: Exception) {
