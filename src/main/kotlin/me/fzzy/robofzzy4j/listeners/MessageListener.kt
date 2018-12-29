@@ -15,12 +15,10 @@ import java.util.regex.Pattern
 object MessageListener {
 
     val respongeMsgs = listOf(
-            "just trying to help %name%",
             "no problem %name%!",
             "anytime %name%!",
             ":D",
-            ":3",
-            "<3"
+            ":3"
     )
 
     @EventSubscriber
@@ -29,7 +27,7 @@ object MessageListener {
             for (msg in event.channel.getMessageHistory(3)) {
                 if (msg.author.longID == RoboFzzy.cli.ourUser.longID) {
                     RequestBuffer.request {
-                        event.channel.sendMessage(respongeMsgs[RoboFzzy.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild)))
+                        MessageScheduler.sendTempMessage(10000, event.channel, respongeMsgs[RoboFzzy.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild).toLowerCase()))
                     }
                     break
                 }

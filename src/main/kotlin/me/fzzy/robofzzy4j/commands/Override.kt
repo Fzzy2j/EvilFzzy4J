@@ -45,7 +45,12 @@ object Override : Command {
                 }
             }
             "allowvotes" -> {
-                Guild.getGuild(event.guild).allowVotes(event.guild.getMessageByID(args[1].toLong()))
+                for (message in event.channel.getMessageHistory(15)) {
+                    if (message.longID == args[1].toLong()) {
+                        Guild.getGuild(event.guild).allowVotes(message)
+                        break
+                    }
+                }
             }
         }
 
