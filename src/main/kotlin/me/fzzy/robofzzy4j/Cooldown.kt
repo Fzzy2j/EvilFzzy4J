@@ -2,14 +2,20 @@ package me.fzzy.robofzzy4j
 
 class Cooldown {
 
+    private var cooldownStamp: Long = 0
     private var cooldown: Long = 0
 
-    fun triggerCooldown() {
-        cooldown = System.currentTimeMillis()
+    fun triggerCooldown(time: Long) {
+        cooldown = time
+        cooldownStamp = System.currentTimeMillis()
     }
 
-    fun getTimePassedMillis(): Long {
-        return System.currentTimeMillis() - cooldown
+    fun timeLeft(scale: Double): Long {
+        return System.currentTimeMillis() - cooldownStamp + (cooldown * scale).toLong()
+    }
+
+    fun isReady(scale: Double): Boolean {
+        return System.currentTimeMillis() > cooldownStamp + (cooldown * scale)
     }
 
     fun clearCooldown() {

@@ -65,15 +65,7 @@ object CommandHandler {
             val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
 
-            var trueCooldown = command.cooldownMillis
-            val timePassedCommand = user.cooldown.getTimePassedMillis()
-            if (event.guild != null) {
-                val guild = Guild.getGuild(event.guild)
-                trueCooldown = command.cooldownMillis * ((100 - user.getCooldownModifier(guild)) / 100.0).roundToInt()
-            }
-
-            if (timePassedCommand > trueCooldown) {
-
+            if (user.cooldown.isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
                 if (!user.runningCommand) {
                     user.runningCommand = true
                     if (!command.votes) tryDelete(event.message)
@@ -85,7 +77,7 @@ object CommandHandler {
                                 CommandResult.fail("Command failed $e")
                             }
                             if (result.isSuccess()) {
-                                user.cooldown.triggerCooldown()
+                                user.cooldown.triggerCooldown(command.cooldownMillis)
                                 if (command.votes && event.guild != null)
                                     Guild.getGuild(event.guild).allowVotes(event.message)
                             } else {
@@ -103,7 +95,7 @@ object CommandHandler {
                 }
             } else {
                 tryDelete(event.message)
-                val timeLeft = Math.ceil((trueCooldown - timePassedCommand) / 1000.0 / 60.0).roundToInt()
+                val timeLeft = Math.ceil((user.cooldown.timeLeft((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) / 1000.0 / 60.0).roundToInt()
 
                 val messages = arrayOf(
                         "%user% you can use that command in %time%",
@@ -111,7 +103,7 @@ object CommandHandler {
                         "sorry %user%, i cant let you use that command for another %time%"
                 )
                 RequestBuffer.request {
-                    MessageScheduler.sendTempMessage(trueCooldown - timePassedCommand, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
+                    MessageScheduler.sendTempMessage(10000, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
                             .replace("%user%", event.author.name.toLowerCase())
                             .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
                     )

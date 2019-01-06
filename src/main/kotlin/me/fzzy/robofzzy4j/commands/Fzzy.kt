@@ -102,7 +102,6 @@ object Fzzy : Command {
     }
 
     fun resize(file: File) {
-        val startTime = System.currentTimeMillis()
         val sizeHelper = ImageIO.read(file)
         val op = IMOperation()
         val convert = ConvertCmd()
@@ -126,7 +125,6 @@ object Fzzy : Command {
         op.addImage(file.absolutePath)
 
         convert.run(op)
-        println("carved in ${System.currentTimeMillis() - startTime}ms")
     }
 
 }
