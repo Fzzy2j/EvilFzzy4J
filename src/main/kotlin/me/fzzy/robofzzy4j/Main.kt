@@ -126,8 +126,11 @@ fun main(args: Array<String>) {
         RoboFzzy.savedMemesIds.add(text.toLong())
     }
 
-    for (file in File("cache").listFiles()) {
-        file.deleteRecursively()
+    val cacheFile = File("cache")
+    if (cacheFile.exists()) {
+        for (file in cacheFile.listFiles()) {
+            file.deleteRecursively()
+        }
     }
 
     Discord4J.LOGGER.info("Starting scheduler.")

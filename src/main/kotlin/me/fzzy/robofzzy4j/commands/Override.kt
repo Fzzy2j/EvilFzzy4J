@@ -38,10 +38,9 @@ object Override : Command {
                         "already done. %target%s cooldown is reset"
                 )
                 RequestBuffer.request {
-                    event.channel.sendMessage(messages[RoboFzzy.random.nextInt(messages.size)]
+                    MessageScheduler.sendTempMessage(10000, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
                             .replace("%target%", RoboFzzy.cli.getUserByID(args[1].toLong()).name.toLowerCase())
-                            .replace("%author%", event.author.name.toLowerCase())
-                    )
+                            .replace("%author%", event.author.name.toLowerCase()))
                 }
             }
             "allowvotes" -> {
