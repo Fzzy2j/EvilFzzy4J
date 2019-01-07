@@ -51,10 +51,10 @@ object Funcs {
     }
 
     fun mentionsByName(msg: IMessage): Boolean {
-        val check = msg.content.toLowerCase().replace(" ", "")
-        val checkAgainst = "${RoboFzzy.cli.ourUser.name} ${RoboFzzy.cli.ourUser.getDisplayName(msg.guild)}".split(" ")
-        for (input in checkAgainst) {
-            if (check.contains("thank") && (check.contains(input.toLowerCase().replace(" ", "")) || msg.mentions.contains(RoboFzzy.cli.ourUser)))
+        val check = msg.content.toLowerCase()
+        val checkAgainst = "${RoboFzzy.cli.ourUser.name} ${RoboFzzy.cli.ourUser.getDisplayName(msg.guild)}"
+        for (realCheck in check.split(" ")) {
+            if (check.contains("thank") && (checkAgainst.toLowerCase().replace(" ", "").contains(realCheck) || msg.mentions.contains(RoboFzzy.cli.ourUser)))
                 return true
         }
         return false
