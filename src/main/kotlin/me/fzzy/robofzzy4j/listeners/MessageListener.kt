@@ -36,7 +36,9 @@ object MessageListener {
         if (event.guild != null) {
             if (!event.author.isBot) {
                 val guild = Guild.getGuild(event.guild.longID)
-                val pattern = Pattern.compile("((http:\\/\\/|https:\\/\\/)?(www.)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(\\/([a-zA-Z-_\\/\\.0-9#:?=&;,]*)?)?)")
+                val pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
+                        + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
+                        + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
                 val m: Matcher = pattern.matcher(event.message.content)
                 if (m.find() || event.message.attachments.size > 0) {
                     guild.allowVotes(event.message)

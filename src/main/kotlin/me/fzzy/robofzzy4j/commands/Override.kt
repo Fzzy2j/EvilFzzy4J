@@ -28,18 +28,32 @@ object Override : Command {
             "skip" -> {
                 AudioPlayer.getAudioPlayerForGuild(event.guild).skip()
             }
-            "cooldowns" -> {
+            "cooldowns", "cooldown" -> {
+                val users = event.message.mentions
                 Task.registerTask(IndividualTask({
-                    User.getUser(args[1].toLong()).cooldown.clearCooldown()
+                    for (user in users) {
+                        User.getUser(user.longID).cooldown.clearCooldown()
+                    }
                 }, 1, false))
+
+                val userNames = arrayListOf<String>()
+                for (i in 0 until users.size) {
+                    userNames.add(if (i != users.size - 1) {
+                        users[i].name.toLowerCase()
+                    } else {
+                        "and ${users[i].name.toLowerCase()}"
+                    })
+                }
+
                 val messages = listOf(
-                        "okay %author%! i reset %target%s cooldown!",
-                        "i guess ill do that if you want me to. i reset %target%s cooldown",
-                        "already done. %target%s cooldown is reset"
+                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""}!",
+                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""}",
+                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset"
                 )
+
                 RequestBuffer.request {
                     MessageScheduler.sendTempMessage(10000, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
-                            .replace("%target%", RoboFzzy.cli.getUserByID(args[1].toLong()).name.toLowerCase())
+                            .replace("%target%", userNames.joinToString(", "))
                             .replace("%author%", event.author.name.toLowerCase()))
                 }
             }
