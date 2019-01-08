@@ -107,7 +107,7 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("tts", Tts)
     CommandHandler.registerCommand("vote", Vote)
 
-    CommandHandler.registerCommand("getmeme", GetMeme)
+    CommandHandler.registerCommand("repost", Repost)
 
     CommandHandler.registerCommand("leaderboard", LeaderboardCommand)
 
