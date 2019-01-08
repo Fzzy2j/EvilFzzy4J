@@ -6,6 +6,7 @@ import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IUser
+import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.RequestBuilder
 import java.io.BufferedInputStream
@@ -174,10 +175,16 @@ class Guild private constructor(private var guildId: Long) {
         posts++
         votes++
         RequestBuilder(RoboFzzy.cli).shouldBufferRequests(true).doAction {
-            msg.addReaction(RoboFzzy.UPVOTE_EMOJI)
+            try {
+                msg.addReaction(RoboFzzy.UPVOTE_EMOJI)
+            } catch (e: MissingPermissionsException) {
+            }
             true
         }.andThen {
-            msg.addReaction(RoboFzzy.DOWNVOTE_EMOJI)
+            try {
+                msg.addReaction(RoboFzzy.DOWNVOTE_EMOJI)
+            } catch (e: MissingPermissionsException) {
+            }
             true
         }.execute()
     }
