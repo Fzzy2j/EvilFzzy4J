@@ -6,6 +6,8 @@ import me.fzzy.robofzzy4j.thread.Task
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IVoiceChannel
+import sx.blah.discord.util.MissingPermissionsException
+import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
 import sx.blah.discord.util.audio.events.TrackFinishEvent
 import sx.blah.discord.util.audio.events.TrackSkipEvent
@@ -97,6 +99,11 @@ object VoiceListener {
 
     @EventSubscriber
     fun onTrackSkip(event: TrackSkipEvent) {
+        val message = RoboFzzy.cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
+        try {
+            RequestBuffer.request { message.delete() }
+        } catch(e: MissingPermissionsException) {
+        }
         if (event.nextTrack == null && !interupt) {
             RoboFzzy.cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
         }
@@ -104,6 +111,11 @@ object VoiceListener {
 
     @EventSubscriber
     fun onTrackEnd(event: TrackFinishEvent) {
+        val message = RoboFzzy.cli.getMessageByID(event.oldTrack.metadata["fzzyMessageId"] as Long)
+        try {
+            RequestBuffer.request { message.delete() }
+        } catch(e: MissingPermissionsException) {
+        }
         if (!event.newTrack.isPresent && !interupt) {
             RoboFzzy.cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
         }

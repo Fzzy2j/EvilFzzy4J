@@ -49,7 +49,7 @@ object Play : Command {
                 if (stream.format == "v3GPP")
                     continue
 
-                Discord4J.LOGGER.info("Playing video audio with id: $id")
+                Discord4J.LOGGER.info("Playing video audio for video: https://www.youtube.com/watch?v=$id")
                 val outputFile = File("cache/${System.currentTimeMillis()}.mp4")
 
                 try {
