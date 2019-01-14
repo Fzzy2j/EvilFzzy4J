@@ -56,7 +56,7 @@ object RoboFzzy {
     lateinit var dataNode: ConfigurationNode
 
     const val CONFIG_DIR: String = "data/"
-    const val THREAD_COUNT = 12
+    const val THREAD_COUNT = 10
 
     lateinit var executor: ExecutorService
 

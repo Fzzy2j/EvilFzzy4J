@@ -22,6 +22,8 @@ object VoiceListener {
 
     var interupt = false
 
+    const val MESSAGE_DELETE_DELAY = 8
+
     fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
         if (!interupt) {
             val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
@@ -101,7 +103,9 @@ object VoiceListener {
     fun onTrackSkip(event: TrackSkipEvent) {
         val message = RoboFzzy.cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
         try {
-            RequestBuffer.request { message.delete() }
+            Task.registerTask(IndividualTask({
+                RequestBuffer.request { message.delete() }
+            }, MESSAGE_DELETE_DELAY, false))
         } catch(e: MissingPermissionsException) {
         }
         if (event.nextTrack == null && !interupt) {
@@ -113,7 +117,9 @@ object VoiceListener {
     fun onTrackEnd(event: TrackFinishEvent) {
         val message = RoboFzzy.cli.getMessageByID(event.oldTrack.metadata["fzzyMessageId"] as Long)
         try {
-            RequestBuffer.request { message.delete() }
+            Task.registerTask(IndividualTask({
+                RequestBuffer.request { message.delete() }
+            }, MESSAGE_DELETE_DELAY, false))
         } catch(e: MissingPermissionsException) {
         }
         if (!event.newTrack.isPresent && !interupt) {
