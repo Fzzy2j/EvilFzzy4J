@@ -41,7 +41,10 @@ object VoteListener {
     fun onReactionAdd(event: ReactionAddEvent) {
         val guild = Guild.getGuild(event.guild.longID)
         if (event.channel.getMessageHistory(10).contains(event.message)) {
-            if (event.reaction.getUserReacted(RoboFzzy.cli.ourUser) && event.user.longID != RoboFzzy.cli.ourUser.longID) {
+            if (event.reaction.
+                            getUserReacted(RoboFzzy.cli.ourUser)
+                    && event.user.longID
+                    != RoboFzzy.cli.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
                     when (event.reaction.emoji.name) {
                         "upvote" -> {
