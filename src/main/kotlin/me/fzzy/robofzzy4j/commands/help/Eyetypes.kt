@@ -8,6 +8,7 @@ import java.io.File
 
 object Eyetypes : Command {
 
+    override val cooldownCategory = "help"
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description: String = "Shows all the eyes the bot can place on an image using the -eyes command"

@@ -17,6 +17,7 @@ import kotlin.math.roundToInt
 
 object Explode : Command {
 
+    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Scales an image repeatedly, turning it into a gif"
@@ -76,7 +77,6 @@ object Explode : Command {
             futureList.forEach { future ->
                 future.get()
                 progress++
-                println("${(progress / futureList.size) * 100}%")
             }
             for (i in 0 until fileList.size)
                 op.addImage(frames[i])
@@ -140,7 +140,6 @@ object Explode : Command {
             futureList.forEach { future ->
                 future.get()
                 progress++
-                println("${(progress / futureList.size) * 100}%")
             }
             for (i in 0..frameCount)
                 op.addImage(frames[i])

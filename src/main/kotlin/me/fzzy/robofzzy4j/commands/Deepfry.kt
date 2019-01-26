@@ -12,6 +12,7 @@ import kotlin.math.roundToInt
 
 object Deepfry : Command {
 
+    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Deep fries an image"

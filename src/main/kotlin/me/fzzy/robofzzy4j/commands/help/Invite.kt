@@ -8,6 +8,7 @@ import sx.blah.discord.util.RequestBuffer
 
 object Invite : Command {
 
+    override val cooldownCategory = "help"
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description = "Gives you the invite link for the bot to add it to servers"

@@ -20,6 +20,7 @@ import kotlin.math.roundToInt
 
 object Sounds : Command {
 
+    override val cooldownCategory = "help"
     private const val SOUND_COOLDOWN: Long = 30 * 1000
 
     override val cooldownMillis: Long = 4 * 1000

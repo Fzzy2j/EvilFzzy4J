@@ -19,6 +19,7 @@ import kotlin.math.roundToInt
 
 object Eyes : Command {
 
+    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Adds different eyes to an image, use -eyetypes to see all the eye types"

@@ -8,6 +8,7 @@ import sx.blah.discord.util.RequestBuffer
 
 object LeaderboardCommand : Command {
 
+    override val cooldownCategory = "leaderboard"
     override val cooldownMillis: Long = 10 * 1000
     override val votes: Boolean = false
     override val description = "shows the vote leaderboard"

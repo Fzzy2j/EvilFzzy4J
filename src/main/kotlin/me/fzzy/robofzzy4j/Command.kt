@@ -4,6 +4,7 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedE
 
 interface Command {
 
+    val cooldownCategory: String
     val cooldownMillis: Long
     val description: String
     val votes: Boolean

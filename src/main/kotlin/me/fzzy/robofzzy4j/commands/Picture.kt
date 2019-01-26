@@ -13,6 +13,7 @@ import javax.imageio.ImageIO
 
 object Picture : Command {
 
+    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Inserts an image into another, use -picturetypes to see all the picture types"

@@ -25,9 +25,14 @@ class User private constructor(val id: Long) {
         }
     }
 
-    val cooldown: Cooldown = Cooldown()
+    private val cooldowns: HashMap<String, Cooldown> = hashMapOf()
 
     var runningCommand = false
+
+    fun getCooldown(category: String): Cooldown {
+        if (!cooldowns.containsKey(category)) cooldowns[category] = Cooldown()
+        return cooldowns[category]!!
+    }
 
     fun getCooldownModifier(guild: Guild): Int {
         val rank = guild.leaderboard.getRank(id)

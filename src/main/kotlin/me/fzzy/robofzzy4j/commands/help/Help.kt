@@ -7,6 +7,7 @@ import sx.blah.discord.util.RequestBuffer
 
 object Help : Command {
 
+    override val cooldownCategory = "help"
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description = "The help command"

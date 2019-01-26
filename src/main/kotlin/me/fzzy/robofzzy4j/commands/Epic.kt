@@ -5,6 +5,8 @@ import me.fzzy.robofzzy4j.CommandResult
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 
 object Epic : Command {
+
+    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 1000 * 60 * 10
     override val description: String = "Plays something epic in your voice channel, use -sounds to see all the sounds"
     override val votes: Boolean = true

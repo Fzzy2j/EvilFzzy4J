@@ -19,6 +19,7 @@ import java.util.regex.Pattern
 
 object Play : Command {
 
+    override val cooldownCategory = "audio"
     override val cooldownMillis: Long = 1000 * 60 * 10
     override val votes: Boolean = true
     override val description = "Plays audio in the voice channel"

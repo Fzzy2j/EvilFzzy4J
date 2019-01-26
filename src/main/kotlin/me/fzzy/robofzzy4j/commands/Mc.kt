@@ -7,6 +7,7 @@ import sx.blah.discord.util.RequestBuffer
 
 object Mc : Command {
 
+    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 60 * 1000
     override val votes: Boolean = false
     override val description = "Generates a minecraft achievement"

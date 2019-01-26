@@ -9,6 +9,8 @@ import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
 
 object Override : Command {
+
+    override val cooldownCategory = "override"
     override val cooldownMillis = 0L
     override val description = "Only for bot owner, for modifying values in the bot"
     override val votes = false
@@ -32,7 +34,9 @@ object Override : Command {
                 val users = event.message.mentions
                 Task.registerTask(IndividualTask({
                     for (user in users) {
-                        User.getUser(user.longID).cooldown.clearCooldown()
+                        for (cooldown in User.getUser((user.longID)).cooldowns.values) {
+                            cooldown.clearCooldown()
+                        }
                     }
                 }, 1, false))
 

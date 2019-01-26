@@ -21,6 +21,7 @@ import kotlin.math.roundToInt
 
 object Vote : Command {
 
+    override val cooldownCategory = "vote"
     override val cooldownMillis: Long = 1000 * 60 * 5
     override val description: String = "Puts a message in the chat that allows users to vote on something"
     override val votes: Boolean = false

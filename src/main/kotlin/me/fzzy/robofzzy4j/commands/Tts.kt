@@ -15,6 +15,7 @@ import javax.sound.sampled.UnsupportedAudioFileException
 
 object Tts : Command {
 
+    override val cooldownCategory = "audio"
     override val cooldownMillis: Long = 60 * 10 * 1000
     override val votes: Boolean = true
     override val description = "Joins the voice channel and plays text to speech"

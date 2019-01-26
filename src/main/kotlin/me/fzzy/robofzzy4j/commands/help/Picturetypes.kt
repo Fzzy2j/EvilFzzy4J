@@ -8,6 +8,7 @@ import java.io.File
 
 object Picturetypes : Command {
 
+    override val cooldownCategory = "help"
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description: String = "Shows all the picturess the bot can insert an image into using the -picture command"

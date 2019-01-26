@@ -7,6 +7,7 @@ import java.io.File
 
 object Repost : Command {
 
+    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 60 * 1000
     override val votes: Boolean = false
     override val description = "Shows you upvoted posts from the server"
