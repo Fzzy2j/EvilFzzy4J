@@ -34,7 +34,7 @@ object Override : Command {
                 val users = event.message.mentions
                 Task.registerTask(IndividualTask({
                     for (user in users) {
-                        for (cooldown in User.getUser((user.longID)).cooldowns.values) {
+                        for (cooldown in User.getUser((user.longID)).getAllCooldowns().values) {
                             cooldown.clearCooldown()
                         }
                     }

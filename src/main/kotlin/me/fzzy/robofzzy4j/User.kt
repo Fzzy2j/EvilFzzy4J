@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j
 
+import com.koloboke.collect.impl.hash.Hash
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IUser
 import kotlin.math.roundToInt
@@ -32,6 +33,10 @@ class User private constructor(val id: Long) {
     fun getCooldown(category: String): Cooldown {
         if (!cooldowns.containsKey(category)) cooldowns[category] = Cooldown()
         return cooldowns[category]!!
+    }
+
+    fun getAllCooldowns(): HashMap<String, Cooldown> {
+        return cooldowns
     }
 
     fun getCooldownModifier(guild: Guild): Int {
