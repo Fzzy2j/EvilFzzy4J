@@ -96,8 +96,8 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun addPoint(message: IMessage, user: IUser, channel: IChannel) {
-        //val score = leaderboard.getOrDefault(user.longID, 0)
-        //if (!user.isBot) handleChanges(leaderboard.setValue(user.longID, score + 1), channel)
+        val score = leaderboard.getOrDefault(user.longID, 0)
+        if (!user.isBot) leaderboard.setValue(user.longID, score + 1)
         votes++
 
         if (VoteListener.getVotes(message) > getAverageVote()) {
@@ -164,8 +164,8 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun subtractPoint(user: IUser, channel: IChannel) {
-        //val score = leaderboard.getOrDefault(user.longID, 0)
-        //if (!user.isBot) handleChanges(leaderboard.setValue(user.longID, score - 1), channel)
+        val score = leaderboard.getOrDefault(user.longID, 0)
+        if (!user.isBot) leaderboard.setValue(user.longID, score - 1)
         votes--
     }
 
