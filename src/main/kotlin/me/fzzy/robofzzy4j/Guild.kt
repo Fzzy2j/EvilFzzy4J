@@ -97,7 +97,7 @@ class Guild private constructor(private var guildId: Long) {
 
     fun addPoint(message: IMessage, user: IUser, channel: IChannel) {
         val score = leaderboard.getOrDefault(user.longID, 0)
-        if (!user.isBot) leaderboard.setValue(user.longID, score + 1)
+        if (!user.isBot) handleChanges(leaderboard.setValue(user.longID, score + 1), channel)
         votes++
 
         if (VoteListener.getVotes(message) > getAverageVote()) {
@@ -140,6 +140,8 @@ class Guild private constructor(private var guildId: Long) {
                     suffix = "gif"
                 if (fixedUrl.toString().endsWith("webm"))
                     suffix = "webm"
+                if (fixedUrl.toString().endsWith("mp4"))
+                    suffix = "mp4"
 
                 File("memes", guildId.toString()).mkdirs()
                 val fileName = "memes/$guildId/${System.currentTimeMillis()}.$suffix"
@@ -165,7 +167,7 @@ class Guild private constructor(private var guildId: Long) {
 
     fun subtractPoint(user: IUser, channel: IChannel) {
         val score = leaderboard.getOrDefault(user.longID, 0)
-        if (!user.isBot) leaderboard.setValue(user.longID, score - 1)
+        if (!user.isBot) handleChanges(leaderboard.setValue(user.longID, score - 1), channel)
         votes--
     }
 
