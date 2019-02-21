@@ -64,8 +64,8 @@ object CommandHandler {
 
             val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
-
-            if (user.getCooldown(command.cooldownCategory).isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
+            if (user.id == RoboFzzy.cli.applicationOwner.longID ||
+                            user.getCooldown(command.cooldownCategory).isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
                 if (!user.runningCommand) {
                     user.runningCommand = true
                     if (!command.votes) tryDelete(event.message)
@@ -74,6 +74,7 @@ object CommandHandler {
                             val result = try {
                                 command.runCommand(event, argsList)
                             } catch (e: java.lang.Exception) {
+                                e.printStackTrace()
                                 CommandResult.fail("Command failed $e")
                             }
                             if (result.isSuccess()) {

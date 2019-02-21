@@ -96,7 +96,7 @@ fun main(args: Array<String>) {
     Discord4J.LOGGER.info("Registering commands.")
 
     CommandHandler.registerCommand("fzzy", Fzzy)
-    CommandHandler.registerCommand("eyes", Eyes)
+    //CommandHandler.registerCommand("eyes", Eyes)
     CommandHandler.registerCommand("picture", Picture)
     CommandHandler.registerCommand("emotion", Emotion)
     CommandHandler.registerCommand("deepfry", Deepfry)
@@ -116,7 +116,7 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("help", Help)
     CommandHandler.registerCommand("invite", Invite)
     CommandHandler.registerCommand("sounds", Sounds)
-    CommandHandler.registerCommand("eyetypes", Eyetypes)
+    //CommandHandler.registerCommand("eyetypes", Eyetypes)
     CommandHandler.registerCommand("picturetypes", Picturetypes)
     CommandHandler.registerCommand("override", Override)
 

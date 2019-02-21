@@ -1,9 +1,5 @@
 package me.fzzy.robofzzy4j.commands
 
-import magick.DrawInfo
-import magick.ImageInfo
-import magick.MagickImage
-import magick.PixelPacket
 import me.fzzy.robofzzy4j.*
 import org.omg.CORBA.COMM_FAILURE
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
@@ -53,18 +49,18 @@ object Meme : Command {
         val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
         val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
 
-        val info = ImageInfo(file.absolutePath)
-        val magickImage = MagickImage(info)
+        //val info = ImageInfo(file.absolutePath)
+        //val magickImage = MagickImage(info)
         val sizeHelper = ImageIO.read(file)
 
-        if (topText.isNotBlank())
-            annotateCenter(sizeHelper, magickImage, info, topText.toUpperCase(), false)
+        //if (topText.isNotBlank())
+            //annotateCenter(sizeHelper, magickImage, info, topText.toUpperCase(), false)
 
-        if (bottomText != null)
-            annotateCenter(sizeHelper, magickImage, info, bottomText.toUpperCase(), true)
+        //if (bottomText != null)
+            //annotateCenter(sizeHelper, magickImage, info, bottomText.toUpperCase(), true)
 
-        magickImage.fileName = file.absolutePath
-        magickImage.writeImage(info)
+        //magickImage.fileName = file.absolutePath
+        //magickImage.writeImage(info)
         RequestBuffer.request {
             Funcs.sendFile(event.channel, file)
             file.delete()
@@ -72,7 +68,7 @@ object Meme : Command {
         return CommandResult.success()
     }
 
-    fun annotateCenter(sizeHelper: BufferedImage, magickImage: MagickImage, info: ImageInfo, text: String, bottom: Boolean) {
+    /*fun annotateCenter(sizeHelper: BufferedImage, magickImage: MagickImage, info: ImageInfo, text: String, bottom: Boolean) {
         val aInfo = DrawInfo(info)
         aInfo.fill = PixelPacket.queryColorDatabase("white")
         aInfo.stroke = PixelPacket.queryColorDatabase("black")
@@ -96,5 +92,5 @@ object Meme : Command {
         aInfo.geometry = "+${(sizeHelper.width / 2) - (textWidth / 2)}+$yOffset"
 
         magickImage.annotateImage(aInfo)
-    }
+    }*/
 }

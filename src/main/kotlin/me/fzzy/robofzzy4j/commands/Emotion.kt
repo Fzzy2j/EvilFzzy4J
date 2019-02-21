@@ -7,6 +7,10 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.net.URL
 
+//
+// UNUSED
+//
+
 object Emotion : Command {
 
     override val cooldownCategory = "image"

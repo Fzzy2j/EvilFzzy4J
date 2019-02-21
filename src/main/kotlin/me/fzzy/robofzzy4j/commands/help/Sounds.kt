@@ -35,7 +35,13 @@ object Sounds : Command {
             all += "-${file.nameWithoutExtension}\n"
         }
         all += "```"
-        RequestBuffer.request { event.message.author.orCreatePMChannel.sendMessage(all) }
+        RequestBuffer.request {
+            try {
+                event.message.author.orCreatePMChannel.sendMessage(all)
+            } catch (e: MissingPermissionsException) {
+                MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
+            }
+        }
         return CommandResult.success()
     }
 

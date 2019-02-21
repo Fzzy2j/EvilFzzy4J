@@ -22,7 +22,7 @@ object VoiceListener {
 
     var interupt = false
 
-    const val MESSAGE_DELETE_DELAY = 8
+    private const val MESSAGE_DELETE_DELAY_SECONDS = 60
 
     fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
         if (!interupt) {
@@ -105,8 +105,8 @@ object VoiceListener {
         try {
             Task.registerTask(IndividualTask({
                 RequestBuffer.request { message.delete() }
-            }, MESSAGE_DELETE_DELAY, false))
-        } catch(e: MissingPermissionsException) {
+            }, MESSAGE_DELETE_DELAY_SECONDS, false))
+        } catch (e: MissingPermissionsException) {
         }
         if (event.nextTrack == null && !interupt) {
             RoboFzzy.cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
@@ -118,9 +118,14 @@ object VoiceListener {
         val message = RoboFzzy.cli.getMessageByID(event.oldTrack.metadata["fzzyMessageId"] as Long)
         try {
             Task.registerTask(IndividualTask({
-                RequestBuffer.request { message.delete() }
-            }, MESSAGE_DELETE_DELAY, false))
-        } catch(e: MissingPermissionsException) {
+                RequestBuffer.request {
+                    try {
+                        message.delete()
+                    } catch (e: Exception) {
+                    }
+                }
+            }, MESSAGE_DELETE_DELAY_SECONDS, false))
+        } catch (e: MissingPermissionsException) {
         }
         if (!event.newTrack.isPresent && !interupt) {
             RoboFzzy.cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()

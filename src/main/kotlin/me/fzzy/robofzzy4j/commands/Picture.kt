@@ -1,12 +1,14 @@
 package me.fzzy.robofzzy4j.commands
 
-import magick.CompositeOperator
-import magick.ImageInfo
-import magick.MagickImage
 import me.fzzy.robofzzy4j.*
+import org.im4java.core.CompositeCmd
+import org.im4java.core.ConvertCmd
+import org.im4java.core.IMOperation
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
+import java.awt.Color
+import java.awt.image.BufferedImage
 import java.io.File
 import java.net.URL
 import javax.imageio.ImageIO
@@ -32,7 +34,7 @@ object Picture : Command {
                     break
                 }
             }
-        }
+        } else picture = pictureFile.listFiles()[RoboFzzy.random.nextInt(pictureFile.listFiles().count())]
         if (picture == null)
             return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes")
 
@@ -40,69 +42,73 @@ object Picture : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
+        val url: URL = ImageFuncs.getFirstImage(history)
+                ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
         val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download that image")
 
-        val info = ImageInfo(file.absolutePath)
-        var magickImage = MagickImage(info)
+        val bufferedImage = ImageIO.read(picture)
 
-        val pictureInfo = ImageInfo(picture.absolutePath)
-        val pictureMagickImage = MagickImage(pictureInfo)
-        val sizeHelper = ImageIO.read(picture)
-
-        // Hard to understand, this gets the corners of the transparent box in the image
-        var farRight = Pair(0, 0)
-        var farLeft = Pair(sizeHelper.width, 0)
-        var farTop = Pair(0, sizeHelper.height)
-        var farBottom = Pair(0, 0)
-        for (x in 0 until sizeHelper.width) {
-            for (y in 0 until sizeHelper.height) {
-                if (pictureMagickImage.getOnePixel(x, y).opacity != 0) {
-                    // top right bias
-                    if (farRight.first < x)
-                        farRight = Pair(x, y)
-
-                    // bottom left bias
-                    if (farLeft.first >= x)
-                        farLeft = Pair(x, y)
-
-                    // top left bias
-                    if (farTop.second > y)
-                        farTop = Pair(x, y)
-
-                    // bottom right bias
-                    if (farBottom.second <= y)
-                        farBottom = Pair(x, y)
-                }
-            }
-        }
-        // Wow this is hard to understand
-        val topRight = if (farTop.first < farBottom.first) farRight else farTop
-        val topLeft = if (farTop.first > farBottom.first) farLeft else farTop
-        val bottomRight = if (farRight.second > farLeft.second) farRight else farBottom
-        val bottomLeft = if (farRight.second < farLeft.second) farLeft else farBottom
+        val topRight = detectTopRightCorner(bufferedImage)
+        val topLeft = detectTopLeftCorner(bufferedImage)
+        val bottomRight = detectBottomRightCorner(bufferedImage)
+        val bottomLeft = detectBottomLeftCorner(bufferedImage)
 
         // Get how much to rotate the image in radians
-        var t = Math.atan(Math.abs(topRight.second - topLeft.second) / Math.abs(topRight.first - topLeft.first.toDouble()))
-        if (farTop.first >= farBottom.first)
-            t = -t
+        val leftAverage = average(topLeft, bottomLeft)
+        val rightAverage = average(topRight, bottomRight)
+        val topAverage = average(topLeft, topRight)
+        val bottomAverage = average(bottomLeft, bottomRight)
+        val t = -Math.atan2(Math.abs(leftAverage.second - rightAverage.second).toDouble(), rightAverage.first - leftAverage.first.toDouble())
 
-        val give = 30
-        // Get the size the image should be
-        val width = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft)) + give
-        val height = Math.max(distance(topRight, bottomRight), distance(topLeft, bottomLeft)) + give
+        // Detecting the proper width and height
+        val maxLength = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft))
+        val maxHeight = Math.max(distance(bottomRight, topRight), distance(bottomLeft, topLeft))
+        val widthCross = Math.max(angleAdjust(bottomRight, -t).first - angleAdjust(topLeft, -t).first, angleAdjust(topRight, -t).first - angleAdjust(bottomLeft, -t).first)
+        val heightCross = Math.max(angleAdjust(bottomLeft, -t).second - angleAdjust(topRight, -t).second, angleAdjust(bottomRight, -t).second - angleAdjust(topLeft, -t).second)
+        val width = Math.max(maxLength, widthCross)
+        val height = Math.max(maxHeight, heightCross)
 
-        // Apply the transform
-        magickImage = magickImage.scaleImage(width, height)
-        magickImage = magickImage.rotateImage(Math.toDegrees(t))
+        val composite = ConvertCmd()
+        val operation = IMOperation()
 
-        // Do some layering
-        val og = MagickImage(pictureInfo)
-        pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, magickImage, Math.min(topLeft.first, bottomLeft.first) - give / 2, Math.min(topLeft.second, topRight.second) - give / 2)
-        pictureMagickImage.compositeImage(CompositeOperator.OverCompositeOp, og, 0, 0)
+        operation.compose("dstover")
+        operation.addImage(picture.absolutePath)
 
-        pictureMagickImage.fileName = file.absolutePath
-        pictureMagickImage.writeImage(info)
+        operation.openOperation()
+
+        operation.addImage(file.absolutePath)
+
+        operation.resize(width, height, "!")
+        operation.gravity("center")
+
+        val trueAverage = average(topAverage, bottomAverage)
+        val xOffset = trueAverage.first - (bufferedImage.width / 2)
+        val yOffset = trueAverage.second - (bufferedImage.height / 2)
+        operation.addRawArgs("-geometry", "${if (xOffset >= 0) "+$xOffset" else "$xOffset"}${if (yOffset >= 0) "+$yOffset" else "$yOffset"}")
+        operation.rotate(Math.toDegrees(t))
+
+        operation.closeOperation()
+
+        operation.composite()
+
+        /* use this for debugging
+
+        operation.draw("fill none stroke red polygon " +
+                "${topLeft.first},${topLeft.second} " +
+                "${bottomLeft.first},${bottomLeft.second} " +
+                "${bottomRight.first},${bottomRight.second} " +
+                "${topRight.first},${topRight.second}")
+
+        operation.draw("fill none stroke blue polygon " +
+                "${topAverage.first},${topAverage.second} " +
+                "${leftAverage.first},${leftAverage.second} " +
+                "${bottomAverage.first},${bottomAverage.second} " +
+                "${rightAverage.first},${rightAverage.second}")*/
+
+        operation.addImage(file.absolutePath)
+
+        composite.run(operation)
+
         RequestBuffer.request {
             Funcs.sendFile(event.channel, file)
             file.delete()
@@ -111,7 +117,124 @@ object Picture : Command {
         return CommandResult.success()
     }
 
+    private fun detectTopRightCorner(img: BufferedImage): Pair<Int, Int> {
+        var minTrans = img.width + img.height
+        var finalPixels = arrayListOf<Pair<Int, Int>>()
+        for (x in -(img.height - 1)..(img.width - 1)) {
+            val transPixels = arrayListOf<Pair<Int, Int>>()
+            for (y in 0 until img.height) {
+                if (x + y < 0 || x + y >= img.width) continue
+                val color = Color(img.getRGB(x + y, y), true)
+                if (color.alpha != 255) transPixels.add(Pair(x + y, y))
+            }
+            if (transPixels.count() == 0) continue
+            if (transPixels.count() > minTrans) minTrans = img.width + img.height
+            if (transPixels.count() <= minTrans) {
+                minTrans = transPixels.count()
+                finalPixels = transPixels
+            }
+        }
+        var x = 0
+        var y = 0
+        for (coord in finalPixels) {
+            x += coord.first
+            y += coord.second
+        }
+        return Pair(x / finalPixels.count(), y / finalPixels.count())
+    }
+
+    private fun detectBottomRightCorner(img: BufferedImage): Pair<Int, Int> {
+        var minTrans = img.width + img.height
+        var finalPixels = arrayListOf<Pair<Int, Int>>()
+        for (x in 0..(img.width - 1) + (img.height - 1)) {
+            val transPixels = arrayListOf<Pair<Int, Int>>()
+            for (y in 0 until img.height) {
+                if (x - y < 0 || x - y >= img.width) continue
+                val color = Color(img.getRGB(x - y, y), true)
+                if (color.alpha != 255) transPixels.add(Pair(x - y, y))
+            }
+            if (transPixels.count() == 0) continue
+            if (transPixels.count() > minTrans) minTrans = img.width + img.height
+            if (transPixels.count() <= minTrans) {
+                minTrans = transPixels.count()
+                finalPixels = transPixels
+            }
+        }
+        var x = 0
+        var y = 0
+        for (coord in finalPixels) {
+            x += coord.first
+            y += coord.second
+        }
+        return Pair(x / finalPixels.count(), y / finalPixels.count())
+    }
+
+    private fun detectTopLeftCorner(img: BufferedImage): Pair<Int, Int> {
+        var minTrans = img.width + img.height
+        var finalPixels = arrayListOf<Pair<Int, Int>>()
+        for (x in (img.width - 1) + (img.height - 1) downTo 0) {
+            val transPixels = arrayListOf<Pair<Int, Int>>()
+            for (y in 0 until img.height) {
+                if (x - y < 0 || x - y >= img.width) continue
+                val color = Color(img.getRGB(x - y, y), true)
+                if (color.alpha != 255) transPixels.add(Pair(x - y, y))
+            }
+            if (transPixels.count() == 0) continue
+            if (transPixels.count() > minTrans) minTrans = img.width + img.height
+            if (transPixels.count() <= minTrans) {
+                minTrans = transPixels.count()
+                finalPixels = transPixels
+            }
+        }
+        var x = 0
+        var y = 0
+        for (coord in finalPixels) {
+            x += coord.first
+            y += coord.second
+        }
+        return Pair(x / finalPixels.count(), y / finalPixels.count())
+    }
+
+    private fun detectBottomLeftCorner(img: BufferedImage): Pair<Int, Int> {
+        var minTrans = img.width + img.height
+        var finalPixels = arrayListOf<Pair<Int, Int>>()
+        for (x in (img.width - 1) downTo -(img.height - 1)) {
+            val transPixels = arrayListOf<Pair<Int, Int>>()
+            for (y in 0 until img.height) {
+                if (x + y < 0 || x + y >= img.width) continue
+                val color = Color(img.getRGB(x + y, y), true)
+                if (color.alpha != 255) transPixels.add(Pair(x + y, y))
+            }
+            if (transPixels.count() == 0) continue
+            if (transPixels.count() > minTrans) minTrans = img.width + img.height
+            if (transPixels.count() <= minTrans) {
+                minTrans = transPixels.count()
+                finalPixels = transPixels
+            }
+        }
+        var x = 0
+        var y = 0
+        for (coord in finalPixels) {
+            x += coord.first
+            y += coord.second
+        }
+        return Pair(x / finalPixels.count(), y / finalPixels.count())
+    }
+
     private fun distance(coord1: Pair<Int, Int>, coord2: Pair<Int, Int>): Int {
         return Math.sqrt(Math.pow((coord2.first - coord1.first).toDouble(), 2.0) + Math.pow((coord2.second - coord1.second).toDouble(), 2.0)).toInt()
+    }
+
+    private fun average(coord1: Pair<Int, Int>, coord2: Pair<Int, Int>): Pair<Int, Int> {
+        return Pair(Math.round((coord1.first + coord2.first) / 2f), Math.round((coord1.second + coord2.second) / 2f))
+    }
+
+    private fun angleAdjust(coord: Pair<Int, Int>, angle: Double): Pair<Int, Int> {
+        val x = coord.first.toDouble()
+        val y = coord.second.toDouble()
+        val r = Math.sqrt(Math.pow(x, 2.0) + Math.pow(y, 2.0))
+        var t = Math.atan2(y, x)
+        t += angle
+        return Pair(Math.round(r * Math.cos(t)).toInt(), Math.round(r * Math.sin(t)).toInt())
     }
 }

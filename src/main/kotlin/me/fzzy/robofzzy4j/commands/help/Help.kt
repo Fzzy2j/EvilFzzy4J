@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands.help
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.util.Zalgo
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 
 object Help : Command {
@@ -20,7 +21,14 @@ object Help : Command {
             helpMsg += "${command.usageText}\n${command.description} : ${command.cooldownMillis / 1000} second cooldown\n\n"
         }
         helpMsg += "```"
-        RequestBuffer.request { event.author.orCreatePMChannel.sendMessage(helpMsg) }
+        RequestBuffer.request {
+            try {
+                event.author.orCreatePMChannel.sendMessage(helpMsg)
+            } catch (e: MissingPermissionsException) {
+                MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
+            }
+        }
+
         return CommandResult.success()
     }
 

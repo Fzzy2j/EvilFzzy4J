@@ -1,8 +1,5 @@
 package me.fzzy.robofzzy4j.commands
 
-import magick.CompositeOperator
-import magick.ImageInfo
-import magick.MagickImage
 import me.fzzy.robofzzy4j.*
 import org.im4java.core.CompositeCmd
 import org.im4java.core.ConvertCmd
@@ -16,6 +13,10 @@ import java.io.File
 import java.net.URL
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
+
+//
+// UNUSED
+//
 
 object Eyes : Command {
 
@@ -55,11 +56,11 @@ object Eyes : Command {
         if (faces == null || faces.length() == 0)
             return CommandResult.fail("the api couldnt find any faces in that picture")
 
-        val info = ImageInfo(file.absolutePath)
-        val magickImage = MagickImage(info)
+        //val info = ImageInfo(file.absolutePath)
+        //val magickImage = MagickImage(info)
 
-        val eyeInfo = ImageInfo(eyes.absolutePath)
-        val eyeMagickImage = MagickImage(eyeInfo)
+        //val eyeInfo = ImageInfo(eyes.absolutePath)
+        //val eyeMagickImage = MagickImage(eyeInfo)
 
         val sizeHelper = ImageIO.read(eyes)
         val ratio = ((sizeHelper.width + sizeHelper.height) / 2.0) / 250.0
@@ -77,20 +78,20 @@ object Eyes : Command {
                 eyeDistance *= ratio
                 val width = if (sizeHelper.width > eyeDistance) eyeDistance.roundToInt() else sizeHelper.width
                 val height = if (sizeHelper.height > eyeDistance) eyeDistance.roundToInt() else sizeHelper.height
-                var resize = eyeMagickImage.scaleImage(width, height)
+                //var resize = eyeMagickImage.scaleImage(width, height)
 
-                magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
+                //magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, lx - width / 2, ly - height / 2)
 
                 // If the eye file ends in _mirror the other eye will be flipped
-                if (eyes.nameWithoutExtension.endsWith("_mirror"))
-                    resize = resize.flopImage()
+                //if (eyes.nameWithoutExtension.endsWith("_mirror"))
+                    //resize = resize.flopImage()
 
-                magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
+                //magickImage.compositeImage(CompositeOperator.OverCompositeOp, resize, rx - width / 2, ry - height / 2)
             }
         }
 
-        magickImage.fileName = file.absolutePath
-        magickImage.writeImage(info)
+        //magickImage.fileName = file.absolutePath
+        //magickImage.writeImage(info)
         RequestBuffer.request {
             Funcs.sendFile(event.channel, file)
             file.delete()

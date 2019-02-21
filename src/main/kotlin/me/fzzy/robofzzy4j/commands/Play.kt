@@ -1,7 +1,6 @@
 package me.fzzy.robofzzy4j.commands
 
 import com.commit451.youtubeextractor.YouTubeExtractor
-import com.google.api.client.auth.oauth2.Credential
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
@@ -15,7 +14,6 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.regex.Pattern
-
 
 object Play : Command {
 
@@ -44,7 +42,12 @@ object Play : Command {
     }
 
     fun play(channel: IVoiceChannel, id: String, messageId: Long, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {
-        val extraction = YouTubeExtractor.Builder().build().extract(id).blockingGet()
+        val extraction = try {
+            YouTubeExtractor.Builder().build().extract(id).blockingGet()
+        } catch (e: Exception) {
+            return CommandResult.fail("i couldnt play that video, maybe its age restricted or blocked by copyright?")
+        }
+
         if (extraction.lengthSeconds!! <= 60 * 10) {
             for (stream in extraction.videoStreams) {
                 if (stream.format == "v3GPP")
