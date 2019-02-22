@@ -12,6 +12,7 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.MissingPermissionsException
 import java.io.*
 import java.net.URL
+import java.nio.file.Files
 import java.util.*
 import java.util.regex.Pattern
 import javax.net.ssl.HttpsURLConnection
@@ -177,6 +178,13 @@ object ImageFuncs {
         return File(fileName)
     }
 
+    fun createTempFile(file: File?): File? {
+        if (file == null) return null
+        val new = File("cache/${System.currentTimeMillis()}.${file.extension}")
+        Files.copy(file.toPath(), new.toPath())
+        return new
+    }
+
     fun getFacialInfo(attributes: String, faceId: Boolean, faceLandmarks: Boolean, url: String): JSONArray? {
         val apiurl = "https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect"
         val httpClient = HttpClientBuilder.create().build()
@@ -213,35 +221,37 @@ object ImageFuncs {
     }
 
     fun getFirstImage(list: MutableList<IMessage>): URL? {
-        val pattern = Pattern.compile("^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
+        val pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
+                + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
+                + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
         var url: URL? = null
-        if (url == null) {
-            for (message in list) {
-                if (message.attachments.size > 0) {
-                    url = URL(message.attachments[0].url)
-                } else {
-                    for (split in message.content.split(" ")) {
-                        val matcher = pattern.matcher(split)
-                        if (matcher.find()) {
-                            var urlString = split.substring(matcher.start(1), matcher.end()).replace(".webp", ".png").replace("//gyazo.com", "//i.gyazo.com")
-                            if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png")) {
-                                urlString += ".png"
-                            }
-                            if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".jpg")) {
-                                urlString += ".jpq"
-                            }
+        for (message in list) {
+            if (message.attachments.size > 0) {
+                url = URL(message.attachments[0].url)
+            } else {
+                for (split in message.content.split(" ")) {
+                    val matcher = pattern.matcher(split)
+                    if (matcher.find()) {
+                        var urlString = split.toLowerCase().substring(matcher.start(1), matcher.end()).replace(".webp", ".png").replace("//gyazo.com", "//i.gyazo.com")
+                        if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png")) {
+                            urlString += ".png"
+                        }
+                        if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".jpg")) {
+                            urlString += ".jpq"
+                        }
+                        if (urlString.endsWith("png") || urlString.endsWith("jpg") || urlString.endsWith("jpeg") || urlString.endsWith("gif")) {
                             url = URL(urlString)
                             break
                         }
                     }
                 }
-                if (url != null) {
-                    if (url.toString().toLowerCase().endsWith(".png")
-                            || url.toString().toLowerCase().endsWith(".jpg")
-                            || url.toString().toLowerCase().endsWith(".jpeg")
-                            || url.toString().toLowerCase().endsWith(".gif")) {
-                        break
-                    }
+            }
+            if (url != null) {
+                if (url.toString().toLowerCase().endsWith(".png")
+                        || url.toString().toLowerCase().endsWith(".jpg")
+                        || url.toString().toLowerCase().endsWith(".jpeg")
+                        || url.toString().toLowerCase().endsWith(".gif")) {
+                    break
                 }
             }
         }

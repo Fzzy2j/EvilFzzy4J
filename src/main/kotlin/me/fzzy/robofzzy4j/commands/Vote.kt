@@ -124,6 +124,8 @@ object Vote : Command {
     fun onReactionAdd(event: ReactionAddEvent) {
         if (event.message.author.longID == RoboFzzy.cli.ourUser.longID && !event.user.isBot) {
             if (getAttendanceMessage(event.channel) != null) {
+
+                // pass reactions so that we only have to make one request to the api, speeds up voting a lot
                 val reactions = event.message.reactions
                 removeExistingReactionsExceptOne(event.user, event.message, reactions, event.reaction.emoji.name)
                 updateVoteMessage(event.message, reactions)
@@ -135,6 +137,8 @@ object Vote : Command {
     fun onReactionRemove(event: ReactionRemoveEvent) {
         if (event.message.author.longID == RoboFzzy.cli.ourUser.longID && !event.user.isBot) {
             if (getAttendanceMessage(event.channel) != null) {
+
+                // pass reactions so that we only have to make one request to the api, speeds up voting a lot
                 val reactions = event.message.reactions
                 updateVoteMessage(event.message, reactions)
             }

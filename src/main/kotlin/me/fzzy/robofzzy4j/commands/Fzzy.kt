@@ -29,9 +29,11 @@ object Fzzy : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history)
-                ?: return CommandResult.fail("i couldnt find any images in the last 10 messages")
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the iamge")
+        val url = ImageFuncs.getFirstImage(history)
+        val file = if (url != null)
+            ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+        else
+            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         var tempFile: File? = null
         if (file.extension == "gif") {

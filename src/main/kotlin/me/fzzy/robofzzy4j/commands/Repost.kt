@@ -2,6 +2,7 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 
@@ -16,15 +17,32 @@ object Repost : Command {
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
-        val files = File("memes", event.guild.longID.toString()).listFiles()
-        if (files == null || files.isEmpty())
-            return CommandResult.fail("there havent been any worthy posts in this server, sorry")
-        val file = files[RoboFzzy.random.nextInt(files.size)]
+        val repost = getRepost(event.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry")
 
         RequestBuffer.request {
-            Funcs.sendFile(event.channel, file, false)
-            file.delete()
+            Funcs.sendFile(event.channel, repost, false)
+            repost.delete()
         }
         return CommandResult.success()
+    }
+
+    fun getRepost(guild: IGuild): File? {
+        val files = File("memes", guild.longID.toString()).listFiles()
+        if (files == null || files.isEmpty())
+            return null
+        return files[RoboFzzy.random.nextInt(files.size)]
+    }
+
+    fun getImageRepost(guild: IGuild): File? {
+        val files = File("memes", guild.longID.toString()).listFiles()
+        if (files == null || files.isEmpty())
+            return null
+
+        val imgs = arrayListOf<File>()
+        for (file in files) {
+            if (file.extension == "jpg" || file.extension == "png") imgs.add(file)
+        }
+        println(imgs)
+        return imgs[RoboFzzy.random.nextInt(imgs.size)]
     }
 }

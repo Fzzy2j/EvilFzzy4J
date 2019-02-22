@@ -30,10 +30,12 @@ object Explode : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history)
-                ?: return CommandResult.fail("theres no image in the last 10 messages?")
+        val url = ImageFuncs.getFirstImage(history)
+        var file = if (url != null)
+            ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+        else
+            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
-        var file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         var tempFile: File? = null
         val finalSize = 0.3
         val convert = ConvertCmd()

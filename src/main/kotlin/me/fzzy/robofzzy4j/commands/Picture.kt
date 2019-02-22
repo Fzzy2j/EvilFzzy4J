@@ -42,9 +42,11 @@ object Picture : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history)
-                ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download that image")
+        val url = ImageFuncs.getFirstImage(history)
+        val file = if (url != null)
+            ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+        else
+            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         val bufferedImage = ImageIO.read(picture)
 
@@ -58,7 +60,9 @@ object Picture : Command {
         val rightAverage = average(topRight, bottomRight)
         val topAverage = average(topLeft, topRight)
         val bottomAverage = average(bottomLeft, bottomRight)
-        val t = -Math.atan2(Math.abs(leftAverage.second - rightAverage.second).toDouble(), rightAverage.first - leftAverage.first.toDouble())
+        val t = -Math.atan2(leftAverage.second - rightAverage.second.toDouble(), rightAverage.first - leftAverage.first.toDouble())
+
+        println(Math.toDegrees(t))
 
         // Detecting the proper width and height
         val maxLength = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft))
@@ -91,9 +95,9 @@ object Picture : Command {
 
         operation.composite()
 
-        /* use this for debugging
+        // use this for debugging
 
-        operation.draw("fill none stroke red polygon " +
+        /*operation.draw("fill none stroke red polygon " +
                 "${topLeft.first},${topLeft.second} " +
                 "${bottomLeft.first},${bottomLeft.second} " +
                 "${bottomRight.first},${bottomRight.second} " +
