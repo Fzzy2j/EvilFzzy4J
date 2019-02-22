@@ -1,6 +1,8 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
+import org.im4java.core.ConvertCmd
+import org.im4java.core.IMOperation
 import org.omg.CORBA.COMM_FAILURE
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.RequestBuffer
@@ -8,6 +10,7 @@ import java.awt.Font
 import java.awt.font.FontRenderContext
 import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
+import java.io.File
 import java.net.URL
 import java.util.regex.Matcher
 import java.util.regex.Pattern
@@ -46,21 +49,30 @@ object Meme : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history) ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
+        val url: URL = ImageFuncs.getFirstImage(history)
+                ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
         val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
 
-        //val info = ImageInfo(file.absolutePath)
-        //val magickImage = MagickImage(info)
-        val sizeHelper = ImageIO.read(file)
+        val convert = ConvertCmd()
+        val operation = IMOperation()
 
-        //if (topText.isNotBlank())
-            //annotateCenter(sizeHelper, magickImage, info, topText.toUpperCase(), false)
+        operation.addImage(file.absolutePath)
 
-        //if (bottomText != null)
-            //annotateCenter(sizeHelper, magickImage, info, bottomText.toUpperCase(), true)
+        operation.fill("white")
+        operation.font("Impact")
+        operation.stroke("black")
+        operation.strokewidth(2)
 
-        //magickImage.fileName = file.absolutePath
-        //magickImage.writeImage(info)
+        if (topText.isNotBlank())
+            annotateCenter(file, operation, topText.toUpperCase(), false)
+
+        if (bottomText != null)
+            annotateCenter(file, operation, bottomText.toUpperCase(), true)
+
+        operation.addImage(file.absolutePath)
+
+        convert.run(operation)
+
         RequestBuffer.request {
             Funcs.sendFile(event.channel, file)
             file.delete()
@@ -68,29 +80,25 @@ object Meme : Command {
         return CommandResult.success()
     }
 
-    /*fun annotateCenter(sizeHelper: BufferedImage, magickImage: MagickImage, info: ImageInfo, text: String, bottom: Boolean) {
-        val aInfo = DrawInfo(info)
-        aInfo.fill = PixelPacket.queryColorDatabase("white")
-        aInfo.stroke = PixelPacket.queryColorDatabase("black")
-        aInfo.strokeAntialias = true
-        aInfo.strokeWidth = 2.0
-        aInfo.opacity = 100
-        aInfo.pointsize = 1.0
-        aInfo.font = "Impact"
-        aInfo.text = text
-        val affinetransform = AffineTransform()
-        val frc = FontRenderContext(affinetransform, true, true)
-        var font = Font(aInfo.font, Font.PLAIN, aInfo.pointsize.toInt())
+    fun annotateCenter(imgFile: File, operation: IMOperation, text: String, bottom: Boolean) {
+        val img = ImageIO.read(imgFile)
+        val affine = AffineTransform()
+        val frc = FontRenderContext(affine, true, true)
+        var pointSize = 1
+        var font = Font("Impact", Font.PLAIN, pointSize)
         var textWidth = font.getStringBounds(text, frc).width
-        while (textWidth < sizeHelper.width * 0.75) {
-            aInfo.pointsize += 1
-            font = Font(aInfo.font, Font.PLAIN, aInfo.pointsize.toInt())
+        while (textWidth < img.width * 0.75) {
+            pointSize += 1
+            font = Font("Impact", Font.PLAIN, pointSize)
             textWidth = font.getStringBounds(text, frc).width
         }
 
-        val yOffset = if (bottom) sizeHelper.height - 30 else aInfo.pointsize.roundToInt() + 20
-        aInfo.geometry = "+${(sizeHelper.width / 2) - (textWidth / 2)}+$yOffset"
+        if (bottom)
+            operation.gravity("south")
+        else
+            operation.gravity("north")
 
-        magickImage.annotateImage(aInfo)
-    }*/
+        operation.pointsize(pointSize)
+        operation.draw("\"text 0,20 $text\"")
+    }
 }
