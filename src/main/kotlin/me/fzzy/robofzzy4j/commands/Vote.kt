@@ -13,6 +13,7 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.Reactio
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
+import sx.blah.discord.handle.obj.IReaction
 import sx.blah.discord.handle.obj.IUser
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.RequestBuilder
@@ -64,17 +65,17 @@ object Vote : Command {
         return list
     }
 
-    fun updateVoteMessage(msg: IMessage, message: String = extractMessage(msg.content)) {
-        val ones = VoteMessage.getUsersReacted(msg, 1)
-        val twos = VoteMessage.getUsersReacted(msg, 2)
-        val threes = VoteMessage.getUsersReacted(msg, 3)
-        val fours = VoteMessage.getUsersReacted(msg, 4)
-        val fives = VoteMessage.getUsersReacted(msg, 5)
-        val sixes = VoteMessage.getUsersReacted(msg, 6)
-        val sevens = VoteMessage.getUsersReacted(msg, 7)
-        val eights = VoteMessage.getUsersReacted(msg, 8)
-        val nines = VoteMessage.getUsersReacted(msg, 9)
-        val tens = VoteMessage.getUsersReacted(msg, 10)
+    fun updateVoteMessage(msg: IMessage, reactions: List<IReaction>, message: String = extractMessage(msg.content)) {
+        val ones = VoteMessage.getUsersReacted(reactions, 1)
+        val twos = VoteMessage.getUsersReacted(reactions, 2)
+        val threes = VoteMessage.getUsersReacted(reactions, 3)
+        val fours = VoteMessage.getUsersReacted(reactions, 4)
+        val fives = VoteMessage.getUsersReacted(reactions, 5)
+        val sixes = VoteMessage.getUsersReacted(reactions, 6)
+        val sevens = VoteMessage.getUsersReacted(reactions, 7)
+        val eights = VoteMessage.getUsersReacted(reactions, 8)
+        val nines = VoteMessage.getUsersReacted(reactions, 9)
+        val tens = VoteMessage.getUsersReacted(reactions, 10)
         val options = extractOptions(msg.content)
         RequestBuffer.request { msg.edit(generateVoteMessage(VoteMessage(message, options, ones, twos, threes, fours, fives, sixes, sevens, eights, nines, tens))) }
     }
@@ -123,8 +124,9 @@ object Vote : Command {
     fun onReactionAdd(event: ReactionAddEvent) {
         if (event.message.author.longID == RoboFzzy.cli.ourUser.longID && !event.user.isBot) {
             if (getAttendanceMessage(event.channel) != null) {
-                removeExistingReactionsExceptOne(event.user, event.message, event.reaction.emoji.name)
-                updateVoteMessage(event.message)
+                val reactions = event.message.reactions
+                removeExistingReactionsExceptOne(event.user, event.message, reactions, event.reaction.emoji.name)
+                updateVoteMessage(event.message, reactions)
             }
         }
     }
@@ -132,13 +134,15 @@ object Vote : Command {
     @EventSubscriber
     fun onReactionRemove(event: ReactionRemoveEvent) {
         if (event.message.author.longID == RoboFzzy.cli.ourUser.longID && !event.user.isBot) {
-            if (getAttendanceMessage(event.channel) != null)
-                updateVoteMessage(event.message)
+            if (getAttendanceMessage(event.channel) != null) {
+                val reactions = event.message.reactions
+                updateVoteMessage(event.message, reactions)
+            }
         }
     }
 
-    fun removeExistingReactionsExceptOne(user: IUser, message: IMessage, exception: String) {
-        for (reaction in message.reactions) {
+    fun removeExistingReactionsExceptOne(user: IUser, message: IMessage, reactions: List<IReaction>, exception: String) {
+        for (reaction in reactions) {
             if (reaction.getUserReacted(user)) {
                 if (reaction.emoji.name != exception)
                     message.removeReaction(user, reaction)
@@ -176,10 +180,12 @@ object Vote : Command {
     ) {
 
         companion object {
-            fun getUsersReacted(msg: IMessage, i: Int): List<IUser> {
-                for (reaction in msg.reactions) {
+            fun getUsersReacted(msg: List<IReaction>, i: Int): List<IUser> {
+                for (reaction in msg) {
                     if (reaction.emoji.name == EmojiManager.getForAlias(numNames[i]).unicode) {
-                        return reaction.users.filter { user -> !user.isBot }
+                        return reaction.users.filter { user ->
+                            if (user != null) !user.isBot else false
+                        }
                     }
                 }
                 return listOf()
