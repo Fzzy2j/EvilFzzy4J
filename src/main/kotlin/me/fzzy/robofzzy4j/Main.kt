@@ -98,7 +98,7 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("fzzy", Fzzy)
     //CommandHandler.registerCommand("eyes", Eyes)
     CommandHandler.registerCommand("picture", Picture)
-    CommandHandler.registerCommand("emotion", Emotion)
+    //CommandHandler.registerCommand("emotion", Emotion)
     CommandHandler.registerCommand("deepfry", Deepfry)
     CommandHandler.registerCommand("mc", Mc)
     CommandHandler.registerCommand("explode", Explode)

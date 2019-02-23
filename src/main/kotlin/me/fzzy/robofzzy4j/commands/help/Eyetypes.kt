@@ -21,7 +21,7 @@ object Eyetypes : Command {
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var all = "```"
         for (file in File("eyes").listFiles()) {
-            all += "-eyes ${file.nameWithoutExtension.replace("_mirror", "")} [imageUrl]\n"
+            all += "-eyes ${file.nameWithoutExtension.replace("_mirror", "")}\n"
         }
         all += "```"
         RequestBuffer.request {

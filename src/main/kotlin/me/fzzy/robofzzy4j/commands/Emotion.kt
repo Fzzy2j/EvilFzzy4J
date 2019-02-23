@@ -17,7 +17,7 @@ object Emotion : Command {
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Displays the emotion of faces in an image"
-    override val usageText: String = "-emotion [imageUrl]"
+    override val usageText: String = "-emotion <imageUrl>"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {

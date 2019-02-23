@@ -19,7 +19,7 @@ object Picture : Command {
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Inserts an image into another, use -picturetypes to see all the picture types"
-    override val usageText: String = "-picture <pictureType> [imageUrl]"
+    override val usageText: String = "-picture <pictureType>"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
@@ -27,7 +27,7 @@ object Picture : Command {
         // Find the specified picture from the pictures folder
         val pictureFile = File("pictures")
         var picture: File? = null
-        if (args.isNotEmpty()) {
+        if (args.isNotEmpty() && args[0].toLowerCase() != "random") {
             for (files in pictureFile.listFiles()) {
                 if (files.nameWithoutExtension.toLowerCase() == args[0].toLowerCase()) {
                     picture = files
@@ -43,7 +43,7 @@ object Picture : Command {
         history.add(0, event.message)
 
         val url = ImageFuncs.getFirstImage(history)
-        val file = if (url != null)
+        val file = if (url != null && args[0].toLowerCase() != "random")
             ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
             ImageFuncs.createTempFile(Repost.getImageRepost(event.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
@@ -61,8 +61,6 @@ object Picture : Command {
         val topAverage = average(topLeft, topRight)
         val bottomAverage = average(bottomLeft, bottomRight)
         val t = -Math.atan2(leftAverage.second - rightAverage.second.toDouble(), rightAverage.first - leftAverage.first.toDouble())
-
-        println(Math.toDegrees(t))
 
         // Detecting the proper width and height
         val maxLength = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft))

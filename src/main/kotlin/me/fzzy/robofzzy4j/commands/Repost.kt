@@ -42,7 +42,6 @@ object Repost : Command {
         for (file in files) {
             if (file.extension == "jpg" || file.extension == "png") imgs.add(file)
         }
-        println(imgs)
         return imgs[RoboFzzy.random.nextInt(imgs.size)]
     }
 }

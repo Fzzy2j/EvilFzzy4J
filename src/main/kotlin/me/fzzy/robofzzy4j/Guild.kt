@@ -112,7 +112,9 @@ class Guild private constructor(private var guildId: Long) {
                         return
                 }
 
-                val pattern = Pattern.compile("^(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]")
+                val pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
+                        + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
+                        + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
                 lateinit var url: URL
                 if (message.attachments.size > 0) {
                     url = URL(message.attachments[0].url)

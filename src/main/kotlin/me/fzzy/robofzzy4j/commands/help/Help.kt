@@ -16,9 +16,9 @@ object Help : Command {
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-        var helpMsg = "```md\n# <> = required | [] = optional\n\n"
+        var helpMsg = "```md\n"
         for ((_, command) in CommandHandler.getAllCommands()) {
-            helpMsg += "${command.usageText}\n${command.description} : ${command.cooldownMillis / 1000} second cooldown\n\n"
+            helpMsg += "# ${command.usageText}\n${command.description} : ${command.cooldownMillis / 1000} second cooldown\n\n"
         }
         helpMsg += "```"
         RequestBuffer.request {

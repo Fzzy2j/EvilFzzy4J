@@ -16,7 +16,7 @@ object Deepfry : Command {
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Deep fries an image"
-    override val usageText: String = "-deepfry [imageUrl]"
+    override val usageText: String = "-deepfry"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {

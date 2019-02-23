@@ -20,7 +20,7 @@ object Fzzy : Command {
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Downsizes the last image sent in the channel using a seam carving algorithm"
-    override val usageText: String = "-fzzy [imageUrl]"
+    override val usageText: String = "-fzzy"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {

@@ -21,8 +21,9 @@ object Picturetypes : Command {
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var all = "```"
         for (file in File("pictures").listFiles()) {
-            all += "-picture ${file.nameWithoutExtension} [imageUrl]\n"
+            all += "-picture ${file.nameWithoutExtension}\n"
         }
+        all += "-picture random"
         all += "```"
         RequestBuffer.request {
             try {

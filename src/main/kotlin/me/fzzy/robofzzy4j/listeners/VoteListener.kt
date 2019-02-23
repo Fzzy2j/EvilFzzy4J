@@ -6,6 +6,7 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.Reactio
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IUser
+import java.lang.NullPointerException
 
 object VoteListener {
 
@@ -41,8 +42,12 @@ object VoteListener {
     fun onReactionAdd(event: ReactionAddEvent) {
         val guild = Guild.getGuild(event.guild.longID)
         if (event.channel.getMessageHistory(10).contains(event.message)) {
-            val users = event.reaction.users
-            if (users != null && users.contains(RoboFzzy.cli.ourUser) && event.user.longID != RoboFzzy.cli.ourUser.longID) {
+            val users = try {
+                event.reaction.users
+            } catch (e: NullPointerException) {
+                return
+            }
+            if (users.contains(RoboFzzy.cli.ourUser) && event.user.longID != RoboFzzy.cli.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
                     when (event.reaction.emoji.name) {
                         "upvote" -> {

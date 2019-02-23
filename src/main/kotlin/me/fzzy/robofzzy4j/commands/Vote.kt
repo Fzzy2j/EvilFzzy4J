@@ -24,9 +24,11 @@ object Vote : Command {
 
     override val cooldownCategory = "vote"
     override val cooldownMillis: Long = 1000 * 60 * 5
-    override val description: String = "Puts a message in the chat that allows users to vote on something"
+    override val description: String =
+            "Puts a message in the chat that allows users to vote on something, if no options are provided it defaults to Yeah and No" +
+            "\nExample: -vote mem on monday?|totally|maybe|absolutely not|toast"
     override val votes: Boolean = false
-    override val usageText: String = "-vote [message|options]"
+    override val usageText: String = "-vote <message|options>"
     override val allowDM: Boolean = false
 
     private const val BEGINNING = "```diff\n- Vote - "
@@ -88,16 +90,18 @@ object Vote : Command {
         var t = "$BEGINNING${message.message}"
         var i = 0
         var total = 0
-        for (s in 1..message.options.size) {
+        for (s in 1..Math.max(message.options.size, 10)) {
             total += message.getListByNumber(s).size
         }
         message.options.forEach { option ->
             i++
-            t += "\n\n$i - \"$option\"\n"
-            t += if (total == 0)
-                "+ 0%"
-            else
-                "+ ${(message.getListByNumber(i).size / total.toFloat() * 100).roundToInt()}%"
+            if (i <= 10) {
+                t += "\n\n$i - \"$option\"\n"
+                t += if (total == 0)
+                    "+ 0%"
+                else
+                    "+ ${(message.getListByNumber(i).size / total.toFloat() * 100).roundToInt()}%"
+            }
         }
         t += "```"
         return t
@@ -127,7 +131,7 @@ object Vote : Command {
 
                 // pass reactions so that we only have to make one request to the api, speeds up voting a lot
                 val reactions = event.message.reactions
-                removeExistingReactionsExceptOne(event.user, event.message, reactions, event.reaction.emoji.name)
+                //removeExistingReactionsExceptOne(event.user, event.message, reactions, event.reaction.emoji.name)
                 updateVoteMessage(event.message, reactions)
             }
         }
