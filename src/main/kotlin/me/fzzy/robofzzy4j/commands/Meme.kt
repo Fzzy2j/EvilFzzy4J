@@ -101,6 +101,6 @@ object Meme : Command {
             operation.gravity("north")
 
         operation.pointsize(pointSize)
-        operation.draw("\"text 0,20 $text\"")
+        operation.draw("\"text 0,20 '$text'\"")
     }
 }
