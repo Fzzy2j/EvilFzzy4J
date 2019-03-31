@@ -12,11 +12,11 @@ object VoteListener {
 
     fun getVotes(message: IMessage): Int {
         var upvotes = 0
-        for (user in message.getReactionByEmoji(RoboFzzy.UPVOTE_EMOJI).users) {
+        for (user in message.getReactionByEmoji(Bot.UPVOTE_EMOJI).users) {
             if (user.longID != message.author.longID) upvotes++
         }
         var downvotes = 0
-        for (user in message.getReactionByEmoji(RoboFzzy.DOWNVOTE_EMOJI).users) {
+        for (user in message.getReactionByEmoji(Bot.DOWNVOTE_EMOJI).users) {
             if (user.longID != message.author.longID) downvotes++
         }
         return upvotes - downvotes
@@ -24,7 +24,7 @@ object VoteListener {
 
     fun getUpvoters(message: IMessage): List<IUser> {
         val list = arrayListOf<IUser>()
-        for (user in message.getReactionByEmoji(RoboFzzy.UPVOTE_EMOJI).users) {
+        for (user in message.getReactionByEmoji(Bot.UPVOTE_EMOJI).users) {
             if (user.longID != message.author.longID) list.add(user)
         }
         return list
@@ -32,7 +32,7 @@ object VoteListener {
 
     fun getDownvoters(message: IMessage): List<IUser> {
         val list = arrayListOf<IUser>()
-        for (user in message.getReactionByEmoji(RoboFzzy.DOWNVOTE_EMOJI).users) {
+        for (user in message.getReactionByEmoji(Bot.DOWNVOTE_EMOJI).users) {
             if (user.longID != message.author.longID) list.add(user)
         }
         return list
@@ -47,7 +47,7 @@ object VoteListener {
             } catch (e: NullPointerException) {
                 return
             }
-            if (users.contains(RoboFzzy.cli.ourUser) && event.user.longID != RoboFzzy.cli.ourUser.longID) {
+            if (users.contains(Bot.client.ourUser) && event.user.longID != Bot.client.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
                     when (event.reaction.emoji.name) {
                         "upvote" -> {
@@ -66,7 +66,7 @@ object VoteListener {
     fun onReactionRemove(event: ReactionRemoveEvent) {
         val guild = Guild.getGuild(event.guild.longID)
         if (event.channel.getMessageHistory(10).contains(event.message)) {
-            if (event.reaction.getUserReacted(RoboFzzy.cli.ourUser) && event.user.longID != RoboFzzy.cli.ourUser.longID) {
+            if (event.reaction.getUserReacted(Bot.client.ourUser) && event.user.longID != Bot.client.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
                     when (event.reaction.emoji.name) {
                         "upvote" -> {

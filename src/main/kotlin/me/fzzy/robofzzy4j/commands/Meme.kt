@@ -30,11 +30,7 @@ object Meme : Command {
 
         var full = ""
         for (text in args) {
-            val pattern = Pattern.compile("((http:\\/\\/|https:\\/\\/)?(www.)?(([a-zA-Z0-9-]){2,}\\.){1,4}([a-zA-Z]){2,6}(\\/([a-zA-Z-_\\/\\.0-9#:?=&;,]*)?)?)")
-            val m: Matcher = pattern.matcher(text)
-            if (!m.find()) {
-                full += " $text"
-            }
+            full += " $text"
         }
 
         if (full.isBlank())
@@ -53,7 +49,8 @@ object Meme : Command {
         val file = if (url != null)
             ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
-            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild))
+                    ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         val convert = ConvertCmd()
         val operation = IMOperation()

@@ -46,7 +46,7 @@ object Explode : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "this image has no framerate to it, i cant work with it") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "this image has no framerate to it, i cant work with it") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
@@ -66,7 +66,7 @@ object Explode : Command {
             val futureList = arrayListOf<Future<*>>()
             val frames = hashMapOf<Int, String>()
             for (i in 0 until fileList.size) {
-                futureList.add(RoboFzzy.executor.submit {
+                futureList.add(Bot.executor.submit {
                     val listFile = fileList[i]
 
                     // https://www.desmos.com/calculator/gztrr4yh2w
@@ -126,7 +126,7 @@ object Explode : Command {
             val futureList = arrayListOf<Future<*>>()
             val frames = hashMapOf<Int, String>()
             for (i in 0..frameCount) {
-                futureList.add(RoboFzzy.executor.submit {
+                futureList.add(Bot.executor.submit {
                     val child = "temp$i.${file.extension}"
                     val warpFile = File(tempPath, child)
                     FileUtils.copyFile(file, warpFile)

@@ -25,7 +25,7 @@ object Help : Command {
             try {
                 event.author.orCreatePMChannel.sendMessage(helpMsg)
             } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
+                MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
             }
         }
 

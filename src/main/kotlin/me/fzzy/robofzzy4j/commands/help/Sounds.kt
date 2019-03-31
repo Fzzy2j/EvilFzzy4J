@@ -39,7 +39,7 @@ object Sounds : Command {
             try {
                 event.message.author.orCreatePMChannel.sendMessage(all)
             } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
+                MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
             }
         }
         return CommandResult.success()
@@ -50,7 +50,7 @@ object Sounds : Command {
     @EventSubscriber
     fun onMessageReceived(event: MessageReceivedEvent) {
         if (event.guild != null) {
-            if (event.message.content.startsWith(RoboFzzy.BOT_PREFIX)) {
+            if (event.message.content.startsWith(Bot.BOT_PREFIX)) {
                 val audioDir = File("sounds").listFiles { file -> file.name.contains(event.message.content.substring(1)) }
 
                 if (audioDir == null || audioDir.isEmpty())
@@ -83,7 +83,7 @@ object Sounds : Command {
                             "you gotta slow down %user%, you can use that command in %time%"
                     )
                     RequestBuffer.request {
-                        MessageScheduler.sendTempMessage(1000 * 60, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
+                        MessageScheduler.sendTempMessage(1000 * 60, event.channel, messages[Bot.random.nextInt(messages.size)]
                                 .replace("%user%", event.author.name.toLowerCase())
                                 .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
                         )

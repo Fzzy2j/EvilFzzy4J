@@ -1,9 +1,6 @@
 package me.fzzy.robofzzy4j
 
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.client.utils.URIBuilder
 import org.apache.http.entity.StringEntity
-import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.util.EntityUtils
 import org.json.JSONArray
 import sx.blah.discord.api.internal.json.objects.EmbedObject
@@ -53,9 +50,9 @@ object Funcs {
 
     fun mentionsByName(msg: IMessage): Boolean {
         val check = msg.content.toLowerCase()
-        val checkAgainst = "${RoboFzzy.cli.ourUser.name} ${RoboFzzy.cli.ourUser.getDisplayName(msg.guild)}"
+        val checkAgainst = "${Bot.client.ourUser.name} ${Bot.client.ourUser.getDisplayName(msg.guild)}"
         for (realCheck in check.split(" ")) {
-            if (check.contains("thank") && (checkAgainst.toLowerCase().replace(" ", "").contains(realCheck) || msg.mentions.contains(RoboFzzy.cli.ourUser)))
+            if (check.contains("thank") && (checkAgainst.toLowerCase().replace(" ", "").contains(realCheck) || msg.mentions.contains(Bot.client.ourUser)))
                 return true
         }
         return false
@@ -74,7 +71,7 @@ object Funcs {
 
         val apiurl = "https://speech.platform.bing.com/synthesize"
         val input = "<speak version='1.0' xml:lang='en-US'>" +
-                "<voice xml:lang='en-US' name='Microsoft Server Speech Text to Speech Voice ${voices[RoboFzzy.random.nextInt(voices.size)]}'>" +
+                "<voice xml:lang='en-US' name='Microsoft Server Speech Text to Speech Voice ${voices[Bot.random.nextInt(voices.size)]}'>" +
                 text +
                 "</voice>" +
                 "</speak>"
@@ -89,7 +86,7 @@ object Funcs {
             urlConnection.requestMethod = "POST"
             urlConnection.setRequestProperty("Content-Type", "application/ssml+xml")
             urlConnection.setRequestProperty("X-MICROSOFT-OutputFormat", "audio-16khz-64kbitrate-mono-mp3")
-            urlConnection.setRequestProperty("Authorization", "Bearer ${RoboFzzy.auth.GetAccessToken()}")
+            urlConnection.setRequestProperty("Authorization", "Bearer ${Bot.azureAuth.GetAccessToken()}")
             urlConnection.setRequestProperty("Accept", "*/*")
             val ssmlBytes = input.toByteArray()
             urlConnection.setRequestProperty("content-length", ssmlBytes.size.toString())
@@ -185,52 +182,14 @@ object ImageFuncs {
         return new
     }
 
-    fun getFacialInfo(attributes: String, faceId: Boolean, faceLandmarks: Boolean, url: String): JSONArray? {
-        val apiurl = "https://westcentralus.api.cognitive.microsoft.com/face/v1.0/detect"
-        val httpClient = HttpClientBuilder.create().build()
-        try {
-            val builder = URIBuilder(apiurl)
-
-            builder.setParameter("returnFaceId", faceId.toString())
-            builder.setParameter("returnFaceLandmarks", faceLandmarks.toString())
-            builder.setParameter("returnFaceAttributes", attributes)
-
-            val uri = builder.build()
-            val request = HttpPost(uri)
-
-            request.setHeader("Content-Type", "application/json")
-            request.setHeader("Ocp-Apim-Subscription-Key", RoboFzzy.faceApiToken)
-
-            val reqEntity = StringEntity("{\"url\":\"$url\"}")
-            request.entity = reqEntity
-
-            val response = httpClient.execute(request)
-            val entity = response.entity
-
-            if (entity != null) {
-                val jsonString = EntityUtils.toString(entity).trim { it <= ' ' }
-                try {
-                    return JSONArray(jsonString)
-                } catch (e: Exception) {
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return null
-    }
-
     fun getFirstImage(list: MutableList<IMessage>): URL? {
-        val pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
-                + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
-                + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
         var url: URL? = null
         for (message in list) {
             if (message.attachments.size > 0) {
                 url = URL(message.attachments[0].url)
             } else {
                 for (split in message.content.split(" ")) {
-                    val matcher = pattern.matcher(split)
+                    val matcher = Bot.URL_PATTERN.matcher(split)
                     if (matcher.find()) {
                         var urlString = split.toLowerCase().substring(matcher.start(1), matcher.end()).replace(".webp", ".png").replace("//gyazo.com", "//i.gyazo.com")
                         if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png")) {

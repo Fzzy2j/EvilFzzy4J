@@ -71,7 +71,7 @@ class Guild private constructor(private var guildId: Long) {
         var existingMessage: IMessage? = null
 
         for (history in messages) {
-            if (history.content.startsWith("```diff\n--- Leaderboard Changes\n") && history.author.longID == RoboFzzy.cli.ourUser.longID) {
+            if (history.content.startsWith("```diff\n--- Leaderboard Changes\n") && history.author.longID == Bot.client.ourUser.longID) {
                 existingMessage = history
                 break
             }
@@ -81,7 +81,7 @@ class Guild private constructor(private var guildId: Long) {
         var message = "```diff\n--- Leaderboard Changes\n"
         for ((id, amt) in Funcs.sortHashMapByValues(changes!!.positions)) {
             if (amt == 0) continue
-            val name = RoboFzzy.cli.getUserByID(id).getDisplayName(getDiscordGuild())
+            val name = Bot.client.getUserByID(id).getDisplayName(getDiscordGuild())
             val rank = leaderboard.getRank(id)
             message += if (amt > 0)
                 "+ $name #$rank CDR=${User.getUser(id).getCooldownModifier(this)}%\n"
@@ -92,7 +92,7 @@ class Guild private constructor(private var guildId: Long) {
         if (existingMessage != null)
             RequestBuffer.request { existingMessage.edit(message) }
         else
-            RequestBuffer.request { channel.sendMessage(message) }
+            RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, channel, message) }
     }
 
     fun addPoint(message: IMessage, user: IUser, channel: IChannel) {
@@ -101,8 +101,8 @@ class Guild private constructor(private var guildId: Long) {
         votes++
 
         if (VoteListener.getVotes(message) > getAverageVote()) {
-            if (!RoboFzzy.savedMemesIds.contains(message.longID)) {
-                RoboFzzy.savedMemesIds.add(message.longID)
+            if (!Bot.savedMemesIds.contains(message.longID)) {
+                Bot.savedMemesIds.add(message.longID)
                 if (message.attachments.size == 0) {
                     if (!(message.content.toLowerCase().endsWith(".png")
                                     || message.content.toLowerCase().endsWith(".jpg")
@@ -112,15 +112,12 @@ class Guild private constructor(private var guildId: Long) {
                         return
                 }
 
-                val pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
-                        + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
-                        + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
                 lateinit var url: URL
                 if (message.attachments.size > 0) {
                     url = URL(message.attachments[0].url)
                 } else {
                     for (split in message.content.split(" ")) {
-                        val matcher = pattern.matcher(split)
+                        val matcher = Bot.URL_PATTERN.matcher(split)
                         if (matcher.find()) {
                             var urlString = split.substring(matcher.start(1), matcher.end()).replace(".webp", ".png").replace("//gyazo.com", "//i.gyazo.com")
                             if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png")) {
@@ -176,15 +173,15 @@ class Guild private constructor(private var guildId: Long) {
     fun allowVotes(msg: IMessage) {
         posts++
         votes++
-        RequestBuilder(RoboFzzy.cli).shouldBufferRequests(true).doAction {
+        RequestBuilder(Bot.client).shouldBufferRequests(true).doAction {
             try {
-                msg.addReaction(RoboFzzy.UPVOTE_EMOJI)
+                msg.addReaction(Bot.UPVOTE_EMOJI)
             } catch (e: MissingPermissionsException) {
             }
             true
         }.andThen {
             try {
-                msg.addReaction(RoboFzzy.DOWNVOTE_EMOJI)
+                msg.addReaction(Bot.DOWNVOTE_EMOJI)
             } catch (e: MissingPermissionsException) {
             }
             true
@@ -204,36 +201,36 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun getDiscordGuild(): IGuild {
-        return RoboFzzy.cli.getGuildByID(longId)
+        return Bot.client.getGuildByID(longId)
     }
 
     fun save() {
-        RoboFzzy.guildNode.getNode("id$guildId", "votes").value = null
+        Bot.guildNode.getNode("id$guildId", "votes").value = null
         var i = 0
         for ((key, value) in leaderboard.valueMap) {
-            RoboFzzy.guildNode.getNode("id$guildId", "votes", i, "id").value = key
-            RoboFzzy.guildNode.getNode("id$guildId", "votes", i, "value").value = value.value
+            Bot.guildNode.getNode("id$guildId", "votes", i, "id").value = key
+            Bot.guildNode.getNode("id$guildId", "votes", i, "value").value = value.value
             i++
         }
 
-        RoboFzzy.guildNode.getNode("id$guildId", "totalVotes").value = votes
-        RoboFzzy.guildNode.getNode("id$guildId", "totalPosts").value = posts
+        Bot.guildNode.getNode("id$guildId", "totalVotes").value = votes
+        Bot.guildNode.getNode("id$guildId", "totalPosts").value = posts
 
-        RoboFzzy.guildManager.save(RoboFzzy.guildNode)
+        Bot.guildManager.save(Bot.guildNode)
     }
 
     fun load() {
         leaderboard = Leaderboard()
-        for (node in RoboFzzy.guildNode.getNode("id$guildId", "votes").childrenList) {
+        for (node in Bot.guildNode.getNode("id$guildId", "votes").childrenList) {
             if (try {
-                        !RoboFzzy.cli.getUserByID(node.getNode("id").long).isBot
+                        !Bot.client.getUserByID(node.getNode("id").long).isBot
                     } catch (e: Exception) {
                         true
                     })
                 leaderboard.setValue(node.getNode("id").long, node.getNode("value").int)
         }
-        votes = RoboFzzy.guildNode.getNode("id$guildId", "totalVotes").int
-        posts = RoboFzzy.guildNode.getNode("id$guildId", "totalPosts").int
+        votes = Bot.guildNode.getNode("id$guildId", "totalVotes").int
+        posts = Bot.guildNode.getNode("id$guildId", "totalPosts").int
     }
 
 }

@@ -4,7 +4,7 @@ import com.vdurmont.emoji.EmojiManager
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.CommandResult
 import me.fzzy.robofzzy4j.Guild
-import me.fzzy.robofzzy4j.RoboFzzy
+import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.listeners.VoteListener
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
@@ -46,7 +46,7 @@ object Vote : Command {
 
     fun getAttendanceMessage(channel: IChannel): IMessage? {
         for (msg in channel.getMessageHistory(20)) {
-            if (msg.content.contains(BEGINNING) && msg.author.longID == RoboFzzy.cli.ourUser.longID) {
+            if (msg.content.contains(BEGINNING) && msg.author.longID == Bot.client.ourUser.longID) {
                 return msg
             }
         }
@@ -109,7 +109,7 @@ object Vote : Command {
 
     fun addNumberReactions(message: IMessage, amount: Int) {
 
-        val request = RequestBuilder(RoboFzzy.cli).shouldBufferRequests(true).doAction {
+        val request = RequestBuilder(Bot.client).shouldBufferRequests(true).doAction {
             message.addReaction(EmojiManager.getForAlias(numNames[1]))
             true
         }
@@ -126,7 +126,7 @@ object Vote : Command {
 
     @EventSubscriber
     fun onReactionAdd(event: ReactionAddEvent) {
-        if (event.message.author.longID == RoboFzzy.cli.ourUser.longID && !event.user.isBot) {
+        if (event.message.author.longID == Bot.client.ourUser.longID && !event.user.isBot) {
             if (getAttendanceMessage(event.channel) != null) {
 
                 // pass reactions so that we only have to make one request to the api, speeds up voting a lot
@@ -139,7 +139,7 @@ object Vote : Command {
 
     @EventSubscriber
     fun onReactionRemove(event: ReactionRemoveEvent) {
-        if (event.message.author.longID == RoboFzzy.cli.ourUser.longID && !event.user.isBot) {
+        if (event.message.author.longID == Bot.client.ourUser.longID && !event.user.isBot) {
             if (getAttendanceMessage(event.channel) != null) {
 
                 // pass reactions so that we only have to make one request to the api, speeds up voting a lot

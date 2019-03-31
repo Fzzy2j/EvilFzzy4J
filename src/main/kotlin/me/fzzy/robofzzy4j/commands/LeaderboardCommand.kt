@@ -25,7 +25,7 @@ object LeaderboardCommand : Command {
             if (id != null) {
                 val value = guild.leaderboard.getOrDefault(id, 0)
 
-                val title = "#$i - ${RoboFzzy.cli.getUserByID(id).getDisplayName(RoboFzzy.cli.getGuildByID(event.guild.longID))} | ${User.getUser(id).getCooldownModifier(guild)}% CDR"
+                val title = "#$i - ${Bot.client.getUserByID(id).getDisplayName(Bot.client.getGuildByID(event.guild.longID))} | ${User.getUser(id).getCooldownModifier(guild)}% CDR"
                 val description = "$value points"
                 builder.appendField(title, description, false)
             }
@@ -39,7 +39,7 @@ object LeaderboardCommand : Command {
         var existingLeaderboard: IMessage? = null
         for (msg in event.channel.getMessageHistory(5)) {
             if (msg.embeds.isEmpty()) continue
-            if (msg.author.longID != RoboFzzy.cli.ourUser.longID) continue
+            if (msg.author.longID != Bot.client.ourUser.longID) continue
             if (msg.embeds[0].title == title) {
                 existingLeaderboard = msg
                 break

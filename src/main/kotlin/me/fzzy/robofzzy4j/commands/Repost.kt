@@ -30,7 +30,7 @@ object Repost : Command {
         val files = File("memes", guild.longID.toString()).listFiles()
         if (files == null || files.isEmpty())
             return null
-        return files[RoboFzzy.random.nextInt(files.size)]
+        return files[Bot.random.nextInt(files.size)]
     }
 
     fun getImageRepost(guild: IGuild): File? {
@@ -42,6 +42,6 @@ object Repost : Command {
         for (file in files) {
             if (file.extension == "jpg" || file.extension == "png") imgs.add(file)
         }
-        return imgs[RoboFzzy.random.nextInt(imgs.size)]
+        return imgs[Bot.random.nextInt(imgs.size)]
     }
 }

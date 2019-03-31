@@ -19,21 +19,32 @@ import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
+import org.apache.http.client.methods.HttpGet
+import org.apache.http.client.utils.URIBuilder
+import org.apache.http.impl.client.HttpClients
+import org.apache.http.util.EntityUtils
+import org.json.JSONObject
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.ReadyEvent
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.RequestBuffer
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.net.HttpURLConnection
+import java.net.URL
+import java.nio.file.Files
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.regex.Pattern
 
-object RoboFzzy {
-    lateinit var cli: IDiscordClient
+object Bot {
+    lateinit var client: IDiscordClient
 
     val savedMemesIds = ArrayList<Long>()
 
-    lateinit var faceApiToken: String
     lateinit var speechApiToken: String
 
     const val BOT_PREFIX = "-"
@@ -42,21 +53,23 @@ object RoboFzzy {
     val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
     val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
 
+    val URL_PATTERN = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
+            + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
+            + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
+
     // Threads
-    lateinit var auth: Authentication
+    lateinit var azureAuth: Authentication
 
     val random = Random()
 
-    internal lateinit var guildFile: File
     lateinit var guildManager: ConfigurationLoader<CommentedConfigurationNode>
     lateinit var guildNode: ConfigurationNode
 
-    internal lateinit var dataFile: File
     lateinit var dataManager: ConfigurationLoader<CommentedConfigurationNode>
     lateinit var dataNode: ConfigurationNode
 
     const val CONFIG_DIR: String = "data/"
-    const val THREAD_COUNT = 10
+    const val THREAD_COUNT = 6
 
     lateinit var executor: ExecutorService
 
@@ -66,31 +79,33 @@ object RoboFzzy {
         for (guild in event.client.guilds) {
             Discord4J.LOGGER.info(guild.name)
         }
-        RequestBuffer.request { RoboFzzy.cli.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${RoboFzzy.BOT_PREFIX}help") }
+        RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.BOT_PREFIX}help") }
     }
 }
 
 fun main(args: Array<String>) {
-    if (args.size != 3) {
-        println("Please enter the bots tokens e.g. java -jar thisjar.jar discordtokenhere azurefacetokenhere azurespeechtokenhere")
-        return
+    val keys = File("keys.conf")
+    if (!keys.exists()) {
+        Discord4J.LOGGER.warn("Generating new keys.conf file... you must enter a discord token for the bot to function")
+        Files.copy(Bot::class.java.getResourceAsStream("keys.conf"), keys.toPath())
+        System.exit(0)
     }
+    val keyNode = HoconConfigurationLoader.builder().setPath(File("keys.conf").toPath()).build().load()
+    Bot.speechApiToken = keyNode.getNode("speechApiToken").string!!
 
-    RoboFzzy.executor = Executors.newFixedThreadPool(RoboFzzy.THREAD_COUNT)
+    Bot.executor = Executors.newFixedThreadPool(Bot.THREAD_COUNT)
 
     Discord4J.LOGGER.info("Bot Starting.")
 
-    RoboFzzy.guildFile = File(RoboFzzy.CONFIG_DIR + File.separator + "guilds.conf")
-    RoboFzzy.dataFile = File(RoboFzzy.CONFIG_DIR + File.separator + "data.conf")
-    RoboFzzy.guildFile.parentFile.mkdirs()
-    RoboFzzy.guildManager = HoconConfigurationLoader.builder().setPath(RoboFzzy.guildFile.toPath()).build()
-    RoboFzzy.dataManager = HoconConfigurationLoader.builder().setPath(RoboFzzy.dataFile.toPath()).build()
-    RoboFzzy.guildNode = RoboFzzy.guildManager.load()
-    RoboFzzy.dataNode = RoboFzzy.dataManager.load()
+    val guildFile = File(Bot.CONFIG_DIR + File.separator + "guilds.conf")
+    val dataFile = File(Bot.CONFIG_DIR + File.separator + "data.conf")
+    guildFile.parentFile.mkdirs()
+    Bot.guildManager = HoconConfigurationLoader.builder().setPath(guildFile.toPath()).build()
+    Bot.dataManager = HoconConfigurationLoader.builder().setPath(dataFile.toPath()).build()
+    Bot.guildNode = Bot.guildManager.load()
+    Bot.dataNode = Bot.dataManager.load()
 
-    RoboFzzy.faceApiToken = args[1]
-    RoboFzzy.speechApiToken = args[2]
-    RoboFzzy.auth = Authentication(RoboFzzy.speechApiToken)
+    Bot.azureAuth = Authentication(Bot.speechApiToken)
     ProcessStarter.setGlobalSearchPath("C:\\Program Files\\ImageMagick-7.0.8-Q16")
 
     Discord4J.LOGGER.info("Registering commands.")
@@ -98,7 +113,6 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("fzzy", Fzzy)
     //CommandHandler.registerCommand("eyes", Eyes)
     CommandHandler.registerCommand("picture", Picture)
-    //CommandHandler.registerCommand("emotion", Emotion)
     CommandHandler.registerCommand("deepfry", Deepfry)
     CommandHandler.registerCommand("mc", Mc)
     CommandHandler.registerCommand("explode", Explode)
@@ -121,9 +135,9 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("override", Override)
 
     Discord4J.LOGGER.info("Loading reviewIds.")
-    RoboFzzy.savedMemesIds.clear()
-    for (text in RoboFzzy.dataNode.getNode("savedMemesIds").getList(TypeToken.of(String::class.java))) {
-        RoboFzzy.savedMemesIds.add(text.toLong())
+    Bot.savedMemesIds.clear()
+    for (text in Bot.dataNode.getNode("savedMemesIds").getList(TypeToken.of(String::class.java))) {
+        Bot.savedMemesIds.add(text.toLong())
     }
 
     val cacheFile = File("cache")
@@ -142,29 +156,29 @@ fun main(args: Array<String>) {
     Task.registerTask(IndividualTask({
 
         val day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        if (day == Calendar.MONDAY && System.currentTimeMillis() - RoboFzzy.dataNode.getNode("leaderboardResetTimestamp").long > 48 * 60 * 60 * 1000) {
-            RoboFzzy.dataNode.getNode("leaderboardResetTimestamp").value = System.currentTimeMillis()
-            RoboFzzy.dataManager.save(RoboFzzy.dataNode)
+        if (day == Calendar.MONDAY && System.currentTimeMillis() - Bot.dataNode.getNode("leaderboardResetTimestamp").long > 48 * 60 * 60 * 1000) {
+            Bot.dataNode.getNode("leaderboardResetTimestamp").value = System.currentTimeMillis()
+            Bot.dataManager.save(Bot.dataNode)
             Guild.clearLeaderboards()
         }
         Guild.saveAll()
-        RequestBuffer.request { RoboFzzy.cli.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${RoboFzzy.BOT_PREFIX}help") }
+        RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.BOT_PREFIX}help") }
     }, 60, true))
 
     Discord4J.LOGGER.info("Registering events.")
 
-    RoboFzzy.cli = ClientBuilder().withToken(args[0]).build()
-    RoboFzzy.cli.dispatcher.registerListener(VoteListener)
-    RoboFzzy.cli.dispatcher.registerListener(MessageListener)
-    RoboFzzy.cli.dispatcher.registerListener(VoiceListener)
-    RoboFzzy.cli.dispatcher.registerListener(Sounds)
-    RoboFzzy.cli.dispatcher.registerListener(CommandHandler)
-    RoboFzzy.cli.dispatcher.registerListener(Vote)
-    RoboFzzy.cli.dispatcher.registerListener(RoboFzzy)
+    Bot.client = ClientBuilder().withToken(keyNode.getNode("discordToken").string!!).build()
+    Bot.client.dispatcher.registerListener(VoteListener)
+    Bot.client.dispatcher.registerListener(MessageListener)
+    Bot.client.dispatcher.registerListener(VoiceListener)
+    Bot.client.dispatcher.registerListener(Sounds)
+    Bot.client.dispatcher.registerListener(CommandHandler)
+    Bot.client.dispatcher.registerListener(Vote)
+    Bot.client.dispatcher.registerListener(Bot)
 
     Discord4J.LOGGER.info("Logging in.")
 
-    RoboFzzy.cli.login()
+    Bot.client.login()
 }
 
 

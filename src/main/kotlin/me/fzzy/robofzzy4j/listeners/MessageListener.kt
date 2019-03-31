@@ -25,9 +25,9 @@ object MessageListener {
     fun onMessageReceived(event: MessageReceivedEvent) {
         if (Funcs.mentionsByName(event.message)) {
             for (msg in event.channel.getMessageHistory(7)) {
-                if (msg.author.longID == RoboFzzy.cli.ourUser.longID) {
+                if (msg.author.longID == Bot.client.ourUser.longID) {
                     RequestBuffer.request {
-                        MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, respongeMsgs[RoboFzzy.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild).toLowerCase()))
+                        MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, respongeMsgs[Bot.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild).toLowerCase()))
                     }
                     break
                 }
@@ -36,10 +36,7 @@ object MessageListener {
         if (event.guild != null) {
             if (!event.author.isBot) {
                 val guild = Guild.getGuild(event.guild.longID)
-                val pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
-                        + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
-                        + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
-                val m: Matcher = pattern.matcher(event.message.content)
+                val m: Matcher = Bot.URL_PATTERN.matcher(event.message.content)
                 if (m.find() || event.message.attachments.size > 0) {
                     guild.allowVotes(event.message)
                 }

@@ -34,7 +34,7 @@ object Picture : Command {
                     break
                 }
             }
-        } else picture = pictureFile.listFiles()[RoboFzzy.random.nextInt(pictureFile.listFiles().count())]
+        } else picture = pictureFile.listFiles()[Bot.random.nextInt(pictureFile.listFiles().count())]
         if (picture == null)
             return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes")
 

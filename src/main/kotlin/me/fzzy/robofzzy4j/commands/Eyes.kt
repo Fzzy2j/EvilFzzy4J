@@ -28,7 +28,7 @@ object Eyes : Command {
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-
+        /*
         // Find the specified eyes from the eyes folder
         val eyesFile = File("eyes")
         var eyes: File? = null
@@ -96,6 +96,7 @@ object Eyes : Command {
             Funcs.sendFile(event.channel, file)
             file.delete()
         }
+        */
         return CommandResult.success()
     }
 }

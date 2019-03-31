@@ -42,7 +42,7 @@ object Fzzy : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
@@ -62,7 +62,7 @@ object Fzzy : Command {
 
             val futureList = arrayListOf<Future<*>>()
             for (listFile in tempFile.list()) {
-                futureList.add(RoboFzzy.executor.submit {
+                futureList.add(Bot.executor.submit {
                     resize(File("cache/${tempFile.nameWithoutExtension}/$listFile"))
                 })
             }

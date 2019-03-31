@@ -3,7 +3,7 @@ package me.fzzy.robofzzy4j.commands.help
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.CommandResult
 import me.fzzy.robofzzy4j.MessageScheduler
-import me.fzzy.robofzzy4j.RoboFzzy
+import me.fzzy.robofzzy4j.Bot
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
@@ -28,7 +28,7 @@ object Eyetypes : Command {
             try {
                 event.message.author.orCreatePMChannel.sendMessage(all)
             } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
+                MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
             }
         }
         return CommandResult.success()

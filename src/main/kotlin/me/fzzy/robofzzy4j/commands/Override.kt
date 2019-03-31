@@ -18,9 +18,12 @@ object Override : Command {
     override val allowDM = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-        if (event.author.longID != RoboFzzy.cli.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${RoboFzzy.cli.applicationOwner.name}")
+        if (event.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${Bot.client.applicationOwner.name}")
 
         when (args[0].toLowerCase()) {
+            "test" -> {
+                RequestBuffer.request { event.channel.sendMessage(event.guild.getUserByID(560570325981593640).mention()) }
+            }
             "volume" -> {
                 AudioPlayer.getAudioPlayerForGuild(event.guild).volume = args[1].toFloat()
             }
@@ -56,7 +59,7 @@ object Override : Command {
                 )
 
                 RequestBuffer.request {
-                    MessageScheduler.sendTempMessage(10000, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
+                    MessageScheduler.sendTempMessage(10000, event.channel, messages[Bot.random.nextInt(messages.size)]
                             .replace("%target%", userNames.joinToString(", "))
                             .replace("%author%", event.author.name.toLowerCase()))
                 }

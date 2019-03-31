@@ -32,7 +32,7 @@ object Play : Command {
 
         val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[0])
 
-        var id = try {
+        val id = try {
             if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]
         } catch (e: Exception) {
             return CommandResult.fail("i couldnt get that videos id")

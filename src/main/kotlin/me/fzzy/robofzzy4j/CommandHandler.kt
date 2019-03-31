@@ -43,7 +43,7 @@ object CommandHandler {
         val args = event.message.content.split(" ")
         if (args.isEmpty())
             return
-        if (!args[0].startsWith(RoboFzzy.BOT_PREFIX))
+        if (!args[0].startsWith(Bot.BOT_PREFIX))
             return
         val commandString = args[0].substring(1)
         var argsList: List<String> = args.toMutableList()
@@ -57,19 +57,19 @@ object CommandHandler {
 
             if (event.channel.isPrivate) {
                 if (!command.allowDM) {
-                    RequestBuffer.request { MessageScheduler.sendTempMessage(RoboFzzy.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
+                    RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
                     return
                 }
             }
 
             val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
-            if (user.id == RoboFzzy.cli.applicationOwner.longID ||
+            if (user.id == Bot.client.applicationOwner.longID ||
                             user.getCooldown(command.cooldownCategory).isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
                 if (!user.runningCommand) {
                     user.runningCommand = true
                     if (!command.votes) tryDelete(event.message)
-                    RoboFzzy.executor.submit {
+                    Bot.executor.submit {
                         try {
                             val result = try {
                                 command.runCommand(event, argsList)
@@ -104,7 +104,7 @@ object CommandHandler {
                         "sorry %user%, i cant let you use that command for another %time%"
                 )
                 RequestBuffer.request {
-                    MessageScheduler.sendTempMessage(10000, event.channel, messages[RoboFzzy.random.nextInt(messages.size)]
+                    MessageScheduler.sendTempMessage(10000, event.channel, messages[Bot.random.nextInt(messages.size)]
                             .replace("%user%", event.author.name.toLowerCase())
                             .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
                     )

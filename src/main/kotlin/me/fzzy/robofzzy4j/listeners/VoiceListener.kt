@@ -1,6 +1,6 @@
 package me.fzzy.robofzzy4j.listeners
 
-import me.fzzy.robofzzy4j.RoboFzzy
+import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.thread.IndividualTask
 import me.fzzy.robofzzy4j.thread.Task
 import sx.blah.discord.api.events.EventSubscriber
@@ -28,7 +28,7 @@ object VoiceListener {
         if (!interupt) {
             val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
             if (!file.exists()) return null
-            if (!channel.connectedUsers.contains(RoboFzzy.cli.ourUser) && audioP.currentTrack == null)
+            if (!channel.connectedUsers.contains(Bot.client.ourUser) && audioP.currentTrack == null)
                 channel.join()
 
             try {
@@ -62,9 +62,9 @@ object VoiceListener {
         if (event.track.metadata.containsKey("fzzyVolume"))
             event.player.volume = event.track.metadata["fzzyVolume"] as Float
         if (event.track.metadata.containsKey("fzzyChannel")) {
-            val channel = RoboFzzy.cli.getVoiceChannelByID(event.track.metadata["fzzyChannel"] as Long)
-            if (!channel.connectedUsers.contains(RoboFzzy.cli.ourUser))
-                RoboFzzy.cli.ourUser.moveToVoiceChannel(channel)
+            val channel = Bot.client.getVoiceChannelByID(event.track.metadata["fzzyChannel"] as Long)
+            if (!channel.connectedUsers.contains(Bot.client.ourUser))
+                Bot.client.ourUser.moveToVoiceChannel(channel)
         }
         if (event.track.metadata.containsKey("fzzyTimeSeconds")) {
             if (event.track.metadata["fzzyTimeSeconds"] as Int > 0) {
@@ -72,7 +72,7 @@ object VoiceListener {
                 Thread {
                     while (true) {
                         Thread.sleep(1000)
-                        val message = RoboFzzy.cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
+                        val message = Bot.client.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
 
                         if (message != null) {
                             if (overrides.contains(message.longID)) {
@@ -101,7 +101,7 @@ object VoiceListener {
 
     @EventSubscriber
     fun onTrackSkip(event: TrackSkipEvent) {
-        val message = RoboFzzy.cli.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
+        val message = Bot.client.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
         try {
             Task.registerTask(IndividualTask({
                 RequestBuffer.request { message.delete() }
@@ -109,13 +109,13 @@ object VoiceListener {
         } catch (e: MissingPermissionsException) {
         }
         if (event.nextTrack == null && !interupt) {
-            RoboFzzy.cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
+            Bot.client.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
         }
     }
 
     @EventSubscriber
     fun onTrackEnd(event: TrackFinishEvent) {
-        val message = RoboFzzy.cli.getMessageByID(event.oldTrack.metadata["fzzyMessageId"] as Long)
+        val message = Bot.client.getMessageByID(event.oldTrack.metadata["fzzyMessageId"] as Long)
         try {
             Task.registerTask(IndividualTask({
                 RequestBuffer.request {
@@ -128,7 +128,7 @@ object VoiceListener {
         } catch (e: MissingPermissionsException) {
         }
         if (!event.newTrack.isPresent && !interupt) {
-            RoboFzzy.cli.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
+            Bot.client.ourUser.getVoiceStateForGuild(event.player.guild).channel?.leave()
         }
     }
 
