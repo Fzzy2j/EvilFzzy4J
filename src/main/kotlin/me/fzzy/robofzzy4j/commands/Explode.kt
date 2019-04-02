@@ -21,7 +21,7 @@ object Explode : Command {
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Scales an image repeatedly, turning it into a gif"
-    override val usageText: String = "-explode"
+    override val usageText: String = "explode"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {

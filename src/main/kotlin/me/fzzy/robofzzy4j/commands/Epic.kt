@@ -10,7 +10,7 @@ object Epic : Command {
     override val cooldownMillis: Long = 1000 * 60 * 10
     override val description: String = "Plays something epic in your voice channel, use -sounds to see all the sounds"
     override val votes: Boolean = true
-    override val usageText: String = "-epic [sound]"
+    override val usageText: String = "epic [sound]"
     override val allowDM: Boolean = false
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {

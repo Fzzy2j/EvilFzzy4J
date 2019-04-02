@@ -11,7 +11,7 @@ object Pfp : Command {
     override val cooldownMillis: Long = 30 * 1000
     override val votes: Boolean = false
     override val description: String = "Displays a users profile picture"
-    override val usageText: String = "-pfp <user>"
+    override val usageText: String = "pfp <user>"
     override val allowDM: Boolean = false
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {

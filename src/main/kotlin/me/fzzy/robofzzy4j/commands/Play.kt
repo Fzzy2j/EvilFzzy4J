@@ -21,7 +21,7 @@ object Play : Command {
     override val cooldownMillis: Long = 1000 * 60 * 10
     override val votes: Boolean = true
     override val description = "Plays audio in the voice channel"
-    override val usageText: String = "-play <videoUrl>"
+    override val usageText: String = "play <videoUrl>"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
@@ -42,6 +42,7 @@ object Play : Command {
     }
 
     fun play(channel: IVoiceChannel, id: String, messageId: Long, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {
+
         val extraction = try {
             YouTubeExtractor.Builder().build().extract(id).blockingGet()
         } catch (e: Exception) {
@@ -52,6 +53,7 @@ object Play : Command {
             for (stream in extraction.videoStreams) {
                 if (stream.format == "v3GPP")
                     continue
+
 
                 Discord4J.LOGGER.info("Playing video audio for video: https://www.youtube.com/watch?v=$id")
                 val outputFile = File("cache/${System.currentTimeMillis()}.mp4")

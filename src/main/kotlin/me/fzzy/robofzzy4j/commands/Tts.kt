@@ -19,7 +19,7 @@ object Tts : Command {
     override val cooldownMillis: Long = 60 * 10 * 1000
     override val votes: Boolean = true
     override val description = "Joins the voice channel and plays text to speech"
-    override val usageText: String = "-tts <text>"
+    override val usageText: String = "tts <text>"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {

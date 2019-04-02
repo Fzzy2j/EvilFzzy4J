@@ -26,7 +26,7 @@ object Sounds : Command {
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description: String = "Shows all the sounds the bot can play in the voice channel"
-    override val usageText: String = "-sounds"
+    override val usageText: String = "sounds"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {

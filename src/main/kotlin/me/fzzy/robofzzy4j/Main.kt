@@ -69,7 +69,7 @@ object Bot {
     lateinit var dataNode: ConfigurationNode
 
     const val CONFIG_DIR: String = "data/"
-    const val THREAD_COUNT = 6
+    const val THREAD_COUNT = 4
 
     lateinit var executor: ExecutorService
 

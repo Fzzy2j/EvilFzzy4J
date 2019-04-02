@@ -14,7 +14,7 @@ object Override : Command {
     override val cooldownMillis = 0L
     override val description = "Only for bot owner, for modifying values in the bot"
     override val votes = false
-    override val usageText = "-override <command>"
+    override val usageText = "override <command>"
     override val allowDM = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
@@ -22,7 +22,9 @@ object Override : Command {
 
         when (args[0].toLowerCase()) {
             "test" -> {
-                RequestBuffer.request { event.channel.sendMessage(event.guild.getUserByID(560570325981593640).mention()) }
+                for (user in event.guild.users) {
+                    event.guild.setUserNickname(user, null)
+                }
             }
             "volume" -> {
                 AudioPlayer.getAudioPlayerForGuild(event.guild).volume = args[1].toFloat()

@@ -28,7 +28,7 @@ object Vote : Command {
             "Puts a message in the chat that allows users to vote on something, if no options are provided it defaults to Yeah and No" +
             "\nExample: -vote mem on monday?|totally|maybe|absolutely not|toast"
     override val votes: Boolean = false
-    override val usageText: String = "-vote <message|options>"
+    override val usageText: String = "vote <message|options>"
     override val allowDM: Boolean = false
 
     private const val BEGINNING = "```diff\n- Vote - "

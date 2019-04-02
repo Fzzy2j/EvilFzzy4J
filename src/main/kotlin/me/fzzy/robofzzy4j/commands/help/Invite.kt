@@ -14,7 +14,7 @@ object Invite : Command {
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description = "Gives you the invite link for the bot to add it to servers"
-    override val usageText: String = "-invite"
+    override val usageText: String = "invite"
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
@@ -29,7 +29,7 @@ object Invite : Command {
     }
 
     fun getInviteLink(): String {
-        return "https://discordapp.com/oauth2/authorize?clientent_id=${Bot.client.ourUser.longID}&scope=bot&permissions=306240"
+        return "https://discordapp.com/oauth2/authorize?client_id=${Bot.client.ourUser.longID}&scope=bot&permissions=306240"
     }
 
 }
