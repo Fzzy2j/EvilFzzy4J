@@ -16,6 +16,7 @@ import java.io.File
 import java.io.IOException
 import java.lang.NullPointerException
 import java.util.*
+import javax.sound.sampled.AudioSystem
 import javax.sound.sampled.UnsupportedAudioFileException
 
 object VoiceListener {
@@ -33,7 +34,7 @@ object VoiceListener {
 
             try {
                 val id = UUID.randomUUID()
-                val track = audioP.queue(file)
+                val track = audioP.queue(AudioSystem.getAudioInputStream(file))
                 track.metadata["fzzyChannel"] = channel.longID
                 track.metadata["fzzyVolume"] = volume
                 track.metadata["fzzyId"] = id

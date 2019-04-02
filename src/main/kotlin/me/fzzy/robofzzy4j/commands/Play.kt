@@ -84,7 +84,7 @@ object Play : Command {
                     e.printStackTrace()
                 }
 
-                val target = File("cache/${System.currentTimeMillis()}.mp3")
+                val target = File("cache${File.separator}${System.currentTimeMillis()}.mp3")
                 val audio = AudioAttributes()
                 audio.setCodec("libmp3lame")
                 audio.setBitRate(128000)

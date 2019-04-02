@@ -21,11 +21,6 @@ object Override : Command {
         if (event.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${Bot.client.applicationOwner.name}")
 
         when (args[0].toLowerCase()) {
-            "test" -> {
-                for (user in event.guild.users) {
-                    event.guild.setUserNickname(user, null)
-                }
-            }
             "volume" -> {
                 AudioPlayer.getAudioPlayerForGuild(event.guild).volume = args[1].toFloat()
             }
