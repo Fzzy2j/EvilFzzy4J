@@ -73,20 +73,18 @@ object VoiceListener {
                 Thread {
                     while (true) {
                         Thread.sleep(1000)
-                        val message = Bot.client.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
+                        val messageId = event.track.metadata["fzzyMessageId"] as Long
+                        if (messageId == 0L) break
+                        val message = Bot.client.getMessageByID(messageId)
 
                         if (message != null) {
                             if (overrides.contains(message.longID)) {
                                 overrides.remove(message.longID)
                                 break
                             }
-                        }
+                        } else event.player.skip()
 
-                        val voteAdjust = try {
-                            VoteListener.getVotes(message) * event.track.metadata["fzzyTimeAdjustment"] as Int
-                        } catch (e: Exception) {
-                            -60 * 200
-                        }
+                        val voteAdjust = VoteListener.getVotes(message) * event.track.metadata["fzzyTimeAdjustment"] as Int
 
                         if (System.currentTimeMillis() - startTime > (event.track.metadata["fzzyTimeSeconds"] as Int + voteAdjust) * 1000) {
                             val track = event.player.currentTrack
@@ -105,7 +103,12 @@ object VoiceListener {
         val message = Bot.client.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
         try {
             Task.registerTask(IndividualTask({
-                RequestBuffer.request { message.delete() }
+                RequestBuffer.request {
+                    try {
+                        message.delete()
+                    } catch (e: Exception) {
+                    }
+                }
             }, MESSAGE_DELETE_DELAY_SECONDS, false))
         } catch (e: MissingPermissionsException) {
         }

@@ -26,14 +26,14 @@ object Override : Command {
                 AudioPlayer.getAudioPlayerForGuild(event.guild).volume = args[1].toFloat()
             }
             "play" -> {
-                val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[2])
+                val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[1])
 
                 val id = try {
-                    if (matcher.find()) matcher.group(0) else args[2].split(".be/")[1]
+                    if (matcher.find()) matcher.group(0) else args[1].split(".be/")[1]
                 } catch (e: Exception) {
                     return CommandResult.fail("i couldnt get that videos id")
                 }
-                Play.play(event.guild.getVoiceChannelByID(args[1].toLong()), id)
+                Play.play(event.guild.getVoiceChannelByID(args[2].toLong()), id)
             }
             "fullplay" -> {
                 VoiceListener.overrides.add(args[1].toLong())
