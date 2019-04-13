@@ -41,7 +41,7 @@ object Play : Command {
         return play(userVoiceChannel, id, event.messageID)
     }
 
-    fun play(channel: IVoiceChannel, id: String, messageId: Long, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {
+    fun play(channel: IVoiceChannel, id: String, messageId: Long = 0, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {
 
         val extraction = try {
             YouTubeExtractor.Builder().build().extract(id).blockingGet()

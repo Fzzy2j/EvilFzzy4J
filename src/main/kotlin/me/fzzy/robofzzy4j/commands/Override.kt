@@ -7,6 +7,7 @@ import me.fzzy.robofzzy4j.thread.Task
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
+import java.util.regex.Pattern
 
 object Override : Command {
 
@@ -23,6 +24,16 @@ object Override : Command {
         when (args[0].toLowerCase()) {
             "volume" -> {
                 AudioPlayer.getAudioPlayerForGuild(event.guild).volume = args[1].toFloat()
+            }
+            "play" -> {
+                val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[0])
+
+                val id = try {
+                    if (matcher.find()) matcher.group(0) else args[2].split(".be/")[1]
+                } catch (e: Exception) {
+                    return CommandResult.fail("i couldnt get that videos id")
+                }
+                Play.play(event.guild.getVoiceChannelByID(args[1].toLong()), id)
             }
             "fullplay" -> {
                 VoiceListener.overrides.add(args[1].toLong())

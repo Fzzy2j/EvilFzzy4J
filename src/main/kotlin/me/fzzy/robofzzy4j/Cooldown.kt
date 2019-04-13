@@ -11,11 +11,11 @@ class Cooldown {
     }
 
     fun timeLeft(scale: Double): Long {
-        return System.currentTimeMillis() - cooldownStamp + (cooldown * scale).toLong()
+        return (cooldownStamp + (cooldown * scale).toLong()) - System.currentTimeMillis()
     }
 
     fun isReady(scale: Double): Boolean {
-        return System.currentTimeMillis() > cooldownStamp + (cooldown * scale)
+        return timeLeft(scale) <= 0
     }
 
     fun clearCooldown() {
