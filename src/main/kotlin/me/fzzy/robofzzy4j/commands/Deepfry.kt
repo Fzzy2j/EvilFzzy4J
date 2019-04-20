@@ -18,6 +18,7 @@ object Deepfry : Command {
     override val description = "Deep fries an image"
     override val usageText: String = "deepfry"
     override val allowDM: Boolean = true
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         val history = event.channel.getMessageHistory(10).toMutableList()
@@ -27,7 +28,8 @@ object Deepfry : Command {
         val file = if (url != null)
             ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
-            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild))
+                    ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         val sizeHelper = ImageIO.read(file)
         val width = sizeHelper.width

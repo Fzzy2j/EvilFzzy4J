@@ -16,6 +16,7 @@ object Invite : Command {
     override val description = "Gives you the invite link for the bot to add it to servers"
     override val usageText: String = "invite"
     override val allowDM: Boolean = true
+    override val cost: Int = 100
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         RequestBuffer.request {

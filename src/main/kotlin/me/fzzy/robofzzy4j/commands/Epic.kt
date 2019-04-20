@@ -12,6 +12,7 @@ object Epic : Command {
     override val votes: Boolean = true
     override val usageText: String = "epic [sound]"
     override val allowDM: Boolean = false
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.

@@ -14,6 +14,7 @@ object Repost : Command {
     override val description = "Shows you upvoted posts from the server"
     override val usageText: String = "repost"
     override val allowDM: Boolean = false
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 

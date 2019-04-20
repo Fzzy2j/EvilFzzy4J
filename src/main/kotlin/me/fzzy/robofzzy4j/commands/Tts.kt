@@ -21,6 +21,7 @@ object Tts : Command {
     override val description = "Joins the voice channel and plays text to speech"
     override val usageText: String = "tts <text>"
     override val allowDM: Boolean = true
+    override val cost: Int = 4
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         if (args.isNotEmpty()) {

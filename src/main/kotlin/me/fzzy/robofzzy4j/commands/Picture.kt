@@ -21,6 +21,7 @@ object Picture : Command {
     override val description = "Inserts an image into another, use -picturetypes to see all the picture types"
     override val usageText: String = "picture <pictureType>"
     override val allowDM: Boolean = true
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 

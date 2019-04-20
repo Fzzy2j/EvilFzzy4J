@@ -13,6 +13,7 @@ object Pfp : Command {
     override val description: String = "Displays a users profile picture"
     override val usageText: String = "pfp <user>"
     override val allowDM: Boolean = false
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 

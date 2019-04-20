@@ -17,6 +17,7 @@ object Picturetypes : Command {
     override val description: String = "Shows all the picturess the bot can insert an image into using the -picture command"
     override val usageText: String = "picturetypes"
     override val allowDM: Boolean = true
+    override val cost: Int = 100
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var all = "```"

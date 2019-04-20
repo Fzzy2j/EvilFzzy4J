@@ -28,6 +28,7 @@ object Sounds : Command {
     override val description: String = "Shows all the sounds the bot can play in the voice channel"
     override val usageText: String = "sounds"
     override val allowDM: Boolean = true
+    override val cost: Int = 100
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var all = "```"
