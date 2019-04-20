@@ -106,7 +106,7 @@ fun main(args: Array<String>) {
     Bot.dataNode = Bot.dataManager.load()
 
     Bot.azureAuth = Authentication(Bot.speechApiToken)
-    ProcessStarter.setGlobalSearchPath("C:\\Program Files\\ImageMagick-7.0.8-Q16")
+    ProcessStarter.setGlobalSearchPath("C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16")
 
     Discord4J.LOGGER.info("Registering commands.")
 
