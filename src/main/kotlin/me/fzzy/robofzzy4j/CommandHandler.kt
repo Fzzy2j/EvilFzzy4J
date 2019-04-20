@@ -38,6 +38,13 @@ object CommandHandler {
         return false
     }
 
+    fun isCommand(string: String): Boolean {
+        for (cmd in commandMap.keys) {
+            if (string.toLowerCase().startsWith("-${cmd.toLowerCase()}")) return true
+        }
+        return false
+    }
+
     @EventSubscriber
     fun onMessageReceived(event: MessageReceivedEvent) {
         val args = event.message.content.split(" ")

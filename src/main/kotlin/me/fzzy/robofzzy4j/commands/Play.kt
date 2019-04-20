@@ -54,9 +54,8 @@ object Play : Command {
                 if (stream.format == "v3GPP")
                     continue
 
-
                 Discord4J.LOGGER.info("Playing video audio for video: https://www.youtube.com/watch?v=$id")
-                val outputFile = File("cache/${System.currentTimeMillis()}.mp4")
+                val outputFile = File("cache${File.separator}${System.currentTimeMillis()}.mp4")
 
                 try {
                     val url = URL(stream.url)

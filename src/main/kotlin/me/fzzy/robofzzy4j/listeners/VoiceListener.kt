@@ -88,7 +88,7 @@ object VoiceListener {
 
                         if (System.currentTimeMillis() - startTime > (event.track.metadata["fzzyTimeSeconds"] as Int + voteAdjust) * 1000) {
                             val track = event.player.currentTrack
-                            if (track != null && VoiceListener.getId(track) == getId(event.track))
+                            if (track != null && getId(track) == getId(event.track))
                                 event.player.skip()
                             break
                         }
