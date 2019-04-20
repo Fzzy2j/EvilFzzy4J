@@ -1,8 +1,8 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IGuild
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 
@@ -16,12 +16,12 @@ object Repost : Command {
     override val allowDM: Boolean = false
     override val cost: Int = 1
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 
-        val repost = getRepost(event.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry")
+        val repost = getRepost(message.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry")
 
         RequestBuffer.request {
-            Funcs.sendFile(event.channel, repost, false)
+            Funcs.sendFile(message.channel, repost, false)
             repost.delete()
         }
         return CommandResult.success()

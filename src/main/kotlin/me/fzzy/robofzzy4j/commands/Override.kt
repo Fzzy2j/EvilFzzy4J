@@ -4,7 +4,7 @@ import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.thread.IndividualTask
 import me.fzzy.robofzzy4j.thread.Task
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
 import java.util.regex.Pattern
@@ -19,12 +19,16 @@ object Override : Command {
     override val allowDM = true
     override val cost: Int = 1
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-        if (event.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${Bot.client.applicationOwner.name}")
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
+        if (message.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${Bot.client.applicationOwner.name}")
 
         when (args[0].toLowerCase()) {
             "volume" -> {
-                AudioPlayer.getAudioPlayerForGuild(event.guild).volume = args[1].toFloat()
+                AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
+            }
+            "currency" -> {
+                Guild.getGuild(message.guild).addCurrency(message.author, 10)
+                RequestBuffer.request { message.channel.sendMessage("${message.author.name} has ${Guild.getGuild(message.guild).getCurrency(message.author)} diamonds") }
             }
             "play" -> {
                 val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[1])
@@ -34,16 +38,16 @@ object Override : Command {
                 } catch (e: Exception) {
                     return CommandResult.fail("i couldnt get that videos id")
                 }
-                Play.play(event.guild.getVoiceChannelByID(args[2].toLong()), id)
+                Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), id)
             }
             "fullplay" -> {
                 VoiceListener.overrides.add(args[1].toLong())
             }
             "skip" -> {
-                AudioPlayer.getAudioPlayerForGuild(event.guild).skip()
+                AudioPlayer.getAudioPlayerForGuild(message.guild).skip()
             }
             "cooldowns", "cooldown" -> {
-                val users = event.message.mentions
+                val users = message.mentions
                 Task.registerTask(IndividualTask({
                     for (user in users) {
                         for (cooldown in User.getUser((user.longID)).getAllCooldowns().values) {
@@ -68,15 +72,15 @@ object Override : Command {
                 )
 
                 RequestBuffer.request {
-                    MessageScheduler.sendTempMessage(10000, event.channel, messages[Bot.random.nextInt(messages.size)]
+                    MessageScheduler.sendTempMessage(10000, message.channel, messages[Bot.random.nextInt(messages.size)]
                             .replace("%target%", userNames.joinToString(", "))
-                            .replace("%author%", event.author.name.toLowerCase()))
+                            .replace("%author%", message.author.name.toLowerCase()))
                 }
             }
             "allowvotes" -> {
-                for (message in event.channel.getMessageHistory(15)) {
-                    if (message.longID == args[1].toLong()) {
-                        Guild.getGuild(event.guild).allowVotes(message)
+                for (msg in message.channel.getMessageHistory(15)) {
+                    if (msg.longID == args[1].toLong()) {
+                        Guild.getGuild(msg.guild).allowVotes(msg)
                         break
                     }
                 }

@@ -2,7 +2,7 @@ package me.fzzy.robofzzy4j.commands.help
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.util.Zalgo
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 
@@ -16,7 +16,7 @@ object Help : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 100
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         var helpMsg = "```md\n"
         for ((_, command) in CommandHandler.getAllCommands()) {
             helpMsg += "# ${Bot.BOT_PREFIX}${command.usageText}\n${command.description} : ${command.cooldownMillis / 1000} second cooldown\n\n"
@@ -24,9 +24,9 @@ object Help : Command {
         helpMsg += "```"
         RequestBuffer.request {
             try {
-                event.author.orCreatePMChannel.sendMessage(helpMsg)
+                message.author.orCreatePMChannel.sendMessage(helpMsg)
             } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
+                MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "${message.author.mention()} i dont have permission to tell you about what i can do :(")
             }
         }
 

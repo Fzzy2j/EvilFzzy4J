@@ -5,6 +5,7 @@ import me.fzzy.robofzzy4j.listeners.VoiceListener
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
@@ -30,7 +31,7 @@ object Sounds : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 100
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         var all = "```"
         for (file in File("sounds").listFiles()) {
             all += "-${file.nameWithoutExtension}\n"
@@ -38,9 +39,9 @@ object Sounds : Command {
         all += "```"
         RequestBuffer.request {
             try {
-                event.message.author.orCreatePMChannel.sendMessage(all)
+                message.author.orCreatePMChannel.sendMessage(all)
             } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "${event.author.mention()} i dont have permission to tell you about what i can do :(")
+                MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "${message.author.mention()} i dont have permission to tell you about what i can do :(")
             }
         }
         return CommandResult.success()

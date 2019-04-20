@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.CommandResult
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 
 object Epic : Command {
 
@@ -14,7 +15,7 @@ object Epic : Command {
     override val allowDM: Boolean = false
     override val cost: Int = 1
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 

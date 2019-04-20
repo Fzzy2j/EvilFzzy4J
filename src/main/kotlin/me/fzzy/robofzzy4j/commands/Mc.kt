@@ -1,7 +1,6 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 
@@ -15,7 +14,7 @@ object Mc : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 1
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         if (args.isEmpty())
             return CommandResult.fail("hello? $usageText")
 
@@ -28,7 +27,7 @@ object Mc : Command {
         val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("the api didnt like that")
 
         RequestBuffer.request {
-            Funcs.sendFile(event.channel, file)
+            Funcs.sendFile(message.channel, file)
             file.delete()
         }
         return CommandResult.success()

@@ -59,6 +59,8 @@ class Guild private constructor(private var guildId: Long) {
     private var posts = 0
     private var votes = 0
 
+    private lateinit var currency: HashMap<Long, Int>
+
     private var changes: Leaderboard.LeaderboardChange? = null
 
     fun handleChanges(change: Leaderboard.LeaderboardChange, channel: IChannel) {
@@ -170,6 +172,14 @@ class Guild private constructor(private var guildId: Long) {
         votes--
     }
 
+    fun addCurrency(user: IUser, amount: Int) {
+        currency[user.longID] = currency.getOrDefault(user.longID, 0) + amount
+    }
+
+    fun getCurrency(user: IUser): Int {
+        return currency.getOrDefault(user.longID, 0)
+    }
+
     fun allowVotes(msg: IMessage) {
         posts++
         votes++
@@ -213,6 +223,10 @@ class Guild private constructor(private var guildId: Long) {
             i++
         }
 
+        for ((key, value) in currency) {
+            Bot.guildNode.getNode("id$guildId", "currency", key).value = value
+        }
+
         Bot.guildNode.getNode("id$guildId", "totalVotes").value = votes
         Bot.guildNode.getNode("id$guildId", "totalPosts").value = posts
 
@@ -220,6 +234,7 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun load() {
+        currency = hashMapOf()
         leaderboard = Leaderboard()
         for (node in Bot.guildNode.getNode("id$guildId", "votes").childrenList) {
             if (try {
@@ -228,6 +243,9 @@ class Guild private constructor(private var guildId: Long) {
                         true
                     })
                 leaderboard.setValue(node.getNode("id").long, node.getNode("value").int)
+        }
+        for ((key, value) in Bot.guildNode.getNode("id$guildId", "currency").childrenMap) {
+            currency[key.toString().toLong()] = value.int
         }
         votes = Bot.guildNode.getNode("id$guildId", "totalVotes").int
         posts = Bot.guildNode.getNode("id$guildId", "totalPosts").int

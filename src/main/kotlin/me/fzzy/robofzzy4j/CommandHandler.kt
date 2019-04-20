@@ -74,9 +74,8 @@ object CommandHandler {
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
             if (user.id == Bot.client.applicationOwner.longID ||
                     user.getCooldown(command.cooldownCategory).isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
-                runCommand(user, command, event, argsList)
+                runCommand(user, command, event.message, argsList)
             } else {
-                tryDelete(event.message)
                 val timeLeft = Math.ceil((user.getCooldown(command.cooldownCategory).timeLeft((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) / 1000.0 / 60.0).roundToInt()
 
                 val s = if (command.cost == 1) "" else "s"
@@ -96,28 +95,28 @@ object CommandHandler {
         }
     }
 
-    fun runCommand(user: User, command: Command, event: MessageReceivedEvent, argsList: List<String>) {
+    fun runCommand(user: User, command: Command, message: IMessage, argsList: List<String>) {
         if (!user.runningCommand) {
             user.runningCommand = true
-            if (!command.votes) tryDelete(event.message)
+            if (!command.votes) tryDelete(message)
             Bot.executor.submit {
                 try {
                     val result = try {
-                        command.runCommand(event, argsList)
+                        command.runCommand(message, argsList)
                     } catch (e: java.lang.Exception) {
                         e.printStackTrace()
-                        CommandResult.fail("Command failed $e")
+                        CommandResult.fail(e.message!!)
                     }
                     if (result.isSuccess()) {
                         user.getCooldown(command.cooldownCategory).triggerCooldown(command.cooldownMillis)
-                        if (command.votes && event.guild != null)
-                            Guild.getGuild(event.guild).allowVotes(event.message)
+                        if (command.votes && message.guild != null)
+                            Guild.getGuild(message.guild).allowVotes(message)
                     } else {
                         Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
                         RequestBuffer.request {
-                            MessageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
+                            MessageScheduler.sendTempMessage(10 * 1000, message.channel, result.getFailMessage())
                         }
-                        tryDelete(event.message)
+                        tryDelete(message)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()

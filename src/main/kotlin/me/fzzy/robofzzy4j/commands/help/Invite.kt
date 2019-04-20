@@ -4,7 +4,7 @@ import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.CommandResult
 import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.Bot
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 
@@ -18,12 +18,12 @@ object Invite : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 100
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         RequestBuffer.request {
             try {
-                event.author.orCreatePMChannel.sendMessage(getInviteLink())
+                message.author.orCreatePMChannel.sendMessage(getInviteLink())
             } catch (e: MissingPermissionsException) {
-                event.channel.sendMessage(getInviteLink())
+                message.channel.sendMessage(getInviteLink())
             }
         }
         return CommandResult.success()

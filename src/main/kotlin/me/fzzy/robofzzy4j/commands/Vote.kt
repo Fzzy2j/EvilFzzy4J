@@ -7,7 +7,6 @@ import me.fzzy.robofzzy4j.Guild
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.listeners.VoteListener
 import sx.blah.discord.api.events.EventSubscriber
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionAddEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
@@ -34,14 +33,14 @@ object Vote : Command {
 
     private const val BEGINNING = "```diff\n- Vote - "
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         if (args.isEmpty()) return CommandResult.fail("i should really put a message on that or give it some options $usageText")
         if (args.joinToString(" ").contains("|")) {
             val options = args.joinToString(" ").split("|")
-            sendVoteMessage(event.channel, options[0], options.subList(1, options.size))
+            sendVoteMessage(message.channel, options[0], options.subList(1, options.size))
             return CommandResult.success()
         }
-        sendVoteMessage(event.channel, args.joinToString(" "), listOf("Yeah", "No"))
+        sendVoteMessage(message.channel, args.joinToString(" "), listOf("Yeah", "No"))
         return CommandResult.success()
     }
 
@@ -132,7 +131,7 @@ object Vote : Command {
 
                 // pass reactions so that we only have to make one request to the api, speeds up voting a lot
                 val reactions = event.message.reactions
-                //removeExistingReactionsExceptOne(event.user, event.message, reactions, event.reaction.emoji.name)
+                //removeExistingReactionsExceptOne(message.user, message.message, reactions, message.reaction.emoji.name)
                 updateVoteMessage(event.message, reactions)
             }
         }

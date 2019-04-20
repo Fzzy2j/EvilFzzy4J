@@ -1,6 +1,6 @@
 package me.fzzy.robofzzy4j
 
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 
 interface Command {
 
@@ -12,6 +12,6 @@ interface Command {
     val allowDM: Boolean
     val cost: Int
 
-    fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult
+    fun runCommand(message: IMessage, args: List<String>): CommandResult
 
 }

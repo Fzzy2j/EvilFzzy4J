@@ -4,7 +4,7 @@ import me.fzzy.robofzzy4j.*
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import org.omg.CORBA.COMM_FAILURE
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.awt.Font
 import java.awt.font.FontRenderContext
@@ -27,7 +27,7 @@ object Meme : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 1
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 
         var full = ""
         for (text in args) {
@@ -43,14 +43,14 @@ object Meme : Command {
             bottomText = full.substring(1).replace("\n", "").split("|")[1]
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
-        val history = event.channel.getMessageHistory(10).toMutableList()
-        history.add(0, event.message)
+        val history = message.channel.getMessageHistory(10).toMutableList()
+        history.add(0, message)
 
         val url = ImageFuncs.getFirstImage(history)
         val file = if (url != null)
             ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
-            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild))
+            ImageFuncs.createTempFile(Repost.getImageRepost(message.guild))
                     ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         val convert = ConvertCmd()
@@ -74,7 +74,7 @@ object Meme : Command {
         convert.run(operation)
 
         RequestBuffer.request {
-            Funcs.sendFile(event.channel, file)
+            Funcs.sendFile(message.channel, file)
             file.delete()
         }
         return CommandResult.success()

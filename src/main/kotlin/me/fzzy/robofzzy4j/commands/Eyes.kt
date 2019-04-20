@@ -28,7 +28,7 @@ object Eyes : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 1
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         /*
         // Find the specified eyes from the eyes folder
         val eyesFile = File("eyes")

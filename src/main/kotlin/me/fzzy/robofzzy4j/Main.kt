@@ -126,8 +126,6 @@ fun main(args: Array<String>) {
 
     CommandHandler.registerCommand("leaderboard", LeaderboardCommand)
 
-    CommandHandler.registerCommand("pfp", Pfp)
-
     CommandHandler.registerCommand("help", Help)
     CommandHandler.registerCommand("invite", Invite)
     CommandHandler.registerCommand("sounds", Sounds)

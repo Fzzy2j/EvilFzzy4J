@@ -5,7 +5,6 @@ import me.fzzy.robofzzy4j.CommandResult
 import me.fzzy.robofzzy4j.Funcs
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import org.apache.commons.io.FileUtils
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.audio.AudioPlayer
 import java.io.File
@@ -23,7 +22,7 @@ object Tts : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 4
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         if (args.isNotEmpty()) {
             var text = ""
             for (arg in args) {
@@ -34,9 +33,9 @@ object Tts : Command {
             val speech = Funcs.getTextToSpeech(text) ?: return CommandResult.fail("the text to speech api didnt work for some reason")
             val sound = File(fileName)
             FileUtils.writeByteArrayToFile(sound, speech)
-            val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
+            val userVoiceChannel = message.author.getVoiceStateForGuild(message.guild).channel
             if (userVoiceChannel != null) {
-                if (VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F, 40, 20, event.messageID) == null)
+                if (VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F, 40, 20, message.longID) == null)
                     return CommandResult.fail("im sorry, something went wrong when i tried to do that")
             } else
                 return CommandResult.fail("i cant do that if youre not in a voice channel")

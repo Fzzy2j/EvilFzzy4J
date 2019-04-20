@@ -5,7 +5,7 @@ import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.Discord4J
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IVoiceChannel
 import ws.schild.jave.*
 import java.io.IOException
@@ -25,9 +25,9 @@ object Play : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 4
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 
-        val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
+        val userVoiceChannel = message.author.getVoiceStateForGuild(message.guild).channel
                 ?: return CommandResult.fail("i cant do that unless youre in a voice channel")
         if (args.isEmpty()) return CommandResult.fail("thats not how you use that command $usageText")
 
@@ -39,7 +39,7 @@ object Play : Command {
             return CommandResult.fail("i couldnt get that videos id")
         }
 
-        return play(userVoiceChannel, id, event.messageID)
+        return play(userVoiceChannel, id, message.longID)
     }
 
     fun play(channel: IVoiceChannel, id: String, messageId: Long = 0, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {

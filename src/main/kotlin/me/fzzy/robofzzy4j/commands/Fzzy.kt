@@ -24,17 +24,17 @@ object Fzzy : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 1
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
-        val history = event.channel.getMessageHistory(10).toMutableList()
-        history.add(0, event.message)
+        val history = message.channel.getMessageHistory(10).toMutableList()
+        history.add(0, message)
 
         val url = ImageFuncs.getFirstImage(history)
         val file = if (url != null)
             ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
-            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageFuncs.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         var tempFile: File? = null
         if (file.extension == "gif") {
@@ -43,7 +43,7 @@ object Fzzy : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
@@ -96,7 +96,7 @@ object Fzzy : Command {
 
         RequestBuffer.request {
             try {
-                Funcs.sendFile(event.channel, file)
+                Funcs.sendFile(message.channel, file)
             } catch (e: Exception) {
             }
             file.delete()

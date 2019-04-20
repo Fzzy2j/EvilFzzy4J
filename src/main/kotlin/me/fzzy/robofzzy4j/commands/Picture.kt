@@ -4,7 +4,6 @@ import me.fzzy.robofzzy4j.*
 import org.im4java.core.CompositeCmd
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.awt.Color
@@ -23,7 +22,7 @@ object Picture : Command {
     override val allowDM: Boolean = true
     override val cost: Int = 1
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 
         // Find the specified picture from the pictures folder
         val pictureFile = File("pictures")
@@ -40,14 +39,14 @@ object Picture : Command {
             return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes")
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
-        val history = event.channel.getMessageHistory(10).toMutableList()
-        history.add(0, event.message)
+        val history = message.channel.getMessageHistory(10).toMutableList()
+        history.add(0, message)
 
         val url = ImageFuncs.getFirstImage(history)
         val file = if (url != null && (args.count() == 1 && args[0].toLowerCase() != "random"))
             ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
-            ImageFuncs.createTempFile(Repost.getImageRepost(event.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageFuncs.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         val bufferedImage = ImageIO.read(picture)
 
@@ -113,7 +112,7 @@ object Picture : Command {
         composite.run(operation)
 
         RequestBuffer.request {
-            Funcs.sendFile(event.channel, file)
+            Funcs.sendFile(message.channel, file)
             file.delete()
         }
 
