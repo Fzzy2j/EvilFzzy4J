@@ -26,6 +26,7 @@ object Eyes : Command {
     override val description = "Adds different eyes to an image, use -eyetypes to see all the eye types"
     override val usageText: String = "eyes <eyeType> [imageUrl]"
     override val allowDM: Boolean = true
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         /*

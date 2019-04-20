@@ -14,6 +14,7 @@ object Help : Command {
     override val description = "The help command"
     override val usageText: String = "help"
     override val allowDM: Boolean = true
+    override val cost: Int = 100
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var helpMsg = "```md\n"

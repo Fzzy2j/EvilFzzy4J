@@ -30,6 +30,7 @@ object Vote : Command {
     override val votes: Boolean = false
     override val usageText: String = "vote <message|options>"
     override val allowDM: Boolean = false
+    override val cost: Int = 1
 
     private const val BEGINNING = "```diff\n- Vote - "
 

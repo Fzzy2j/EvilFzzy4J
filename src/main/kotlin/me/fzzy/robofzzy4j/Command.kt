@@ -10,6 +10,7 @@ interface Command {
     val votes: Boolean
     val usageText: String
     val allowDM: Boolean
+    val cost: Int
 
     fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult
 

@@ -17,6 +17,7 @@ object Eyetypes : Command {
     override val description: String = "Shows all the eyes the bot can place on an image using the -eyes command"
     override val usageText: String = "eyetypes"
     override val allowDM: Boolean = true
+    override val cost: Int = 100
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var all = "```"

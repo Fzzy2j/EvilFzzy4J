@@ -25,6 +25,7 @@ object Meme : Command {
     override val description = "Puts meme text onto an image"
     override val usageText: String = "meme <top text>|<bottom text>"
     override val allowDM: Boolean = true
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
