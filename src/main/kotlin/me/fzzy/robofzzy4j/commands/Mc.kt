@@ -13,6 +13,7 @@ object Mc : Command {
     override val description = "Generates a minecraft achievement"
     override val usageText: String = "mc <text>"
     override val allowDM: Boolean = true
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         if (args.isEmpty())

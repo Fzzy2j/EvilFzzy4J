@@ -23,6 +23,7 @@ object Explode : Command {
     override val description = "Scales an image repeatedly, turning it into a gif"
     override val usageText: String = "explode"
     override val allowDM: Boolean = true
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 

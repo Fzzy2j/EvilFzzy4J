@@ -14,6 +14,7 @@ object LeaderboardCommand : Command {
     override val description = "shows the vote leaderboard"
     override val usageText: String = "leaderboard"
     override val allowDM: Boolean = false
+    override val cost: Int = 1
 
     private const val title = "LEADERBOARD - resets every monday"
 

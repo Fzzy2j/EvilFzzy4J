@@ -17,6 +17,7 @@ object Override : Command {
     override val votes = false
     override val usageText = "override <command>"
     override val allowDM = true
+    override val cost: Int = 1
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         if (event.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${Bot.client.applicationOwner.name}")

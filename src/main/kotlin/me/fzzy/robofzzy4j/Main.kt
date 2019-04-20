@@ -52,6 +52,7 @@ object Bot {
 
     val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
     val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
+    val DIAMOND_EMOJI = ReactionEmoji.of("diamond", 569090342897319936)!!
 
     val URL_PATTERN = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"

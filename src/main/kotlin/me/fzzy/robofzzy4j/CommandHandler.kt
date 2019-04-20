@@ -9,6 +9,7 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
+import sx.blah.discord.util.RequestBuilder
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
@@ -72,53 +73,60 @@ object CommandHandler {
             val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
             Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
             if (user.id == Bot.client.applicationOwner.longID ||
-                            user.getCooldown(command.cooldownCategory).isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
-                if (!user.runningCommand) {
-                    user.runningCommand = true
-                    if (!command.votes) tryDelete(event.message)
-                    Bot.executor.submit {
-                        try {
-                            val result = try {
-                                command.runCommand(event, argsList)
-                            } catch (e: java.lang.Exception) {
-                                e.printStackTrace()
-                                CommandResult.fail("Command failed $e")
-                            }
-                            if (result.isSuccess()) {
-                                user.getCooldown(command.cooldownCategory).triggerCooldown(command.cooldownMillis)
-                                if (command.votes && event.guild != null)
-                                    Guild.getGuild(event.guild).allowVotes(event.message)
-                            } else {
-                                Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
-                                RequestBuffer.request {
-                                    MessageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
-                                }
-                                tryDelete(event.message)
-                            }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                        user.runningCommand = false
-                    }
-                }
+                    user.getCooldown(command.cooldownCategory).isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
+                runCommand(user, command, event, argsList)
             } else {
                 tryDelete(event.message)
                 val timeLeft = Math.ceil((user.getCooldown(command.cooldownCategory).timeLeft((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) / 1000.0 / 60.0).roundToInt()
 
-                val messages = arrayOf(
-                        "%user% you can use that command in %time%",
-                        "you can use that command in %time% %user%",
-                        "sorry %user%, i cant let you use that command for another %time%"
-                )
-                RequestBuffer.request {
-                    MessageScheduler.sendTempMessage(10000, event.channel, messages[Bot.random.nextInt(messages.size)]
-                            .replace("%user%", event.author.name.toLowerCase())
-                            .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
-                    )
-                }
+                val message = "${event.author.name}, you are still on cooldown for $timeLeft. Click the reaction to spend ${command.cost} point(s) to skip the cooldown."
+                var msg: IMessage? = null
+                RequestBuilder(Bot.client).shouldBufferRequests(true).doAction {
+
+                    msg = MessageScheduler.sendTempMessage(10000, event.channel, message)
+                    true
+                }.andThen {
+                    try {
+                        msg?.addReaction(Bot.DIAMOND_EMOJI)
+                    } catch (e: MissingPermissionsException) {
+                    }
+                    true
+                }.execute()
             }
         }
     }
+
+    fun runCommand(user: User, command: Command, event: MessageReceivedEvent, argsList: List<String>) {
+        if (!user.runningCommand) {
+            user.runningCommand = true
+            if (!command.votes) tryDelete(event.message)
+            Bot.executor.submit {
+                try {
+                    val result = try {
+                        command.runCommand(event, argsList)
+                    } catch (e: java.lang.Exception) {
+                        e.printStackTrace()
+                        CommandResult.fail("Command failed $e")
+                    }
+                    if (result.isSuccess()) {
+                        user.getCooldown(command.cooldownCategory).triggerCooldown(command.cooldownMillis)
+                        if (command.votes && event.guild != null)
+                            Guild.getGuild(event.guild).allowVotes(event.message)
+                    } else {
+                        Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
+                        RequestBuffer.request {
+                            MessageScheduler.sendTempMessage(10 * 1000, event.channel, result.getFailMessage())
+                        }
+                        tryDelete(event.message)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                user.runningCommand = false
+            }
+        }
+    }
+
 
     fun tryDelete(msg: IMessage) {
         RequestBuffer.request {

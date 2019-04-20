@@ -23,6 +23,7 @@ object Play : Command {
     override val description = "Plays audio in the voice channel"
     override val usageText: String = "play <videoUrl>"
     override val allowDM: Boolean = true
+    override val cost: Int = 4
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
