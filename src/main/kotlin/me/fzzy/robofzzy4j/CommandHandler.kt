@@ -79,14 +79,14 @@ object CommandHandler {
                 val timeLeft = Math.ceil((user.getCooldown(command.cooldownCategory).timeLeft((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) / 1000.0 / 60.0).roundToInt()
 
                 val s = if (command.cost == 1) "" else "s"
-                val content = "${event.author.name} you are still on cooldown for $timeLeft seconds\n click the reaction to spend ${command.cost} point$s to skip the cooldown"
+                val content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeft seconds\n click the reaction to spend ${command.cost} point$s to skip the cooldown"
                 var msg: IMessage? = null
                 RequestBuilder(Bot.client).shouldBufferRequests(true).doAction {
                     msg = MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content)
                     true
                 }.andThen {
                     try {
-                        msg?.addReaction(Bot.DIAMOND_EMOJI)
+                        msg?.addReaction(Bot.CURRENCY_EMOJI)
                     } catch (e: MissingPermissionsException) {
                     }
                     true

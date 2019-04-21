@@ -1,10 +1,8 @@
 package me.fzzy.robofzzy4j.listeners
 
 import me.fzzy.robofzzy4j.Bot
-import me.fzzy.robofzzy4j.thread.IndividualTask
-import me.fzzy.robofzzy4j.thread.Task
+import me.fzzy.robofzzy4j.thread.Scheduler
 import sx.blah.discord.api.events.EventSubscriber
-import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IVoiceChannel
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
@@ -13,11 +11,8 @@ import sx.blah.discord.util.audio.events.TrackFinishEvent
 import sx.blah.discord.util.audio.events.TrackSkipEvent
 import sx.blah.discord.util.audio.events.TrackStartEvent
 import java.io.File
-import java.io.IOException
-import java.lang.NullPointerException
 import java.util.*
 import javax.sound.sampled.AudioSystem
-import javax.sound.sampled.UnsupportedAudioFileException
 
 object VoiceListener {
 
@@ -44,7 +39,7 @@ object VoiceListener {
                 return id
             } catch (e: Exception) {
                 e.printStackTrace()
-                Task.registerTask(IndividualTask({ channel.leave() }, 2, false))
+                Scheduler.Builder(2).doAction { channel.leave() }.execute()
             }
             if (delete)
                 file.delete()
@@ -102,14 +97,14 @@ object VoiceListener {
     fun onTrackSkip(event: TrackSkipEvent) {
         val message = Bot.client.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
         try {
-            Task.registerTask(IndividualTask({
+            Scheduler.Builder(MESSAGE_DELETE_DELAY_SECONDS).doAction {
                 RequestBuffer.request {
                     try {
                         message.delete()
                     } catch (e: Exception) {
                     }
                 }
-            }, MESSAGE_DELETE_DELAY_SECONDS, false))
+            }.execute()
         } catch (e: MissingPermissionsException) {
         }
         if (event.nextTrack == null && !interupt) {
@@ -121,14 +116,14 @@ object VoiceListener {
     fun onTrackEnd(event: TrackFinishEvent) {
         val message = Bot.client.getMessageByID(event.oldTrack.metadata["fzzyMessageId"] as Long)
         try {
-            Task.registerTask(IndividualTask({
+            Scheduler.Builder(MESSAGE_DELETE_DELAY_SECONDS).doAction {
                 RequestBuffer.request {
                     try {
                         message.delete()
                     } catch (e: Exception) {
                     }
                 }
-            }, MESSAGE_DELETE_DELAY_SECONDS, false))
+            }.execute()
         } catch (e: MissingPermissionsException) {
         }
         if (!event.newTrack.isPresent && !interupt) {

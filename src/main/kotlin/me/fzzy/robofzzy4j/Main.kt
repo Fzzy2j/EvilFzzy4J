@@ -1,14 +1,13 @@
 package me.fzzy.robofzzy4j
 
 import com.google.common.reflect.TypeToken
-import me.fzzy.robofzzy4j.thread.IndividualTask
-import me.fzzy.robofzzy4j.thread.Task
 import me.fzzy.robofzzy4j.commands.*
 import me.fzzy.robofzzy4j.commands.help.*
 import me.fzzy.robofzzy4j.listeners.MessageListener
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.listeners.VoteListener
 import me.fzzy.robofzzy4j.thread.Authentication
+import me.fzzy.robofzzy4j.thread.Scheduler
 import org.im4java.process.ProcessStarter
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.ClientBuilder
@@ -19,22 +18,12 @@ import ninja.leaping.configurate.ConfigurationNode
 import ninja.leaping.configurate.commented.CommentedConfigurationNode
 import ninja.leaping.configurate.loader.ConfigurationLoader
 import ninja.leaping.configurate.hocon.HoconConfigurationLoader
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.client.utils.URIBuilder
-import org.apache.http.impl.client.HttpClients
-import org.apache.http.util.EntityUtils
-import org.json.JSONObject
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.ReadyEvent
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.RequestBuffer
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
 import java.nio.file.Files
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -52,7 +41,7 @@ object Bot {
 
     val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
     val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
-    val DIAMOND_EMOJI = ReactionEmoji.of("diamond", 569090342897319936)!!
+    val CURRENCY_EMOJI = ReactionEmoji.of("diamond", 569090342897319936)!!
 
     val URL_PATTERN = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
@@ -148,12 +137,11 @@ fun main(args: Array<String>) {
 
     Discord4J.LOGGER.info("Starting scheduler.")
 
-    Task.start()
+    Scheduler.start()
 
     Discord4J.LOGGER.info("Starting auto-saver.")
 
-    Task.registerTask(IndividualTask({
-
+    Scheduler.Builder(60).doAction {
         val day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
         if (day == Calendar.MONDAY && System.currentTimeMillis() - Bot.dataNode.getNode("leaderboardResetTimestamp").long > 48 * 60 * 60 * 1000) {
             Bot.dataNode.getNode("leaderboardResetTimestamp").value = System.currentTimeMillis()
@@ -162,7 +150,7 @@ fun main(args: Array<String>) {
         }
         Guild.saveAll()
         RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.BOT_PREFIX}help") }
-    }, 60, true))
+    }.repeat().execute()
 
     Discord4J.LOGGER.info("Registering events.")
 

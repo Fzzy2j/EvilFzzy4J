@@ -2,8 +2,7 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
-import me.fzzy.robofzzy4j.thread.IndividualTask
-import me.fzzy.robofzzy4j.thread.Task
+import me.fzzy.robofzzy4j.thread.Scheduler
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
@@ -48,13 +47,11 @@ object Override : Command {
             }
             "cooldowns", "cooldown" -> {
                 val users = message.mentions
-                Task.registerTask(IndividualTask({
-                    for (user in users) {
-                        for (cooldown in User.getUser((user.longID)).getAllCooldowns().values) {
-                            cooldown.clearCooldown()
-                        }
+                for (user in users) {
+                    for (cooldown in User.getUser((user.longID)).getAllCooldowns().values) {
+                        cooldown.clearCooldown()
                     }
-                }, 1, false))
+                }
 
                 val userNames = arrayListOf<String>()
                 for (i in 0 until users.size) {

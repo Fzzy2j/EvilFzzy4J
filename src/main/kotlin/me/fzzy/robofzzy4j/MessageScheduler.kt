@@ -1,7 +1,6 @@
 package me.fzzy.robofzzy4j
 
-import me.fzzy.robofzzy4j.thread.IndividualTask
-import me.fzzy.robofzzy4j.thread.Task
+import me.fzzy.robofzzy4j.thread.Scheduler
 import sx.blah.discord.api.internal.json.objects.EmbedObject
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
@@ -13,7 +12,7 @@ object MessageScheduler {
     private var tempMessages: HashMap<IMessage?, Long> = hashMapOf()
 
     init {
-        Task.registerTask(IndividualTask({
+        Scheduler.Builder(1).doAction {
             val iter = tempMessages.iterator()
             while (iter.hasNext()) {
                 val i = iter.next()
@@ -22,7 +21,7 @@ object MessageScheduler {
                     iter.remove()
                 }
             }
-        }, 1, true))
+        }.repeat().execute()
     }
 
     fun clearTempMessage(message: IMessage) {
