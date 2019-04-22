@@ -1,16 +1,20 @@
 package me.fzzy.robofzzy4j.commands
 
 import com.commit451.youtubeextractor.YouTubeExtractor
-import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.CommandResult
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.Discord4J
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IVoiceChannel
-import ws.schild.jave.*
-import java.io.IOException
-import java.io.FileOutputStream
+import ws.schild.jave.AudioAttributes
+import ws.schild.jave.Encoder
+import ws.schild.jave.EncodingAttributes
+import ws.schild.jave.MultimediaObject
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.regex.Pattern
@@ -31,7 +35,7 @@ object Play : Command {
                 ?: return CommandResult.fail("i cant do that unless youre in a voice channel")
         if (args.isEmpty()) return CommandResult.fail("thats not how you use that command $usageText")
 
-        val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[0])
+        val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[0])
 
         val id = try {
             if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]

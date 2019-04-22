@@ -12,7 +12,6 @@ import sx.blah.discord.util.audio.events.TrackSkipEvent
 import sx.blah.discord.util.audio.events.TrackStartEvent
 import java.io.File
 import java.util.*
-import javax.sound.sampled.AudioSystem
 
 object VoiceListener {
 
@@ -29,7 +28,7 @@ object VoiceListener {
 
             try {
                 val id = UUID.randomUUID()
-                val track = audioP.queue(AudioSystem.getAudioInputStream(file))
+                val track = audioP.queue(file)
                 track.metadata["fzzyChannel"] = channel.longID
                 track.metadata["fzzyVolume"] = volume
                 track.metadata["fzzyId"] = id

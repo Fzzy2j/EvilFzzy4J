@@ -39,6 +39,7 @@ class BotData {
     val THREAD_COUNT = 4
     var leaderboardResetStamp = 0L
     var cooldownMode = true
+    val imageMagickDirectory = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
 }
 
 object Bot {
@@ -73,6 +74,7 @@ object Bot {
         for (guild in event.client.guilds) {
             Discord4J.LOGGER.info(guild.name)
         }
+        Discord4J.LOGGER.info("RoboFzzy v${Bot::class.java.`package`.implementationVersion} online.")
         RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
     }
 }
@@ -106,7 +108,7 @@ fun main(args: Array<String>) {
     Discord4J.LOGGER.info("Bot Starting.")
 
     if (Bot.speechApiToken != null) Bot.azureAuth = Authentication(Bot.speechApiToken!!)
-    ProcessStarter.setGlobalSearchPath("C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16")
+    ProcessStarter.setGlobalSearchPath(Bot.data.imageMagickDirectory)
 
     Discord4J.LOGGER.info("Registering commands.")
 

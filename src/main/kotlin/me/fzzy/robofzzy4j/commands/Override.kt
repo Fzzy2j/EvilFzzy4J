@@ -29,7 +29,7 @@ object Override : Command {
                 RequestBuffer.request { message.channel.sendMessage("${message.author.name} has ${Guild.getGuild(message.guild).getCurrency(message.author)} diamonds") }
             }
             "play" -> {
-                val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v\\/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[1])
+                val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[1])
 
                 val id = try {
                     if (matcher.find()) matcher.group(0) else args[1].split(".be/")[1]
