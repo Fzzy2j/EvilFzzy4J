@@ -3,8 +3,6 @@ package me.fzzy.robofzzy4j
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
-import sx.blah.discord.handle.impl.obj.ReactionEmoji
-import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.MissingPermissionsException
@@ -79,18 +77,26 @@ object CommandHandler {
                 val timeLeft = Math.ceil((user.getCooldown(command.cooldownCategory).timeLeft((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) / 1000.0 / 60.0).roundToInt()
 
                 val s = if (command.cost == 1) "" else "s"
-                val content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeft seconds\n click the reaction to spend ${command.cost} point$s to skip the cooldown"
+                var content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeft seconds"
+
                 var msg: IMessage? = null
-                RequestBuilder(Bot.client).shouldBufferRequests(true).doAction {
+                val msgBuilder = RequestBuilder(Bot.client).doAction {
                     msg = MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content)
                     true
-                }.andThen {
-                    try {
-                        msg?.addReaction(Bot.CURRENCY_EMOJI)
-                    } catch (e: MissingPermissionsException) {
+                }
+
+                if (!Bot.data.cooldownMode) {
+                    content += "\n click the reaction to spend ${command.cost} point$s to skip the cooldown"
+                    msgBuilder.shouldBufferRequests(true).andThen {
+                        try {
+                            msg?.addReaction(Bot.CURRENCY_EMOJI)
+                        } catch (e: MissingPermissionsException) {
+                        }
+                        true
                     }
-                    true
-                }.execute()
+                }
+
+                msgBuilder.execute()
             }
         }
     }
@@ -114,7 +120,7 @@ object CommandHandler {
                     } else {
                         Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
                         RequestBuffer.request {
-                            MessageScheduler.sendTempMessage(10 * 1000, message.channel, result.getFailMessage())
+                            MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, result.getFailMessage())
                         }
                         tryDelete(message)
                     }

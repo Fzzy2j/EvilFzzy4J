@@ -2,10 +2,12 @@ package me.fzzy.robofzzy4j
 
 import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
-import com.google.gson.annotations.Expose
 import com.google.gson.stream.JsonReader
 import me.fzzy.robofzzy4j.commands.*
-import me.fzzy.robofzzy4j.commands.help.*
+import me.fzzy.robofzzy4j.commands.help.Help
+import me.fzzy.robofzzy4j.commands.help.Invite
+import me.fzzy.robofzzy4j.commands.help.Picturetypes
+import me.fzzy.robofzzy4j.commands.help.Sounds
 import me.fzzy.robofzzy4j.listeners.MessageListener
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.listeners.VoteListener
@@ -15,8 +17,6 @@ import org.im4java.process.ProcessStarter
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
-import java.io.File
-import java.util.*
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.ReadyEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
@@ -24,19 +24,21 @@ import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.RequestBuffer
 import java.io.BufferedWriter
+import java.io.File
 import java.io.FileWriter
 import java.io.InputStreamReader
 import java.nio.file.Files
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
-import kotlin.collections.HashMap
 
 class BotData {
     val BOT_PREFIX = "-"
     val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
     val THREAD_COUNT = 4
     var leaderboardResetStamp = 0L
+    var cooldownMode = true
 }
 
 object Bot {
@@ -46,7 +48,7 @@ object Bot {
 
     var speechApiToken: String? = null
 
-    var data = BotData()
+    lateinit var data: BotData
 
     val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
     val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
@@ -86,6 +88,17 @@ fun main(args: Array<String>) {
     val type = object : TypeToken<HashMap<String, String>>() {}.type
     val keys: HashMap<String, String> = Bot.gson.fromJson(JsonReader(InputStreamReader(keysFile.inputStream())), type)
 
+    Discord4J.LOGGER.info("Loading data.")
+    val dataFile = File("${Bot.DATA_DIR}config.json")
+    if (dataFile.exists()) Bot.data = Bot.gson.fromJson(JsonReader(InputStreamReader(dataFile.inputStream())), BotData::class.java)
+    else {
+        Bot.data = BotData()
+        val bufferWriter = BufferedWriter(FileWriter(dataFile.absoluteFile, false))
+        val save = Bot.gson.toJson(Bot.data)
+        bufferWriter.write(save)
+        bufferWriter.close()
+    }
+
     Bot.speechApiToken = keys["speechApiToken"]
 
     Bot.executor = Executors.newFixedThreadPool(Bot.data.THREAD_COUNT)
@@ -118,16 +131,6 @@ fun main(args: Array<String>) {
     //CommandHandler.registerCommand("eyetypes", Eyetypes)
     CommandHandler.registerCommand("picturetypes", Picturetypes)
     CommandHandler.registerCommand("override", Override)
-
-    Discord4J.LOGGER.info("Loading data.")
-    val dataFile = File("${Bot.DATA_DIR}config.json")
-    if (dataFile.exists()) Bot.data = Bot.gson.fromJson(JsonReader(InputStreamReader(dataFile.inputStream())), BotData::class.java)
-    else {
-        val bufferWriter = BufferedWriter(FileWriter(dataFile.absoluteFile, false))
-        val save = Bot.gson.toJson(Bot.data)
-        bufferWriter.write(save)
-        bufferWriter.close()
-    }
 
     val cacheFile = File("cache")
     if (cacheFile.exists()) {

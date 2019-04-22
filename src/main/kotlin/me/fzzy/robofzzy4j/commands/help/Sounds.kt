@@ -1,6 +1,9 @@
 package me.fzzy.robofzzy4j.commands.help
 
-import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Bot
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.CommandResult
+import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
@@ -9,13 +12,9 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
-import sx.blah.discord.util.audio.AudioPlayer
 import java.io.File
-import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import javax.sound.sampled.AudioSystem
-import javax.sound.sampled.UnsupportedAudioFileException
 import kotlin.math.roundToInt
 
 
@@ -85,7 +84,7 @@ object Sounds : Command {
                             "you gotta slow down %user%, you can use that command in %time%"
                     )
                     RequestBuffer.request {
-                        MessageScheduler.sendTempMessage(1000 * 60, event.channel, messages[Bot.random.nextInt(messages.size)]
+                        MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, messages[Bot.random.nextInt(messages.size)]
                                 .replace("%user%", event.author.name.toLowerCase())
                                 .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
                         )

@@ -2,7 +2,6 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
-import me.fzzy.robofzzy4j.thread.Scheduler
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
@@ -69,7 +68,7 @@ object Override : Command {
                 )
 
                 RequestBuffer.request {
-                    MessageScheduler.sendTempMessage(10000, message.channel, messages[Bot.random.nextInt(messages.size)]
+                    MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, messages[Bot.random.nextInt(messages.size)]
                             .replace("%target%", userNames.joinToString(", "))
                             .replace("%author%", message.author.name.toLowerCase()))
                 }
