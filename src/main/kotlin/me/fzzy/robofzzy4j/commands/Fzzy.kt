@@ -43,7 +43,7 @@ object Fzzy : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {

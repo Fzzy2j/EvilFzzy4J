@@ -8,6 +8,8 @@ object Scheduler : Thread() {
 
     private var tasks: HashMap<Task, Long> = hashMapOf()
 
+    var running = true
+
     private fun addTask(task: Task): Task {
         tasks[task] = System.currentTimeMillis()
         return task
@@ -45,7 +47,7 @@ object Scheduler : Thread() {
     }
 
     override fun run() {
-        while (true) {
+        while (running) {
             sleep(1000)
 
             for ((task, time) in tasks) {

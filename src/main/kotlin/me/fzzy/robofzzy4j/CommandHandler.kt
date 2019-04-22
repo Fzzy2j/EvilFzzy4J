@@ -51,7 +51,7 @@ object CommandHandler {
         val args = event.message.content.split(" ")
         if (args.isEmpty())
             return
-        if (!args[0].startsWith(Bot.BOT_PREFIX))
+        if (!args[0].startsWith(Bot.data.BOT_PREFIX))
             return
         val commandString = args[0].substring(1)
         var argsList: List<String> = args.toMutableList()
@@ -65,7 +65,7 @@ object CommandHandler {
 
             if (event.channel.isPrivate) {
                 if (!command.allowDM) {
-                    RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
+                    RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, "This command is not allowed in DMs!") }
                     return
                 }
             }
@@ -82,7 +82,7 @@ object CommandHandler {
                 val content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeft seconds\n click the reaction to spend ${command.cost} point$s to skip the cooldown"
                 var msg: IMessage? = null
                 RequestBuilder(Bot.client).shouldBufferRequests(true).doAction {
-                    msg = MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content)
+                    msg = MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content)
                     true
                 }.andThen {
                     try {

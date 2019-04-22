@@ -1,5 +1,7 @@
 package me.fzzy.robofzzy4j
 
+import com.google.gson.annotations.Expose
+import com.google.gson.stream.JsonReader
 import me.fzzy.robofzzy4j.listeners.VoteListener
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.IChannel
@@ -9,11 +11,9 @@ import sx.blah.discord.handle.obj.IUser
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.RequestBuilder
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.File
-import java.io.FileOutputStream
+import java.io.*
 import java.net.URL
+import java.util.ArrayList
 import java.util.regex.Pattern
 import kotlin.math.roundToInt
 
@@ -27,7 +27,10 @@ class Guild private constructor(private var guildId: Long) {
                 if (guild.longId == guildId)
                     return guild
             }
-            val guild = Guild(guildId)
+            val guildFile = File("${Bot.DATA_DIR}guilds${File.separator}$guildId.json")
+            val guild = if (guildFile.exists()) {
+                Bot.gson.fromJson<Guild>(JsonReader(InputStreamReader(guildFile.inputStream())), Guild::class.java)
+            } else Guild(guildId)
             guilds.add(guild)
             return guild
         }
@@ -49,17 +52,18 @@ class Guild private constructor(private var guildId: Long) {
         }
     }
 
-    init {
-        load()
-    }
-
+    @Expose
     val longId: Long = this.guildId
-    lateinit var leaderboard: Leaderboard
-
+    @Expose
+    var leaderboard: Leaderboard = Leaderboard()
+    @Expose
     private var posts = 0
+    @Expose
     private var votes = 0
-
-    private lateinit var currency: HashMap<Long, Int>
+    @Expose
+    private var currency: HashMap<Long, Int> = hashMapOf()
+    @Expose
+    val savedMessageIds = ArrayList<Long>()
 
     private var changes: Leaderboard.LeaderboardChange? = null
 
@@ -94,7 +98,7 @@ class Guild private constructor(private var guildId: Long) {
         if (existingMessage != null)
             RequestBuffer.request { existingMessage.edit(message) }
         else
-            RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, channel, message) }
+            RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, channel, message) }
     }
 
     fun addPoint(message: IMessage, user: IUser, channel: IChannel) {
@@ -103,8 +107,8 @@ class Guild private constructor(private var guildId: Long) {
         votes++
 
         if (VoteListener.getVotes(message) > getAverageVote()) {
-            if (!Bot.savedMemesIds.contains(message.longID)) {
-                Bot.savedMemesIds.add(message.longID)
+            if (!savedMessageIds.contains(message.longID)) {
+                savedMessageIds.add(message.longID)
                 if (message.attachments.size == 0) {
                     if (!(message.content.toLowerCase().endsWith(".png")
                                     || message.content.toLowerCase().endsWith(".jpg")
@@ -199,6 +203,7 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun getAverageVote(): Int {
+        if (posts == 0) return 0
         return (votes.toFloat() / posts.toFloat()).roundToInt()
     }
 
@@ -215,40 +220,12 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun save() {
-        Bot.guildNode.getNode("id$guildId", "votes").value = null
-        var i = 0
-        for ((key, value) in leaderboard.valueMap) {
-            Bot.guildNode.getNode("id$guildId", "votes", i, "id").value = key
-            Bot.guildNode.getNode("id$guildId", "votes", i, "value").value = value.value
-            i++
-        }
-
-        for ((key, value) in currency) {
-            Bot.guildNode.getNode("id$guildId", "currency", key).value = value
-        }
-
-        Bot.guildNode.getNode("id$guildId", "totalVotes").value = votes
-        Bot.guildNode.getNode("id$guildId", "totalPosts").value = posts
-
-        Bot.guildManager.save(Bot.guildNode)
-    }
-
-    fun load() {
-        currency = hashMapOf()
-        leaderboard = Leaderboard()
-        for (node in Bot.guildNode.getNode("id$guildId", "votes").childrenList) {
-            if (try {
-                        !Bot.client.getUserByID(node.getNode("id").long).isBot
-                    } catch (e: Exception) {
-                        true
-                    })
-                leaderboard.setValue(node.getNode("id").long, node.getNode("value").int)
-        }
-        for ((key, value) in Bot.guildNode.getNode("id$guildId", "currency").childrenMap) {
-            currency[key.toString().toLong()] = value.int
-        }
-        votes = Bot.guildNode.getNode("id$guildId", "totalVotes").int
-        posts = Bot.guildNode.getNode("id$guildId", "totalPosts").int
+        File("${Bot.DATA_DIR}guilds").mkdirs()
+        val guildFile = File("${Bot.DATA_DIR}guilds${File.separator}$guildId.json")
+        val bufferWriter = BufferedWriter(FileWriter(guildFile.absoluteFile, false))
+        val save = Bot.gson.toJson(this)
+        bufferWriter.write(save)
+        bufferWriter.close()
     }
 
 }

@@ -50,7 +50,7 @@ object LeaderboardCommand : Command {
         if (existingLeaderboard != null)
             RequestBuffer.request { existingLeaderboard.edit(builder.build()) }
         else
-            RequestBuffer.request { MessageScheduler.sendTempEmbed(Bot.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, builder.build()) }
+            RequestBuffer.request { MessageScheduler.sendTempEmbed(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, builder.build()) }
         return CommandResult.success()
     }
 

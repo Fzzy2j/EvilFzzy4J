@@ -59,6 +59,7 @@ object Funcs {
     }
 
     fun getTextToSpeech(text: String): ByteArray? {
+        if (Bot.azureAuth == null) return null
         val voices = listOf(
                 "(en-US, BenjaminRUS)",
                 "(en-GB, HazelRUS)",
@@ -86,7 +87,7 @@ object Funcs {
             urlConnection.requestMethod = "POST"
             urlConnection.setRequestProperty("Content-Type", "application/ssml+xml")
             urlConnection.setRequestProperty("X-MICROSOFT-OutputFormat", "audio-16khz-64kbitrate-mono-mp3")
-            urlConnection.setRequestProperty("Authorization", "Bearer ${Bot.azureAuth.GetAccessToken()}")
+            urlConnection.setRequestProperty("Authorization", "Bearer ${Bot.azureAuth!!.GetAccessToken()}")
             urlConnection.setRequestProperty("Accept", "*/*")
             val ssmlBytes = input.toByteArray()
             urlConnection.setRequestProperty("content-length", ssmlBytes.size.toString())

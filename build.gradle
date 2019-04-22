@@ -38,7 +38,7 @@ dependencies {
     compile group: 'org.im4java', name: 'im4java', version: '1.4.0'
     compile group: 'ws.schild', name: 'jave-core', version: '2.4.3'
     compile 'com.github.Commit451:YouTubeExtractor:4.2.1'
-    compile 'org.spongepowered:configurate-hocon:3.6'
+    compile 'com.google.code.gson:gson:2.8.5'
 }
 
 compileKotlin {

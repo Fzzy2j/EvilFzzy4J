@@ -47,7 +47,7 @@ object Explode : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "this image has no framerate to it, i cant work with it") }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "this image has no framerate to it, i cant work with it") }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {

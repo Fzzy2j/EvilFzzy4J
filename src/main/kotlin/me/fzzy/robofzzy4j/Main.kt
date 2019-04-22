@@ -1,6 +1,9 @@
 package me.fzzy.robofzzy4j
 
 import com.google.common.reflect.TypeToken
+import com.google.gson.Gson
+import com.google.gson.annotations.Expose
+import com.google.gson.stream.JsonReader
 import me.fzzy.robofzzy4j.commands.*
 import me.fzzy.robofzzy4j.commands.help.*
 import me.fzzy.robofzzy4j.listeners.MessageListener
@@ -14,30 +17,36 @@ import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
 import java.io.File
 import java.util.*
-import ninja.leaping.configurate.ConfigurationNode
-import ninja.leaping.configurate.commented.CommentedConfigurationNode
-import ninja.leaping.configurate.loader.ConfigurationLoader
-import ninja.leaping.configurate.hocon.HoconConfigurationLoader
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.ReadyEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.ActivityType
 import sx.blah.discord.handle.obj.StatusType
 import sx.blah.discord.util.RequestBuffer
+import java.io.BufferedWriter
+import java.io.FileWriter
+import java.io.InputStreamReader
 import java.nio.file.Files
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.regex.Pattern
+import kotlin.collections.HashMap
+
+class BotData {
+    val BOT_PREFIX = "-"
+    val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
+    val THREAD_COUNT = 4
+    var leaderboardResetStamp = 0L
+}
 
 object Bot {
     lateinit var client: IDiscordClient
 
-    val savedMemesIds = ArrayList<Long>()
+    val gson = Gson()
 
-    lateinit var speechApiToken: String
+    var speechApiToken: String? = null
 
-    const val BOT_PREFIX = "-"
-    const val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
+    var data = BotData()
 
     val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
     val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
@@ -48,18 +57,11 @@ object Bot {
             + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
 
     // Threads
-    lateinit var azureAuth: Authentication
+    var azureAuth: Authentication? = null
 
     val random = Random()
 
-    lateinit var guildManager: ConfigurationLoader<CommentedConfigurationNode>
-    lateinit var guildNode: ConfigurationNode
-
-    lateinit var dataManager: ConfigurationLoader<CommentedConfigurationNode>
-    lateinit var dataNode: ConfigurationNode
-
-    const val CONFIG_DIR: String = "data/"
-    const val THREAD_COUNT = 4
+    val DATA_DIR: String = "data${File.separator}"
 
     lateinit var executor: ExecutorService
 
@@ -69,33 +71,28 @@ object Bot {
         for (guild in event.client.guilds) {
             Discord4J.LOGGER.info(guild.name)
         }
-        RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.BOT_PREFIX}help") }
+        RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
     }
 }
 
 fun main(args: Array<String>) {
-    val keys = File("keys.conf")
-    if (!keys.exists()) {
-        Discord4J.LOGGER.warn("Generating new keys.conf file... you must enter a discord token for the bot to function")
-        Files.copy(Bot::class.java.getResourceAsStream("keys.conf"), keys.toPath())
+    File(Bot.DATA_DIR).mkdirs()
+    val keysFile = File("${Bot.DATA_DIR}keys.json")
+    if (!keysFile.exists()) {
+        Discord4J.LOGGER.warn("Generating new keys.json file... you must enter a discord token for the bot to function")
+        Files.copy(Bot::class.java.classLoader.getResourceAsStream("${File.separator}keys.json"), keysFile.toPath())
         System.exit(0)
     }
-    val keyNode = HoconConfigurationLoader.builder().setPath(File("keys.conf").toPath()).build().load()
-    Bot.speechApiToken = keyNode.getNode("speechApiToken").string!!
+    val type = object : TypeToken<HashMap<String, String>>() {}.type
+    val keys: HashMap<String, String> = Bot.gson.fromJson(JsonReader(InputStreamReader(keysFile.inputStream())), type)
 
-    Bot.executor = Executors.newFixedThreadPool(Bot.THREAD_COUNT)
+    Bot.speechApiToken = keys["speechApiToken"]
+
+    Bot.executor = Executors.newFixedThreadPool(Bot.data.THREAD_COUNT)
 
     Discord4J.LOGGER.info("Bot Starting.")
 
-    val guildFile = File(Bot.CONFIG_DIR + File.separator + "guilds.conf")
-    val dataFile = File(Bot.CONFIG_DIR + File.separator + "data.conf")
-    guildFile.parentFile.mkdirs()
-    Bot.guildManager = HoconConfigurationLoader.builder().setPath(guildFile.toPath()).build()
-    Bot.dataManager = HoconConfigurationLoader.builder().setPath(dataFile.toPath()).build()
-    Bot.guildNode = Bot.guildManager.load()
-    Bot.dataNode = Bot.dataManager.load()
-
-    Bot.azureAuth = Authentication(Bot.speechApiToken)
+    if (Bot.speechApiToken != null) Bot.azureAuth = Authentication(Bot.speechApiToken!!)
     ProcessStarter.setGlobalSearchPath("C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16")
 
     Discord4J.LOGGER.info("Registering commands.")
@@ -122,10 +119,14 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("picturetypes", Picturetypes)
     CommandHandler.registerCommand("override", Override)
 
-    Discord4J.LOGGER.info("Loading reviewIds.")
-    Bot.savedMemesIds.clear()
-    for (text in Bot.dataNode.getNode("savedMemesIds").getList(TypeToken.of(String::class.java))) {
-        Bot.savedMemesIds.add(text.toLong())
+    Discord4J.LOGGER.info("Loading data.")
+    val dataFile = File("${Bot.DATA_DIR}config.json")
+    if (dataFile.exists()) Bot.data = Bot.gson.fromJson(JsonReader(InputStreamReader(dataFile.inputStream())), BotData::class.java)
+    else {
+        val bufferWriter = BufferedWriter(FileWriter(dataFile.absoluteFile, false))
+        val save = Bot.gson.toJson(Bot.data)
+        bufferWriter.write(save)
+        bufferWriter.close()
     }
 
     val cacheFile = File("cache")
@@ -141,20 +142,26 @@ fun main(args: Array<String>) {
 
     Discord4J.LOGGER.info("Starting auto-saver.")
 
+    // Autosave
     Scheduler.Builder(60).doAction {
         val day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        if (day == Calendar.MONDAY && System.currentTimeMillis() - Bot.dataNode.getNode("leaderboardResetTimestamp").long > 48 * 60 * 60 * 1000) {
-            Bot.dataNode.getNode("leaderboardResetTimestamp").value = System.currentTimeMillis()
-            Bot.dataManager.save(Bot.dataNode)
+        if (day == Calendar.MONDAY && System.currentTimeMillis() - Bot.data.leaderboardResetStamp > 48 * 60 * 60 * 1000) {
+            Bot.data.leaderboardResetStamp = System.currentTimeMillis()
+
+            val bufferWriter = BufferedWriter(FileWriter(dataFile.absoluteFile, false))
+            val save = Bot.gson.toJson(Bot.data)
+            bufferWriter.write(save)
+            bufferWriter.close()
+
             Guild.clearLeaderboards()
         }
         Guild.saveAll()
-        RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.BOT_PREFIX}help") }
+        RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
     }.repeat().execute()
 
     Discord4J.LOGGER.info("Registering events.")
 
-    Bot.client = ClientBuilder().withToken(keyNode.getNode("discordToken").string!!).build()
+    Bot.client = ClientBuilder().withToken(keys["discordToken"]!!).build()
     Bot.client.dispatcher.registerListener(VoteListener)
     Bot.client.dispatcher.registerListener(MessageListener)
     Bot.client.dispatcher.registerListener(VoiceListener)

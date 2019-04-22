@@ -30,7 +30,7 @@ object Picturetypes : Command {
             try {
                message.author.orCreatePMChannel.sendMessage(all)
             } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "${message.author.mention()} i dont have permission to tell you about what i can do :(")
+                MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "${message.author.mention()} i dont have permission to tell you about what i can do :(")
             }
         }
         return CommandResult.success()

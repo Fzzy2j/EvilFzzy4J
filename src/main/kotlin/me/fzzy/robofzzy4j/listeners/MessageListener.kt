@@ -10,12 +10,9 @@ import sx.blah.discord.handle.impl.events.guild.channel.message.MessageSendEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.util.EmbedBuilder
 import sx.blah.discord.util.RequestBuffer
-import sx.blah.discord.util.RequestBuilder
-import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Matcher
-import java.util.regex.Pattern
 
 object MessageListener {
 
@@ -32,7 +29,7 @@ object MessageListener {
             for (msg in event.channel.getMessageHistory(7)) {
                 if (msg.author.longID == Bot.client.ourUser.longID) {
                     RequestBuffer.request {
-                        MessageScheduler.sendTempMessage(Bot.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, respongeMsgs[Bot.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild).toLowerCase()))
+                        MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, respongeMsgs[Bot.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild).toLowerCase()))
                     }
                     break
                 }
