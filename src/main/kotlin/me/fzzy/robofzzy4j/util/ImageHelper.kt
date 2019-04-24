@@ -1,6 +1,6 @@
-package me.fzzy.robofzzy4j
+package me.fzzy.robofzzy4j.util
 
-import me.fzzy.robofzzy4j.util.MediaType
+import me.fzzy.robofzzy4j.Bot
 import sx.blah.discord.handle.obj.IMessage
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream

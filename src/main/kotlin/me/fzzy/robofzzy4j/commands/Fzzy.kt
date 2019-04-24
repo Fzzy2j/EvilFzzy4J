@@ -1,7 +1,11 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Bot
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.util.CommandResult
+import me.fzzy.robofzzy4j.util.ImageHelper
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import org.im4java.core.Info

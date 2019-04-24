@@ -2,8 +2,8 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
-import me.fzzy.robofzzy4j.ImageHelper
 import me.fzzy.robofzzy4j.util.CommandResult
+import me.fzzy.robofzzy4j.util.ImageHelper
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import sx.blah.discord.handle.obj.IMessage

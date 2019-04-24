@@ -75,10 +75,10 @@ object CommandHandler {
                     user.getCooldown(command.cooldownCategory).isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
                 runCommand(user, command, event.message, argsList)
             } else {
-                val timeLeft = Math.ceil((user.getCooldown(command.cooldownCategory).timeLeft((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) / 1000.0 / 60.0).roundToInt()
+                val timeLeftMinutes = Math.ceil((user.getCooldown(command.cooldownCategory).timeLeft((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) / 1000.0 / 60.0).roundToInt()
 
                 val s = if (command.cost == 1) "" else "s"
-                var content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeft seconds"
+                var content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeftMinutes minute${if (timeLeftMinutes != 1) "s" else ""}"
 
                 var msg: IMessage? = null
                 val msgBuilder = RequestBuilder(Bot.client).doAction {

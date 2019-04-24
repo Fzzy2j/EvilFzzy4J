@@ -2,8 +2,8 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
-import me.fzzy.robofzzy4j.ImageHelper
 import me.fzzy.robofzzy4j.util.CommandResult
+import me.fzzy.robofzzy4j.util.ImageHelper
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.net.URL
