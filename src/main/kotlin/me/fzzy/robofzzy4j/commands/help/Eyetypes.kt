@@ -1,10 +1,9 @@
 package me.fzzy.robofzzy4j.commands.help
 
-import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.CommandResult
-import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.Bot
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.MessageScheduler
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer

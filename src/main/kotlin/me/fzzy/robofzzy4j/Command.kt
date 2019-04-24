@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j
 
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 
 interface Command {

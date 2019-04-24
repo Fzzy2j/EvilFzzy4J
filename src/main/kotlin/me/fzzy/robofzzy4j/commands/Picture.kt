@@ -1,7 +1,10 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.*
-import org.im4java.core.CompositeCmd
+import me.fzzy.robofzzy4j.Bot
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.ImageHelper
+import me.fzzy.robofzzy4j.util.CommandResult
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import sx.blah.discord.handle.obj.IMessage
@@ -9,7 +12,6 @@ import sx.blah.discord.util.RequestBuffer
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
-import java.net.URL
 import javax.imageio.ImageIO
 
 object Picture : Command {
@@ -42,11 +44,11 @@ object Picture : Command {
         val history = message.channel.getMessageHistory(10).toMutableList()
         history.add(0, message)
 
-        val url = ImageFuncs.getFirstImage(history)
+        val url = ImageHelper.getFirstImage(history)
         val file = if (url != null && (args.count() == 1 && args[0].toLowerCase() != "random"))
-            ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
-            ImageFuncs.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         val bufferedImage = ImageIO.read(picture)
 
@@ -112,7 +114,7 @@ object Picture : Command {
         composite.run(operation)
 
         RequestBuffer.request {
-            Funcs.sendFile(message.channel, file)
+            Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
             file.delete()
         }
 
@@ -122,7 +124,7 @@ object Picture : Command {
     private fun detectTopRightCorner(img: BufferedImage): Pair<Int, Int> {
         var minTrans = img.width + img.height
         var finalPixels = arrayListOf<Pair<Int, Int>>()
-        for (x in -(img.height - 1)..(img.width - 1)) {
+        for (x in -(img.height - 1) until img.width) {
             val transPixels = arrayListOf<Pair<Int, Int>>()
             for (y in 0 until img.height) {
                 if (x + y < 0 || x + y >= img.width) continue

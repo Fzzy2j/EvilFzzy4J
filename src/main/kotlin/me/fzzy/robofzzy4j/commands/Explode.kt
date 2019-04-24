@@ -1,16 +1,14 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.util.CommandResult
 import org.apache.commons.io.FileUtils
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
 import org.im4java.core.Info
-import org.im4java.core.MogrifyCmd
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
-import java.net.URL
 import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
@@ -31,11 +29,11 @@ object Explode : Command {
         val history = message.channel.getMessageHistory(10).toMutableList()
         history.add(0, message)
 
-        val url = ImageFuncs.getFirstImage(history)
+        val url = ImageHelper.getFirstImage(history)
         var file = if (url != null)
-            ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
-            ImageFuncs.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         var tempFile: File? = null
         val finalSize = 0.3
@@ -158,7 +156,7 @@ object Explode : Command {
 
         RequestBuffer.request {
             try {
-                Funcs.sendFile(message.channel, file)
+                Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
             } catch (e: Exception) {
                 message.channel.sendMessage("i couldnt send the file, sorry")
             }

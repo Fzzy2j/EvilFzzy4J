@@ -2,8 +2,8 @@ package me.fzzy.robofzzy4j.commands
 
 import com.commit451.youtubeextractor.YouTubeExtractor
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.CommandResult
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.Discord4J
 import sx.blah.discord.handle.obj.IMessage

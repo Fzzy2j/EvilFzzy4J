@@ -1,7 +1,7 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.EmbedBuilder
 import sx.blah.discord.util.RequestBuffer

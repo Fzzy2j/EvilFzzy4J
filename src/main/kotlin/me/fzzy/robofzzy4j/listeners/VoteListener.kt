@@ -1,12 +1,12 @@
 package me.fzzy.robofzzy4j.listeners
 
-import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Bot
+import me.fzzy.robofzzy4j.Guild
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionAddEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IUser
-import java.lang.NullPointerException
 
 object VoteListener {
 
@@ -51,10 +51,10 @@ object VoteListener {
                 if (event.message.author.longID != event.user.longID) {
                     when (event.reaction.emoji.name) {
                         "upvote" -> {
-                            guild.addPoint(event.message, event.author, event.channel)
+                            guild.adjustScore(event.author, 1, event.channel, event.message)
                         }
                         "downvote" -> {
-                            guild.subtractPoint(event.author, event.channel)
+                            guild.adjustScore(event.author, -1, event.channel, event.message)
                         }
                     }
                 }
@@ -70,10 +70,10 @@ object VoteListener {
                 if (event.message.author.longID != event.user.longID) {
                     when (event.reaction.emoji.name) {
                         "upvote" -> {
-                            guild.subtractPoint(event.author, event.channel)
+                            guild.adjustScore(event.author, -1, event.channel, event.message)
                         }
                         "downvote" -> {
-                            guild.addPoint(event.message, event.author, event.channel)
+                            guild.adjustScore(event.author, 1, event.channel, event.message)
                         }
                     }
                 }

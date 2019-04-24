@@ -1,8 +1,13 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.ImageHelper
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
+import java.net.URL
+import java.util.*
 
 object Mc : Command {
 
@@ -23,13 +28,18 @@ object Mc : Command {
             achieve += "+$text"
         }
         achieve = achieve.substring(1)
-        val url = ImageFuncs.getMinecraftAchievement(achieve)
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("the api didnt like that")
+        val url = getMinecraftAchievement(achieve)
+        val file = ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("the api didnt like that")
 
         RequestBuffer.request {
-            Funcs.sendFile(message.channel, file)
+            Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
             file.delete()
         }
         return CommandResult.success()
+    }
+
+    fun getMinecraftAchievement(text: String): URL {
+        val url = "https://mcgen.herokuapp.com/a.php?i=${Random().nextInt(20) + 1}&h=Achievement+get!&t=$text"
+        return URL(url)
     }
 }

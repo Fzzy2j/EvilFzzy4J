@@ -2,6 +2,7 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer

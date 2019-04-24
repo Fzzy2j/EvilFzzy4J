@@ -1,18 +1,8 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.*
-import org.im4java.core.CompositeCmd
-import org.im4java.core.ConvertCmd
-import org.im4java.core.IMOperation
-import org.im4java.core.Stream2BufferedImage
-import org.json.JSONObject
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.RequestBuffer
-import java.io.File
-import java.net.URL
-import javax.imageio.ImageIO
-import kotlin.math.roundToInt
 
 //
 // UNUSED
@@ -48,11 +38,11 @@ object Eyes : Command {
         val history = event.channel.getMessageHistory(10).toMutableList()
         history.add(0, event.message)
 
-        val url: URL = ImageFuncs.getFirstImage(history)
+        val url: URL = ImageHelper.getFirstImage(history)
                 ?: return CommandResult.fail("i couldnt find an image in the last 10 messages")
 
-        val faces = ImageFuncs.getFacialInfo("", false, true, url.toString())
-        val file = ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+        val faces = ImageHelper.getFacialInfo("", false, true, url.toString())
+        val file = ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
 
         if (faces == null || faces.length() == 0)
             return CommandResult.fail("the api couldnt find any faces in that picture")

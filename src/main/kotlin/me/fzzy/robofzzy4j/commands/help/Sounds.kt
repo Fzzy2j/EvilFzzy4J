@@ -2,9 +2,9 @@ package me.fzzy.robofzzy4j.commands.help
 
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.CommandResult
 import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
@@ -15,8 +15,6 @@ import sx.blah.discord.util.RequestBuffer
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.roundToInt
-
 
 object Sounds : Command {
 
@@ -74,20 +72,6 @@ object Sounds : Command {
                     val userVoiceChannel = event.author.getVoiceStateForGuild(event.guild).channel
                     if (userVoiceChannel != null) {
                         VoiceListener.playTempAudio(userVoiceChannel, audioDir[0], false)
-                    }
-                } else {
-                    val timeLeft = Math.ceil((SOUND_COOLDOWN - ((System.currentTimeMillis() - cooldowns.getOrDefault(event.author.longID, System.currentTimeMillis())))) / 1000.0 / 60.0).roundToInt()
-
-                    val messages = arrayOf(
-                            "%user% you can use that command in %time%",
-                            "you can use that command in %time% %user%",
-                            "you gotta slow down %user%, you can use that command in %time%"
-                    )
-                    RequestBuffer.request {
-                        MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, messages[Bot.random.nextInt(messages.size)]
-                                .replace("%user%", event.author.name.toLowerCase())
-                                .replace("%time%", timeLeft.toString() + if (timeLeft == 1) " minute" else " minutes")
-                        )
                     }
                 }
             }

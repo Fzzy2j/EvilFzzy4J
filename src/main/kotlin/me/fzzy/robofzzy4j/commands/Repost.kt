@@ -1,6 +1,9 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Bot
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
@@ -21,7 +24,7 @@ object Repost : Command {
         val repost = getRepost(message.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry")
 
         RequestBuffer.request {
-            Funcs.sendFile(message.channel, repost, false)
+            Guild.getGuild(message.guild).sendVoteAttachment(repost, message.channel)
             repost.delete()
         }
         return CommandResult.success()

@@ -3,7 +3,7 @@ package me.fzzy.robofzzy4j
 import com.google.gson.annotations.Expose
 import com.google.gson.stream.JsonReader
 import me.fzzy.robofzzy4j.listeners.VoteListener
-import sx.blah.discord.handle.impl.obj.ReactionEmoji
+import me.fzzy.robofzzy4j.util.MediaType
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IMessage
@@ -12,9 +12,7 @@ import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.RequestBuilder
 import java.io.*
-import java.net.URL
-import java.util.ArrayList
-import java.util.regex.Pattern
+import java.util.*
 import kotlin.math.roundToInt
 
 class Guild private constructor(private var guildId: Long) {
@@ -85,7 +83,7 @@ class Guild private constructor(private var guildId: Long) {
         if (existingMessage == null) changes = change else changes?.add(change)
 
         var message = "```diff\n--- Leaderboard Changes\n"
-        for ((id, amt) in Funcs.sortHashMapByValues(changes!!.positions)) {
+        for ((id, amt) in sortHashMapByValues(changes!!.positions)) {
             if (amt == 0) continue
             val name = Bot.client.getUserByID(id).getDisplayName(getDiscordGuild())
             val rank = leaderboard.getRank(id)
@@ -101,79 +99,99 @@ class Guild private constructor(private var guildId: Long) {
             RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, channel, message) }
     }
 
-    fun addPoint(message: IMessage, user: IUser, channel: IChannel) {
+    fun adjustScore(user: IUser, amount: Int, broadcastChannel: IChannel? = null, message: IMessage? = null) {
         val score = leaderboard.getOrDefault(user.longID, 0)
-        if (!user.isBot) handleChanges(leaderboard.setValue(user.longID, score + 1), channel)
-        votes++
+        val changes = if (!user.isBot) leaderboard.setValue(user.longID, score + amount) else Leaderboard.LeaderboardChange()
 
-        if (VoteListener.getVotes(message) > getAverageVote()) {
-            if (!savedMessageIds.contains(message.longID)) {
-                savedMessageIds.add(message.longID)
-                if (message.attachments.size == 0) {
-                    if (!(message.content.toLowerCase().endsWith(".png")
-                                    || message.content.toLowerCase().endsWith(".jpg")
-                                    || message.content.toLowerCase().endsWith(".jpeg")
-                                    || message.content.toLowerCase().endsWith(".gif")
-                                    || message.content.toLowerCase().endsWith(".webm")))
-                        return
-                }
+        if (!user.isBot && broadcastChannel != null)
+            handleChanges(changes, broadcastChannel)
+        else if (user.longID == Bot.client.ourUser.longID && message != null && message.mentions.isNotEmpty()) {
+            for (mention in message.mentions) {
+                adjustScore(mention, amount, broadcastChannel)
+            }
+        }
+        votes += amount
 
-                lateinit var url: URL
-                if (message.attachments.size > 0) {
-                    url = URL(message.attachments[0].url)
-                } else {
-                    for (split in message.content.split(" ")) {
-                        val matcher = Bot.URL_PATTERN.matcher(split)
-                        if (matcher.find()) {
-                            var urlString = split.substring(matcher.start(1), matcher.end()).replace(".webp", ".png").replace("//gyazo.com", "//i.gyazo.com")
-                            if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png")) {
-                                urlString += ".png"
-                            }
-                            if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".jpg")) {
-                                urlString += ".jpq"
-                            }
-                            url = URL(urlString)
-                            break
-                        }
-                    }
-                }
-                val fixedUrl = URL(url.toString().replace(".gifv", ".gif"))
-                var suffix = "jpg"
-                if (fixedUrl.toString().endsWith("webp") || fixedUrl.toString().endsWith("png"))
-                    suffix = "png"
-                if (fixedUrl.toString().endsWith("gif"))
-                    suffix = "gif"
-                if (fixedUrl.toString().endsWith("webm"))
-                    suffix = "webm"
-                if (fixedUrl.toString().endsWith("mp4"))
-                    suffix = "mp4"
+        // Handle repost saving
+        if (message != null && VoteListener.getVotes(message) > getAverageVote()) {
+            saveMessage(message)
+        }
+    }
 
-                File("memes", guildId.toString()).mkdirs()
-                val fileName = "memes/$guildId/${System.currentTimeMillis()}.$suffix"
+    fun allowVotes(msg: IMessage) {
+        if (Bot.data.cooldownMode) {
+            posts++
+            votes++
+            RequestBuilder(Bot.client).shouldBufferRequests(true).doAction {
                 try {
-                    val openConnection = fixedUrl.openConnection()
-                    openConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11")
-                    openConnection.connect()
-
-                    val inputStream = BufferedInputStream(openConnection.getInputStream())
-                    val outputStream = BufferedOutputStream(FileOutputStream(fileName))
-
-                    for (out in inputStream.iterator()) {
-                        outputStream.write(out.toInt())
-                    }
-                    inputStream.close()
-                    outputStream.close()
+                    msg.addReaction(Bot.UPVOTE_EMOJI)
+                } catch (e: MissingPermissionsException) {
+                }
+                true
+            }.andThen {
+                try {
+                    msg.addReaction(Bot.DOWNVOTE_EMOJI)
+                } catch (e: MissingPermissionsException) {
+                }
+                true
+            }.execute()
+        } else {
+            RequestBuffer.request {
+                try {
+                    msg.addReaction(Bot.CURRENCY_EMOJI)
                 } catch (e: Exception) {
-                    e.printStackTrace()
                 }
             }
         }
     }
 
-    fun subtractPoint(user: IUser, channel: IChannel) {
-        val score = leaderboard.getOrDefault(user.longID, 0)
-        if (!user.isBot) handleChanges(leaderboard.setValue(user.longID, score - 1), channel)
-        votes--
+    fun sendVoteAttachment(file: File, channel: IChannel, credit: IUser? = null): IMessage? {
+        val msg = if (credit != null) {
+            try {
+                channel.sendFile(credit.mention(), file)
+            } catch (e: MissingPermissionsException) {
+                null
+            }
+        } else {
+            try {
+                channel.sendFile(file)
+            } catch (e: MissingPermissionsException) {
+                null
+            }
+        }
+        if (msg != null) allowVotes(msg)
+        return msg
+    }
+
+    fun saveMessage(message: IMessage): File? {
+        if (!savedMessageIds.contains(message.longID)) {
+            savedMessageIds.add(message.longID)
+
+            val url = Bot.getMessageMediaUrl(message, MediaType.IMAGE_AND_VIDEO)?: return null
+            val suffixFinder = url.toString().split(".")
+            val suffix = ".${suffixFinder[suffixFinder.size - 1]}"
+
+            File("memes", guildId.toString()).mkdirs()
+            val fileName = "memes/$guildId/${System.currentTimeMillis()}.$suffix"
+            try {
+                val openConnection = url.openConnection()
+                openConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11")
+                openConnection.connect()
+
+                val inputStream = BufferedInputStream(openConnection.getInputStream())
+                val outputStream = BufferedOutputStream(FileOutputStream(fileName))
+
+                for (out in inputStream.iterator()) {
+                    outputStream.write(out.toInt())
+                }
+                inputStream.close()
+                outputStream.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return File(fileName)
+        }
+        return null
     }
 
     fun addCurrency(user: IUser, amount: Int) {
@@ -182,24 +200,6 @@ class Guild private constructor(private var guildId: Long) {
 
     fun getCurrency(user: IUser): Int {
         return currency.getOrDefault(user.longID, 0)
-    }
-
-    fun allowVotes(msg: IMessage) {
-        posts++
-        votes++
-        RequestBuilder(Bot.client).shouldBufferRequests(true).doAction {
-            try {
-                msg.addReaction(Bot.UPVOTE_EMOJI)
-            } catch (e: MissingPermissionsException) {
-            }
-            true
-        }.andThen {
-            try {
-                msg.addReaction(Bot.DOWNVOTE_EMOJI)
-            } catch (e: MissingPermissionsException) {
-            }
-            true
-        }.execute()
     }
 
     fun getAverageVote(): Int {
@@ -226,6 +226,33 @@ class Guild private constructor(private var guildId: Long) {
         val save = Bot.gson.toJson(this)
         bufferWriter.write(save)
         bufferWriter.close()
+    }
+
+    fun sortHashMapByValues(passedMap: java.util.HashMap<Long, Int>): LinkedHashMap<Long, Int> {
+        val mapKeys = ArrayList(passedMap.keys)
+        val mapValues = ArrayList(passedMap.values)
+        mapValues.sort()
+        mapKeys.sort()
+
+        val sortedMap = LinkedHashMap<Long, Int>()
+
+        val valueIt = mapValues.iterator()
+        while (valueIt.hasNext()) {
+            val `val` = valueIt.next()
+            val keyIt = mapKeys.iterator()
+
+            while (keyIt.hasNext()) {
+                val key = keyIt.next()
+                val comp1 = passedMap[key]
+
+                if (comp1 == `val`) {
+                    keyIt.remove()
+                    sortedMap[key] = `val`
+                    break
+                }
+            }
+        }
+        return sortedMap
     }
 
 }

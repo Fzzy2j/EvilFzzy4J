@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j
 
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
@@ -141,27 +142,6 @@ object CommandHandler {
             } catch (e: DiscordException) {
             }
         }
-    }
-}
-
-class CommandResult private constructor(private val success: Boolean, private val message: String) {
-
-    companion object {
-        fun success(): CommandResult {
-            return CommandResult(true, "")
-        }
-
-        fun fail(msg: String): CommandResult {
-            return CommandResult(false, msg)
-        }
-    }
-
-    fun isSuccess(): Boolean {
-        return success
-    }
-
-    fun getFailMessage(): String {
-        return message
     }
 
 }

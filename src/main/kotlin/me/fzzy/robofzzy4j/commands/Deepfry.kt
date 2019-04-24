@@ -1,12 +1,13 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.ImageHelper
+import me.fzzy.robofzzy4j.util.CommandResult
 import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
-import java.net.URL
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
@@ -24,11 +25,11 @@ object Deepfry : Command {
         val history = message.channel.getMessageHistory(10).toMutableList()
         history.add(0, message)
 
-        val url = ImageFuncs.getFirstImage(history)
+        val url = ImageHelper.getFirstImage(history)
         val file = if (url != null)
-            ImageFuncs.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
         else
-            ImageFuncs.createTempFile(Repost.getImageRepost(message.guild))
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
                     ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
         val sizeHelper = ImageIO.read(file)
@@ -61,7 +62,7 @@ object Deepfry : Command {
         convert.run(op)
 
         RequestBuffer.request {
-            Funcs.sendFile(message.channel, file)
+            Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
             file.delete()
         }
         return CommandResult.success()

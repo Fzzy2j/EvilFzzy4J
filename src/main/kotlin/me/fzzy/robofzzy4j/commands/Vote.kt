@@ -1,15 +1,12 @@
 package me.fzzy.robofzzy4j.commands
 
 import com.vdurmont.emoji.EmojiManager
-import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.CommandResult
-import me.fzzy.robofzzy4j.Guild
 import me.fzzy.robofzzy4j.Bot
-import me.fzzy.robofzzy4j.listeners.VoteListener
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionAddEvent
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
-import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.IChannel
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IReaction

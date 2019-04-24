@@ -13,20 +13,27 @@ import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.listeners.VoteListener
 import me.fzzy.robofzzy4j.thread.Authentication
 import me.fzzy.robofzzy4j.thread.Scheduler
+import me.fzzy.robofzzy4j.util.MediaType
 import org.im4java.process.ProcessStarter
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
 import sx.blah.discord.api.events.EventSubscriber
+import sx.blah.discord.api.internal.json.objects.EmbedObject
 import sx.blah.discord.handle.impl.events.ReadyEvent
+import sx.blah.discord.handle.impl.events.guild.GuildCreateEvent
 import sx.blah.discord.handle.impl.obj.ReactionEmoji
 import sx.blah.discord.handle.obj.ActivityType
+import sx.blah.discord.handle.obj.IChannel
+import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.StatusType
+import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStreamReader
+import java.net.URL
 import java.nio.file.Files
 import java.util.*
 import java.util.concurrent.ExecutorService
@@ -70,12 +77,58 @@ object Bot {
 
     @EventSubscriber
     fun onReady(event: ReadyEvent) {
-        Discord4J.LOGGER.info("list of current guilds:")
-        for (guild in event.client.guilds) {
-            Discord4J.LOGGER.info(guild.name)
-        }
         Discord4J.LOGGER.info("RoboFzzy v${Bot::class.java.`package`.implementationVersion} online.")
         RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
+    }
+
+    @EventSubscriber
+    fun onJoin(event: GuildCreateEvent) {
+        Discord4J.LOGGER.info("guild created: ${event.guild.name}")
+    }
+
+    fun sendMessage(channel: IChannel, text: String): IMessage? {
+        if (text.isEmpty())
+            return null
+        return try {
+            channel.sendMessage(text)
+        } catch (e: MissingPermissionsException) {
+            null
+        }
+    }
+
+    fun sendEmbed(channel: IChannel, embed: EmbedObject): IMessage? {
+        return try {
+            channel.sendMessage(embed)
+        } catch (e: MissingPermissionsException) {
+            null
+        }
+    }
+
+    fun getMessageMediaUrl(message: IMessage, type: MediaType): URL? {
+        var url: URL? = null
+        if (message.attachments.size > 0) {
+            url = URL(message.attachments[0].url)
+        } else {
+            for (split in message.content.split(" ")) {
+                val matcher = Bot.URL_PATTERN.matcher(split)
+                if (matcher.find()) {
+                    var urlString = split.toLowerCase().substring(matcher.start(1), matcher.end())
+                            .replace(".webp", ".png")
+                            .replace(".gifv", ".gif")
+                            .replace("//gyazo.com", "//i.gyazo.com")
+                    if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png")) {
+                        urlString += ".png"
+                    }
+                    for (t in type.formats) {
+                        if (urlString.endsWith(".$t")) {
+                            url = URL(urlString)
+                            break
+                        }
+                    }
+                }
+            }
+        }
+        return url
     }
 }
 
