@@ -95,7 +95,7 @@ object CommandHandler {
                         }
                         true
                     }
-                }
+                } else tryDelete(event.message)
 
                 msgBuilder.execute()
             }
