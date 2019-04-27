@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
 import org.im4java.core.IMOperation
@@ -16,13 +17,13 @@ import javax.imageio.ImageIO
 
 object Picture : Command {
 
-    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Inserts an image into another, use -picturetypes to see all the picture types"
     override val usageText: String = "picture <pictureType>"
     override val allowDM: Boolean = true
-    override val cost: Int = 1
+    override val price: Int = 1
+    override val cost: CommandCost = CommandCost.COOLDOWN
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 

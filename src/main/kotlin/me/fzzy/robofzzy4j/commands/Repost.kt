@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IGuild
 import sx.blah.discord.handle.obj.IMessage
@@ -11,13 +12,13 @@ import java.io.File
 
 object Repost : Command {
 
-    override val cooldownCategory = "repost"
     override val cooldownMillis: Long = 60 * 1000 * 5
     override val votes: Boolean = false
     override val description = "Shows you upvoted posts from the server"
     override val usageText: String = "repost"
     override val allowDM: Boolean = false
-    override val cost: Int = 1
+    override val price: Int = 1
+    override val cost: CommandCost = CommandCost.COOLDOWN
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 

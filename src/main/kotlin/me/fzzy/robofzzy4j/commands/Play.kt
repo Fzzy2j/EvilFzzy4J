@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands
 import com.commit451.youtubeextractor.YouTubeExtractor
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.Discord4J
@@ -21,13 +22,13 @@ import java.util.regex.Pattern
 
 object Play : Command {
 
-    override val cooldownCategory = "audio"
     override val cooldownMillis: Long = 1000 * 60 * 10
     override val votes: Boolean = true
     override val description = "Plays audio in the voice channel"
     override val usageText: String = "play <videoUrl>"
     override val allowDM: Boolean = true
-    override val cost: Int = 4
+    override val price: Int = 4
+    override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 

@@ -1,6 +1,7 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 
@@ -10,13 +11,13 @@ import sx.blah.discord.handle.obj.IMessage
 
 object Eyes : Command {
 
-    override val cooldownCategory = "image"
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Adds different eyes to an image, use -eyetypes to see all the eye types"
     override val usageText: String = "eyes <eyeType> [imageUrl]"
     override val allowDM: Boolean = true
-    override val cost: Int = 1
+    override val price: Int = 1
+    override val cost: CommandCost = CommandCost.COOLDOWN
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         /*

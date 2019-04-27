@@ -2,6 +2,7 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
@@ -10,13 +11,13 @@ import java.util.regex.Pattern
 
 object Override : Command {
 
-    override val cooldownCategory = "override"
     override val cooldownMillis = 0L
     override val description = "Only for bot owner, for modifying values in the bot"
     override val votes = false
     override val usageText = "override <command>"
     override val allowDM = true
-    override val cost: Int = 1
+    override val price: Int = 0
+    override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         if (message.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${Bot.client.applicationOwner.name}")
@@ -45,12 +46,16 @@ object Override : Command {
             "skip" -> {
                 AudioPlayer.getAudioPlayerForGuild(message.guild).skip()
             }
+            "give" -> {
+                for (mention in message.mentions) {
+                    Guild.getGuild(message.guild).addCurrency(mention, args[1].toInt())
+                }
+                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "done!") }
+            }
             "cooldowns", "cooldown" -> {
                 val users = message.mentions
                 for (user in users) {
-                    for (cooldown in User.getUser((user.longID)).getAllCooldowns().values) {
-                        cooldown.clearCooldown()
-                    }
+                    User.getUser(user.longID).cooldown.clearCooldown()
                 }
 
                 val userNames = arrayListOf<String>()

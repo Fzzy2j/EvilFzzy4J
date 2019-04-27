@@ -11,28 +11,12 @@ import sx.blah.discord.handle.obj.IUser
 object VoteListener {
 
     fun getVotes(message: IMessage): Int {
-        var upvotes = 0
-        for (user in message.getReactionByEmoji(Bot.UPVOTE_EMOJI).users) {
-            if (user.longID != message.author.longID) upvotes++
-        }
-        var downvotes = 0
-        for (user in message.getReactionByEmoji(Bot.DOWNVOTE_EMOJI).users) {
-            if (user.longID != message.author.longID) downvotes++
-        }
-        return upvotes - downvotes
+        return getUpvoters(message).size
     }
 
     fun getUpvoters(message: IMessage): List<IUser> {
         val list = arrayListOf<IUser>()
-        for (user in message.getReactionByEmoji(Bot.UPVOTE_EMOJI).users) {
-            if (user.longID != message.author.longID) list.add(user)
-        }
-        return list
-    }
-
-    fun getDownvoters(message: IMessage): List<IUser> {
-        val list = arrayListOf<IUser>()
-        for (user in message.getReactionByEmoji(Bot.DOWNVOTE_EMOJI).users) {
+        for (user in message.getReactionByEmoji(Bot.CURRENCY_EMOJI).users) {
             if (user.longID != message.author.longID) list.add(user)
         }
         return list
@@ -49,13 +33,8 @@ object VoteListener {
             }
             if (users.contains(Bot.client.ourUser) && event.user.longID != Bot.client.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
-                    when (event.reaction.emoji.name) {
-                        "upvote" -> {
-                            guild.adjustScore(event.author, 1, event.channel, event.message)
-                        }
-                        "downvote" -> {
-                            guild.adjustScore(event.author, -1, event.channel, event.message)
-                        }
+                    if (event.reaction.emoji.longID == Bot.CURRENCY_EMOJI.longID) {
+                        guild.addCurrency(event.author, 1)
                     }
                 }
             }
@@ -68,13 +47,8 @@ object VoteListener {
         if (event.channel.getMessageHistory(10).contains(event.message)) {
             if (event.reaction.getUserReacted(Bot.client.ourUser) && event.user.longID != Bot.client.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
-                    when (event.reaction.emoji.name) {
-                        "upvote" -> {
-                            guild.adjustScore(event.author, -1, event.channel, event.message)
-                        }
-                        "downvote" -> {
-                            guild.adjustScore(event.author, 1, event.channel, event.message)
-                        }
+                    if (event.reaction.emoji.longID == Bot.CURRENCY_EMOJI.longID) {
+                        guild.addCurrency(event.author, -1)
                     }
                 }
             }

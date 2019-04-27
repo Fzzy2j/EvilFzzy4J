@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j
 
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
@@ -8,8 +9,6 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.DiscordException
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
-import sx.blah.discord.util.RequestBuilder
-import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.roundToInt
 
@@ -69,35 +68,28 @@ object CommandHandler {
                 }
             }
 
-            val date = SimpleDateFormat("hh:mm:ss aa").format(Date(System.currentTimeMillis()))
-            Discord4J.LOGGER.info("$date - ${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
-            if (user.id == Bot.client.applicationOwner.longID ||
-                    user.getCooldown(command.cooldownCategory).isReady((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) {
-                runCommand(user, command, event.message, argsList)
-            } else {
-                val timeLeftMinutes = Math.ceil((user.getCooldown(command.cooldownCategory).timeLeft((100 - user.getCooldownModifier(Guild.getGuild(event.guild))) / 100.0)) / 1000.0 / 60.0).roundToInt()
-
-                val s = if (command.cost == 1) "" else "s"
-                var content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeftMinutes minute${if (timeLeftMinutes != 1) "s" else ""}"
-
-                var msg: IMessage? = null
-                val msgBuilder = RequestBuilder(Bot.client).doAction {
-                    msg = MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content)
-                    true
-                }
-
-                if (!Bot.data.cooldownMode) {
-                    content += "\n click the reaction to spend ${command.cost} point$s to skip the cooldown"
-                    msgBuilder.shouldBufferRequests(true).andThen {
-                        try {
-                            msg?.addReaction(Bot.CURRENCY_EMOJI)
-                        } catch (e: MissingPermissionsException) {
-                        }
-                        true
+            Discord4J.LOGGER.info("${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
+            val currency = Guild.getGuild(event.guild).getCurrency(user)
+            when (command.cost) {
+                CommandCost.CURRENCY -> {
+                    if (user.id == Bot.client.applicationOwner.longID || currency >= command.price) {
+                        runCommand(user, command, event.message, argsList)
+                    } else {
+                        tryDelete(event.message)
+                        val content = "${event.author.name.toLowerCase()} this command costs ${command.price} ${Bot.CURRENCY_EMOJI}, you only have $currency ${Bot.CURRENCY_EMOJI}"
+                        RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content) }
                     }
-                } else tryDelete(event.message)
-
-                msgBuilder.execute()
+                }
+                CommandCost.COOLDOWN -> {
+                    if (user.id == Bot.client.applicationOwner.longID || user.cooldown.isReady(1.0)) {
+                        runCommand(user, command, event.message, argsList)
+                    } else {
+                        tryDelete(event.message)
+                        val timeLeftMinutes = Math.ceil((user.cooldown.timeLeft(1.0)) / 1000.0 / 60.0).roundToInt()
+                        val content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeftMinutes minute${if (timeLeftMinutes != 1) "s" else ""}"
+                        RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content) }
+                    }
+                }
             }
         }
     }
@@ -115,7 +107,14 @@ object CommandHandler {
                         CommandResult.fail(e.message!!)
                     }
                     if (result.isSuccess()) {
-                        user.getCooldown(command.cooldownCategory).triggerCooldown(command.cooldownMillis)
+                        when (command.cost) {
+                            CommandCost.COOLDOWN -> {
+                                user.cooldown.triggerCooldown(command.cooldownMillis)
+                            }
+                            CommandCost.CURRENCY -> {
+                                Guild.getGuild(message.guild).addCurrency(user, -command.price)
+                            }
+                        }
                         if (command.votes && message.guild != null)
                             Guild.getGuild(message.guild).allowVotes(message)
                     } else {

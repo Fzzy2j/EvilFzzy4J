@@ -1,35 +1,37 @@
 package me.fzzy.robofzzy4j.commands
 
-import me.fzzy.robofzzy4j.*
+import me.fzzy.robofzzy4j.Bot
+import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.EmbedBuilder
 import sx.blah.discord.util.RequestBuffer
+import java.util.*
 
 object LeaderboardCommand : Command {
 
-    override val cooldownCategory = "leaderboard"
     override val cooldownMillis: Long = 10 * 1000
     override val votes: Boolean = false
     override val description = "shows the vote leaderboard"
     override val usageText: String = "leaderboard"
     override val allowDM: Boolean = false
-    override val cost: Int = 1
+    override val price: Int = 1
+    override val cost: CommandCost = CommandCost.COOLDOWN
 
-    private const val title = "LEADERBOARD - resets every monday"
+    private const val title = "LEADERBOARD"
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         val builder = EmbedBuilder()
         val guild = Guild.getGuild(message.guild.longID)
-        for (i in 1..25) {
-            val id = guild.leaderboard.getAtRank(i)
-            if (id != null) {
-                val value = guild.leaderboard.getOrDefault(id, 0)
-
-                val title = "#$i - ${Bot.client.getUserByID(id).getDisplayName(Bot.client.getGuildByID(message.guild.longID))} | ${User.getUser(id).getCooldownModifier(guild)}% CDR"
-                val description = "$value points"
-                builder.appendField(title, description, false)
-            }
+        val sorted = guild.currency.toSortedMap(compareBy { -guild.currency[it]!! })
+        var i = 1
+        for ((id, value) in sorted) {
+            val title = "#$i - ${Bot.client.getUserByID(id).getDisplayName(Bot.client.getGuildByID(message.guild.longID))}"
+            val description = "$value ${Bot.CURRENCY_EMOJI}"
+            builder.appendField(title, description, false)
+            i++
         }
 
         builder.withTitle(title)
@@ -50,8 +52,35 @@ object LeaderboardCommand : Command {
         if (existingLeaderboard != null)
             RequestBuffer.request { existingLeaderboard.edit(builder.build()) }
         else
-            RequestBuffer.request { MessageScheduler.sendTempEmbed(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, builder.build()) }
+            RequestBuffer.request { Bot.sendEmbed(message.channel, builder.build()) }
         return CommandResult.success()
+    }
+
+    fun sortHashMapByValues(passedMap: java.util.HashMap<Long, Int>): LinkedHashMap<Long, Int> {
+        val mapKeys = ArrayList(passedMap.keys)
+        val mapValues = ArrayList(passedMap.values)
+        mapValues.sort()
+        mapKeys.sort()
+
+        val sortedMap = LinkedHashMap<Long, Int>()
+
+        val valueIt = mapValues.iterator()
+        while (valueIt.hasNext()) {
+            val `val` = valueIt.next()
+            val keyIt = mapKeys.iterator()
+
+            while (keyIt.hasNext()) {
+                val key = keyIt.next()
+                val comp1 = passedMap[key]
+
+                if (comp1 == `val`) {
+                    keyIt.remove()
+                    sortedMap[key] = `val`
+                    break
+                }
+            }
+        }
+        return sortedMap
     }
 
 }

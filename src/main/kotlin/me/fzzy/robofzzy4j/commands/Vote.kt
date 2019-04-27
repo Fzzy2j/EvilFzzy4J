@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands
 import com.vdurmont.emoji.EmojiManager
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.api.events.EventSubscriber
 import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionAddEvent
@@ -18,7 +19,6 @@ import kotlin.math.roundToInt
 
 object Vote : Command {
 
-    override val cooldownCategory = "vote"
     override val cooldownMillis: Long = 1000 * 60 * 5
     override val description: String =
             "Puts a message in the chat that allows users to vote on something, if no options are provided it defaults to Yeah and No" +
@@ -26,7 +26,8 @@ object Vote : Command {
     override val votes: Boolean = false
     override val usageText: String = "vote <message|options>"
     override val allowDM: Boolean = false
-    override val cost: Int = 1
+    override val price: Int = 1
+    override val cost: CommandCost = CommandCost.COOLDOWN
 
     private const val BEGINNING = "```diff\n- Vote - "
 

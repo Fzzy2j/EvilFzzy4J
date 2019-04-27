@@ -3,6 +3,7 @@ package me.fzzy.robofzzy4j.commands
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import org.apache.commons.io.FileUtils
 import sx.blah.discord.handle.obj.IMessage
@@ -13,13 +14,13 @@ import javax.net.ssl.HttpsURLConnection
 
 object Tts : Command {
 
-    override val cooldownCategory = "audio"
     override val cooldownMillis: Long = 60 * 10 * 1000
     override val votes: Boolean = true
     override val description = "Joins the voice channel and plays text to speech"
     override val usageText: String = "tts <text>"
     override val allowDM: Boolean = true
-    override val cost: Int = 4
+    override val price: Int = 4
+    override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         if (args.isNotEmpty()) {

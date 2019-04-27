@@ -44,9 +44,9 @@ class BotData {
     val BOT_PREFIX = "-"
     val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
     val THREAD_COUNT = 4
-    var leaderboardResetStamp = 0L
-    var cooldownMode = true
-    val imageMagickDirectory = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
+    val IMAGE_MAGICK_DIRECTORY = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
+    val CURRENCY_EMOJI_NAME = "diamond"
+    val CURRENCY_EMOJI_ID = 571593175907434516
 }
 
 object Bot {
@@ -58,9 +58,7 @@ object Bot {
 
     lateinit var data: BotData
 
-    val UPVOTE_EMOJI = ReactionEmoji.of("upvote", 445376322353496064)!!
-    val DOWNVOTE_EMOJI = ReactionEmoji.of("downvote", 445376330989830147)!!
-    val CURRENCY_EMOJI = ReactionEmoji.of("diamond", 569090342897319936)!!
+    lateinit var CURRENCY_EMOJI: ReactionEmoji
 
     val URL_PATTERN = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
@@ -153,6 +151,7 @@ fun main(args: Array<String>) {
         bufferWriter.write(save)
         bufferWriter.close()
     }
+    Bot.CURRENCY_EMOJI = ReactionEmoji.of(Bot.data.CURRENCY_EMOJI_NAME, Bot.data.CURRENCY_EMOJI_ID)!!
 
     Bot.speechApiToken = keys["speechApiToken"]
 
@@ -161,7 +160,7 @@ fun main(args: Array<String>) {
     Discord4J.LOGGER.info("Bot Starting.")
 
     if (Bot.speechApiToken != null) Bot.azureAuth = Authentication(Bot.speechApiToken!!)
-    ProcessStarter.setGlobalSearchPath(Bot.data.imageMagickDirectory)
+    ProcessStarter.setGlobalSearchPath(Bot.data.IMAGE_MAGICK_DIRECTORY)
 
     Discord4J.LOGGER.info("Registering commands.")
 
@@ -202,17 +201,6 @@ fun main(args: Array<String>) {
 
     // Autosave
     Scheduler.Builder(60).doAction {
-        val day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        if (day == Calendar.MONDAY && System.currentTimeMillis() - Bot.data.leaderboardResetStamp > 48 * 60 * 60 * 1000) {
-            Bot.data.leaderboardResetStamp = System.currentTimeMillis()
-
-            val bufferWriter = BufferedWriter(FileWriter(dataFile.absoluteFile, false))
-            val save = Bot.gson.toJson(Bot.data)
-            bufferWriter.write(save)
-            bufferWriter.close()
-
-            Guild.clearLeaderboards()
-        }
         Guild.saveAll()
         RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
     }.repeat().execute()

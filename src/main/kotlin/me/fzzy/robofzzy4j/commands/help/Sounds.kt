@@ -4,6 +4,7 @@ import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.events.EventSubscriber
@@ -18,7 +19,6 @@ import java.util.*
 
 object Sounds : Command {
 
-    override val cooldownCategory = "help"
     private const val SOUND_COOLDOWN: Long = 30 * 1000
 
     override val cooldownMillis: Long = 4 * 1000
@@ -26,7 +26,8 @@ object Sounds : Command {
     override val description: String = "Shows all the sounds the bot can play in the voice channel"
     override val usageText: String = "sounds"
     override val allowDM: Boolean = true
-    override val cost: Int = 100
+    override val price: Int = 0
+    override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         var all = "```"
