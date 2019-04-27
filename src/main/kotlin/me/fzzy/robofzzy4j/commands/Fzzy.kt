@@ -6,8 +6,8 @@ import me.fzzy.robofzzy4j.Guild
 import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
-import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
+import org.im4java.core.ImageMagickCmd
 import org.im4java.core.Info
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
@@ -52,7 +52,7 @@ object Fzzy : Command {
                 delay = "25x100"
             }
 
-            val convert = ConvertCmd()
+            val convert = ImageMagickCmd("convert")
 
             tempFile = File("cache/${file.nameWithoutExtension}")
             tempFile.mkdirs()
@@ -110,8 +110,7 @@ object Fzzy : Command {
     fun resize(file: File) {
         val sizeHelper = ImageIO.read(file)
         val op = IMOperation()
-        val convert = ConvertCmd()
-        convert.searchPath = "C:\\Program Files (x86)\\ImageMagick-6.9.9-Q16"
+        val convert = ImageMagickCmd("convert")
 
         op.addImage(file.absolutePath)
         var newWidth: Int = sizeHelper.width

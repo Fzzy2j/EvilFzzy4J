@@ -4,8 +4,8 @@ import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
-import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
+import org.im4java.core.ImageMagickCmd
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.awt.Font
@@ -50,7 +50,7 @@ object Meme : Command {
             ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
                     ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
 
-        val convert = ConvertCmd()
+        val convert = ImageMagickCmd("convert")
         val operation = IMOperation()
 
         operation.addImage(file.absolutePath)

@@ -5,8 +5,8 @@ import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
-import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
+import org.im4java.core.ImageMagickCmd
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.awt.Color
@@ -72,7 +72,7 @@ object Picture : Command {
         val width = Math.max(maxLength, widthCross)
         val height = Math.max(maxHeight, heightCross)
 
-        val composite = ConvertCmd()
+        val composite = ImageMagickCmd("convert")
         val operation = IMOperation()
 
         operation.compose("dstover")

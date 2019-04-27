@@ -7,8 +7,8 @@ import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
 import org.apache.commons.io.FileUtils
-import org.im4java.core.ConvertCmd
 import org.im4java.core.IMOperation
+import org.im4java.core.ImageMagickCmd
 import org.im4java.core.Info
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
@@ -41,7 +41,7 @@ object Explode : Command {
 
         var tempFile: File? = null
         val finalSize = 0.3
-        val convert = ConvertCmd()
+        val convert = ImageMagickCmd("convert")
 
         if (file.extension == "gif") {
             var op = IMOperation()
@@ -173,8 +173,7 @@ object Explode : Command {
     fun resize(file: File, size: Double) {
         val sizeHelper = ImageIO.read(file)
         val op = IMOperation()
-        val convert = ConvertCmd()
-        convert.searchPath = "C:\\Program Files (x86)\\ImageMagick-6.9.9-Q16"
+        val convert = ImageMagickCmd("convert")
 
         op.addImage(file.absolutePath)
         var newWidth: Int = sizeHelper.width
