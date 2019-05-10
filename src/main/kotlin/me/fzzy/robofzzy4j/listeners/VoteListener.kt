@@ -34,7 +34,7 @@ object VoteListener {
             if (users.contains(Bot.client.ourUser) && event.user.longID != Bot.client.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {
                     if (event.reaction.emoji.longID == Bot.CURRENCY_EMOJI.longID) {
-                        guild.addCurrency(event.author, 1)
+                        guild.addCurrency(event.author, 1, event.message)
                     }
                 }
             }

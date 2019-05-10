@@ -23,14 +23,20 @@ object Help : Command {
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
         var helpMsg = "```md\n"
         for ((_, command) in CommandHandler.getAllCommands()) {
-            helpMsg += "# ${Bot.data.BOT_PREFIX}${command.usageText}\n${command.description} : ${command.cooldownMillis / 1000} second cooldown\n\n"
+            val cost = when {
+                command.cost == CommandCost.COOLDOWN -> "${command.cooldownMillis / 1000} second cooldown"
+                command.price > 0 -> "${command.price} ${Bot.CURRENCY_EMOJI.name}"
+                else -> "Free"
+            }
+            helpMsg += "# ${Bot.data.BOT_PREFIX}${command.usageText}\n${command.description} : $cost\n\n"
         }
         helpMsg += "```"
         RequestBuffer.request {
             try {
                 message.author.orCreatePMChannel.sendMessage(helpMsg)
             } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "${message.author.mention()} i dont have permission to tell you about what i can do :(")
+                MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel,
+                        "${message.author.mention()} i dont have permission to tell you about what i can do :(")
             }
         }
 

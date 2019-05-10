@@ -25,8 +25,8 @@ object Explode : Command {
     override val description = "Scales an image repeatedly, turning it into a gif"
     override val usageText: String = "explode"
     override val allowDM: Boolean = true
-    override val price: Int = 1
-    override val cost: CommandCost = CommandCost.COOLDOWN
+    override val price: Int = 3
+    override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 

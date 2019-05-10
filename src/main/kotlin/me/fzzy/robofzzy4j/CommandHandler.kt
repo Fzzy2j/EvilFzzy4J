@@ -69,9 +69,9 @@ object CommandHandler {
             }
 
             Discord4J.LOGGER.info("${event.author.name}#${event.author.discriminator} running command: ${event.message.content}")
-            val currency = Guild.getGuild(event.guild).getCurrency(user)
             when (command.cost) {
                 CommandCost.CURRENCY -> {
+                    val currency = if (command.price > 0) Guild.getGuild(event.guild).getCurrency(user) else 0
                     if (user.id == Bot.client.applicationOwner.longID || currency >= command.price) {
                         runCommand(user, command, event.message, argsList)
                     } else {
