@@ -112,7 +112,8 @@ object CommandHandler {
                                 user.cooldown.triggerCooldown(command.cooldownMillis)
                             }
                             CommandCost.CURRENCY -> {
-                                Guild.getGuild(message.guild).addCurrency(user, -command.price)
+                                val guild = Guild.getGuild(message.guild)
+                                guild.addCurrency(user, Math.max(-command.price, -guild.getCurrency(user)))
                             }
                         }
                         if (command.votes && message.guild != null)
