@@ -15,10 +15,6 @@ repositories {
 allprojects {
     repositories {
         maven { url "https://jitpack.io" }
-        maven {
-            name = 'sponge'
-            url = 'https://repo.spongepowered.org/maven'
-        }
     }
 }
 
