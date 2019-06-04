@@ -17,7 +17,7 @@ object VoteListener {
     fun getUpvoters(message: IMessage): List<IUser> {
         val list = arrayListOf<IUser>()
         for (user in message.getReactionByEmoji(Bot.CURRENCY_EMOJI).users) {
-            if (user.longID != message.author.longID) list.add(user)
+            if (user.longID != message.author.longID && user.longID != Bot.client.ourUser.longID) list.add(user)
         }
         return list
     }

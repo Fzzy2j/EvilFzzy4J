@@ -75,7 +75,7 @@ object CommandHandler {
                     if (user.id == Bot.client.applicationOwner.longID || currency >= command.price) {
                         runCommand(user, command, event.message, argsList)
                     } else {
-                        tryDelete(event.message)
+                        delete(event.message)
                         val content = "${event.author.name.toLowerCase()} this command costs ${command.price} ${Bot.CURRENCY_EMOJI}, you only have $currency ${Bot.CURRENCY_EMOJI}"
                         RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content) }
                     }
@@ -84,7 +84,7 @@ object CommandHandler {
                     if (user.id == Bot.client.applicationOwner.longID || user.cooldown.isReady(1.0)) {
                         runCommand(user, command, event.message, argsList)
                     } else {
-                        tryDelete(event.message)
+                        delete(event.message)
                         val timeLeftMinutes = Math.ceil((user.cooldown.timeLeft(1.0)) / 1000.0 / 60.0).roundToInt()
                         val content = "${event.author.name.toLowerCase()} you are still on cooldown for $timeLeftMinutes minute${if (timeLeftMinutes != 1) "s" else ""}"
                         RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, content) }
@@ -97,7 +97,7 @@ object CommandHandler {
     fun runCommand(user: User, command: Command, message: IMessage, argsList: List<String>) {
         if (!user.runningCommand) {
             user.runningCommand = true
-            if (!command.votes) tryDelete(message)
+            if (!command.votes) delete(message)
             Bot.executor.submit {
                 try {
                     val result = try {
@@ -123,7 +123,7 @@ object CommandHandler {
                         RequestBuffer.request {
                             MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, result.getFailMessage())
                         }
-                        tryDelete(message)
+                        delete(message)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -134,12 +134,14 @@ object CommandHandler {
     }
 
 
-    fun tryDelete(msg: IMessage) {
-        RequestBuffer.request {
-            try {
-                msg.delete()
-            } catch (e: MissingPermissionsException) {
-            } catch (e: DiscordException) {
+    private fun delete(msg: IMessage) {
+        if (msg.attachments.count() == 0) {
+            RequestBuffer.request {
+                try {
+                    msg.delete()
+                } catch (e: MissingPermissionsException) {
+                } catch (e: DiscordException) {
+                }
             }
         }
     }

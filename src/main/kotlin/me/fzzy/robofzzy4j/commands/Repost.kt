@@ -25,7 +25,7 @@ object Repost : Command {
         val repost = getRepost(message.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry")
 
         RequestBuffer.request {
-            Guild.getGuild(message.guild).sendVoteAttachment(repost, message.channel)
+            Guild.getGuild(message.guild).sendVoteAttachment(repost, message.channel, message.author)
             repost.delete()
         }
         return CommandResult.success()

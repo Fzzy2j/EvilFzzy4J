@@ -1,8 +1,6 @@
 package me.fzzy.robofzzy4j
 
 import javafx.util.Pair
-import java.util.*
-import kotlin.collections.HashMap
 
 class Leaderboard {
 
@@ -30,11 +28,11 @@ class Leaderboard {
     }
 
     fun setValue(id: Long, newValue: Int): LeaderboardChange {
-        if (valueMap.containsKey(id)) {
+        return if (valueMap.containsKey(id)) {
             val prevValue = valueMap[id]!!.value
 
             // Determines if they need to move up or down in the leaderboard
-            return if (newValue < prevValue) {
+            if (newValue < prevValue) {
                 moveDownInLeaderboard(id, newValue)
             } else {
                 moveUpInLeaderboard(id, newValue)
@@ -42,16 +40,15 @@ class Leaderboard {
         } else {
             newEntry(id, newValue)
         }
-        return LeaderboardChange()
     }
 
-    private fun newEntry(id: Long, newValue: Int) {
+    private fun newEntry(id: Long, newValue: Int): LeaderboardChange {
 
         // Start from the bottom of the leaderboard
         val rank = valueMap.size + 1
         valueMap[id] = Pair(rank, newValue)
         rankMap[rank] = id
-        setValue(id, newValue)
+        return setValue(id, newValue)
     }
 
     private fun moveUpInLeaderboard(id: Long, newValue: Int): LeaderboardChange {
