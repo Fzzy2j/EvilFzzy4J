@@ -1,24 +1,16 @@
 package me.fzzy.robofzzy4j.commands
 
-import com.commit451.youtubeextractor.YouTubeExtractor
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
-import me.fzzy.robofzzy4j.util.FFMPEGLocalLocator
 import sx.blah.discord.Discord4J
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IVoiceChannel
-import ws.schild.jave.AudioAttributes
-import ws.schild.jave.Encoder
-import ws.schild.jave.EncodingAttributes
-import ws.schild.jave.MultimediaObject
+import java.io.BufferedReader
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
-import java.util.regex.Pattern
+import java.io.InputStreamReader
+
 
 object Play : Command {
 
@@ -36,80 +28,38 @@ object Play : Command {
                 ?: return CommandResult.fail("i cant do that unless youre in a voice channel")
         if (args.isEmpty()) return CommandResult.fail("thats not how you use that command $usageText")
 
-        val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[0])
-
-        val id = try {
-            if (matcher.find()) matcher.group(0) else args[0].split(".be/")[1]
-        } catch (e: Exception) {
-            return CommandResult.fail("i couldnt get that videos id")
-        }
-
-        return play(userVoiceChannel, id, message.longID)
+        return play(userVoiceChannel, args[0], message.longID)
     }
 
-    fun play(channel: IVoiceChannel, id: String, messageId: Long = 0, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {
+    fun play(channel: IVoiceChannel, url: String, messageId: Long = 0, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {
+        val currentTime = System.currentTimeMillis()
 
-        val extraction = try {
-            YouTubeExtractor.Builder().build().extract(id).blockingGet()
-        } catch (e: Exception) {
-            return CommandResult.fail("i couldnt play that video, maybe its age restricted or blocked by copyright?")
-        }
+        Discord4J.LOGGER.info("attempting to get media from $url")
 
-        if (extraction.lengthSeconds!! <= 60 * 10) {
-            for (stream in extraction.videoStreams) {
-                if (stream.format == "v3GPP")
-                    continue
+        val rt = Runtime.getRuntime()
+        val process = rt.exec("youtube-dl -x --audio-format mp3 --no-playlist $url -o \"cache${File.separator}$currentTime.%(ext)s\"")
+        val stdInput = BufferedReader(InputStreamReader(process.inputStream))
+        val stdError = BufferedReader(InputStreamReader(process.errorStream))
 
-                Discord4J.LOGGER.info("Playing video audio for video: https://www.youtube.com/watch?v=$id")
-                val outputFile = File("cache${File.separator}${System.currentTimeMillis()}.mp4")
+        var s: String?
+        do {
+            s = stdInput.readLine()
+            if (s != null)
+                println(s)
+        } while (s != null)
 
-                try {
-                    val url = URL(stream.url)
-                    val con = url.openConnection() as HttpURLConnection
-                    con.requestMethod = "GET"
-                    con.connect()
+        do {
+            s = stdError.readLine()
+            if (s != null)
+                println(s)
+        } while (s != null)
 
-                    if (!outputFile.exists()) {
-                        outputFile.createNewFile()
-                    }
+        val file = File("cache${File.separator}$currentTime.mp3")
+        if (!file.exists()) return CommandResult.fail("sorry i couldnt get any media from that url")
 
-                    val fos = FileOutputStream(outputFile)
+        VoiceListener.playTempAudio(channel, file, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
+                ?: return CommandResult.fail("i couldnt play that audio for some reason")
 
-                    val input = con.inputStream
-
-                    val buffer = ByteArray(1024)
-                    var len1 = input.read(buffer)
-                    while (len1 != -1) {
-                        fos.write(buffer, 0, len1)
-                        len1 = input.read(buffer)
-                    }
-                    fos.close()
-                    input.close()
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-
-                val target = File("cache${File.separator}${System.currentTimeMillis()}.mp3")
-                val audio = AudioAttributes()
-                audio.setCodec("libmp3lame")
-                audio.setBitRate(128000)
-                audio.setChannels(2)
-                audio.setSamplingRate(44100)
-                val attrs = EncodingAttributes()
-                attrs.setFormat("mp3")
-                attrs.setAudioAttributes(audio)
-                val encoder = Encoder(FFMPEGLocalLocator())
-
-                encoder.encode(MultimediaObject(outputFile, FFMPEGLocalLocator()), target, attrs)
-
-                outputFile.delete()
-
-                VoiceListener.playTempAudio(channel, target, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
-                        ?: return CommandResult.fail("i couldnt play that audio for some reason")
-                break
-            }
-        } else
-            return CommandResult.fail("videos longer than 10 minutes take too long for me to download, so i dont allow them. sorry.")
         return CommandResult.success()
     }
 }

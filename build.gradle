@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'me.fzzy.robofzzy4j'
-version '7.6-SNAPSHOT'
+version '8.9-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -38,6 +38,7 @@ dependencies {
     compile group: 'ws.schild', name: 'jave-core', version: '2.4.3'
     compile 'com.github.Commit451:YouTubeExtractor:4.2.1'
     compile 'com.google.code.gson:gson:2.8.5'
+
 }
 
 compileKotlin {
