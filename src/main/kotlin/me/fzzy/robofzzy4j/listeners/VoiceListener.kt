@@ -69,15 +69,17 @@ object VoiceListener {
                         if (messageId == 0L) break
                         val message = Bot.client.getMessageByID(messageId)
 
-                        if (message == null) event.player.skip()
+                        if (message == null) {
+                            event.player.skip()
+                        } else {
+                            val voteAdjust = VoteListener.getVotes(message) * event.track.metadata["fzzyTimeAdjustment"] as Int
 
-                        val voteAdjust = VoteListener.getVotes(message) * event.track.metadata["fzzyTimeAdjustment"] as Int
-
-                        if (System.currentTimeMillis() - startTime > (event.track.metadata["fzzyTimeSeconds"] as Int + voteAdjust) * 1000) {
-                            val track = event.player.currentTrack
-                            if (track != null && getId(track) == getId(event.track))
-                                event.player.skip()
-                            break
+                            if (System.currentTimeMillis() - startTime > (event.track.metadata["fzzyTimeSeconds"] as Int + voteAdjust) * 1000) {
+                                val track = event.player.currentTrack
+                                if (track != null && getId(track) == getId(event.track))
+                                    event.player.skip()
+                                break
+                            }
                         }
                     }
                 }.start()

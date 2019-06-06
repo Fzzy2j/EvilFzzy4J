@@ -15,6 +15,7 @@ import me.fzzy.robofzzy4j.thread.Authentication
 import me.fzzy.robofzzy4j.thread.Scheduler
 import me.fzzy.robofzzy4j.util.MediaType
 import org.im4java.process.ProcessStarter
+import org.json.JSONObject
 import sx.blah.discord.Discord4J
 import sx.blah.discord.api.ClientBuilder
 import sx.blah.discord.api.IDiscordClient
@@ -36,17 +37,13 @@ import java.io.InputStreamReader
 import java.net.URL
 import java.nio.file.Files
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.regex.Pattern
 
 class BotData {
     val BOT_PREFIX = "-"
     val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
-    val THREAD_COUNT = 4
     val IMAGE_MAGICK_DIRECTORY = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
-    val CURRENCY_EMOJI_NAME = "diamond"
-    val CURRENCY_EMOJI_ID = 571593175907434516
+    val CURRENCY_EMOJI = "❤"
 }
 
 object Bot {
@@ -71,12 +68,18 @@ object Bot {
 
     val DATA_DIR: String = "data${File.separator}"
 
-    lateinit var executor: ExecutorService
-
     @EventSubscriber
     fun onReady(event: ReadyEvent) {
         Discord4J.LOGGER.info("RoboFzzy v${Bot::class.java.`package`.implementationVersion} online.")
         RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
+
+        try {
+            val emojiSplit = data.CURRENCY_EMOJI.substring(1, data.CURRENCY_EMOJI.length - 1).split(":")
+            CURRENCY_EMOJI = ReactionEmoji.of(emojiSplit[1], emojiSplit[2].toLong(), emojiSplit[0].isNotBlank())
+        } catch(e: Exception) {
+            ReactionEmoji.of(data.CURRENCY_EMOJI)
+        }
+        Discord4J.LOGGER.info("Currency emoji set to: $CURRENCY_EMOJI")
     }
 
     @EventSubscriber
@@ -147,15 +150,12 @@ fun main(args: Array<String>) {
     else {
         Bot.data = BotData()
         val bufferWriter = BufferedWriter(FileWriter(dataFile.absoluteFile, false))
-        val save = Bot.gson.toJson(Bot.data)
-        bufferWriter.write(save)
+        val save = JSONObject(Bot.gson.toJson(Bot.data))
+        bufferWriter.write(save.toString(2))
         bufferWriter.close()
     }
-    Bot.CURRENCY_EMOJI = ReactionEmoji.of(Bot.data.CURRENCY_EMOJI_NAME, Bot.data.CURRENCY_EMOJI_ID)!!
 
     Bot.speechApiToken = keys["speechApiToken"]
-
-    Bot.executor = Executors.newFixedThreadPool(Bot.data.THREAD_COUNT)
 
     Discord4J.LOGGER.info("Bot Starting.")
 

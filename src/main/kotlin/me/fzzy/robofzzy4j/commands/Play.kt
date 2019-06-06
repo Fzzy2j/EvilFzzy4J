@@ -7,9 +7,7 @@ import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.Discord4J
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.handle.obj.IVoiceChannel
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
 
 
 object Play : Command {
@@ -32,33 +30,21 @@ object Play : Command {
     }
 
     fun play(channel: IVoiceChannel, url: String, messageId: Long = 0, playTimeSeconds: Int = 60, playTimeAdjustment: Int = 40): CommandResult {
+
         val currentTime = System.currentTimeMillis()
 
         Discord4J.LOGGER.info("attempting to get media from $url")
 
-        val rt = Runtime.getRuntime()
-        val process = rt.exec("youtube-dl -x --audio-format mp3 --no-playlist $url -o \"cache${File.separator}$currentTime.%(ext)s\"")
-        val stdInput = BufferedReader(InputStreamReader(process.inputStream))
-        val stdError = BufferedReader(InputStreamReader(process.errorStream))
+        Thread {
+            val rt = Runtime.getRuntime()
+            val process = rt.exec("youtube-dl -x --audio-format mp3 --no-playlist $url -o \"cache${File.separator}$currentTime.%(ext)s\"")
+            process.waitFor()
 
-        var s: String?
-        do {
-            s = stdInput.readLine()
-            if (s != null)
-                println(s)
-        } while (s != null)
+            val file = File("cache${File.separator}$currentTime.mp3")
 
-        do {
-            s = stdError.readLine()
-            if (s != null)
-                println(s)
-        } while (s != null)
-
-        val file = File("cache${File.separator}$currentTime.mp3")
-        if (!file.exists()) return CommandResult.fail("sorry i couldnt get any media from that url")
-
-        VoiceListener.playTempAudio(channel, file, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
-                ?: return CommandResult.fail("i couldnt play that audio for some reason")
+            if (file.exists())
+                VoiceListener.playTempAudio(channel, file, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
+        }.start()
 
         return CommandResult.success()
     }

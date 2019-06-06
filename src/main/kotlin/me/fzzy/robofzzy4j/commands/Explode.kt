@@ -14,6 +14,7 @@ import org.im4java.core.Info
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
+import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
@@ -43,6 +44,7 @@ object Explode : Command {
         var tempFile: File? = null
         val finalSize = 0.3
         val convert = ImageMagickCmd("convert")
+        val executor = Executors.newFixedThreadPool(4)
 
         if (file.extension == "gif") {
             var op = IMOperation()
@@ -70,7 +72,7 @@ object Explode : Command {
             val futureList = arrayListOf<Future<*>>()
             val frames = hashMapOf<Int, String>()
             for (i in 0 until fileList.size) {
-                futureList.add(Bot.executor.submit {
+                futureList.add(executor.submit {
                     val listFile = fileList[i]
 
                     // https://www.desmos.com/calculator/gztrr4yh2w
@@ -130,7 +132,7 @@ object Explode : Command {
             val futureList = arrayListOf<Future<*>>()
             val frames = hashMapOf<Int, String>()
             for (i in 0..frameCount) {
-                futureList.add(Bot.executor.submit {
+                futureList.add(executor.submit {
                     val child = "temp$i.${file.extension}"
                     val warpFile = File(tempPath, child)
                     FileUtils.copyFile(file, warpFile)

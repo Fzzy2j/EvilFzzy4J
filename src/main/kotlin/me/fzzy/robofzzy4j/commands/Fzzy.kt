@@ -13,6 +13,7 @@ import org.im4java.core.Info
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
+import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
@@ -64,9 +65,10 @@ object Fzzy : Command {
 
             convert.run(op)
 
+            val executor = Executors.newFixedThreadPool(4)
             val futureList = arrayListOf<Future<*>>()
             for (listFile in tempFile.list()) {
-                futureList.add(Bot.executor.submit {
+                futureList.add(executor.submit {
                     resize(File("cache/${tempFile.nameWithoutExtension}/$listFile"))
                 })
             }
@@ -88,7 +90,7 @@ object Fzzy : Command {
 
             op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
             for (listFile in tempFile.list()) {
-                op.addImage("cache/${tempFile.nameWithoutExtension}/$listFile")
+                op.addImage("cache${File.separator}${tempFile.nameWithoutExtension}${File.separator}$listFile")
             }
 
             op.addImage(file.absolutePath)

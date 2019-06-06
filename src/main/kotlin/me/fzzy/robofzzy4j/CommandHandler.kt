@@ -98,7 +98,7 @@ object CommandHandler {
         if (!user.runningCommand) {
             user.runningCommand = true
             if (!command.votes) delete(message)
-            Bot.executor.submit {
+            Thread {
                 try {
                     val result = try {
                         command.runCommand(message, argsList)
@@ -129,7 +129,7 @@ object CommandHandler {
                     e.printStackTrace()
                 }
                 user.runningCommand = false
-            }
+            }.start()
         }
     }
 
