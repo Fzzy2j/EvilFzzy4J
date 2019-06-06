@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j.commands
 
+import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
 import me.fzzy.robofzzy4j.util.CommandCost
@@ -15,12 +16,12 @@ import java.awt.geom.AffineTransform
 import java.io.File
 import javax.imageio.ImageIO
 
-object Meme : Command {
+object Meme : Command("meme") {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Puts meme text onto an image"
-    override val usageText: String = "meme <top text>|<bottom text>"
+    override val args: ArrayList<String> = arrayListOf("text")
     override val allowDM: Boolean = true
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
@@ -32,13 +33,10 @@ object Meme : Command {
             full += " $text"
         }
 
-        if (full.isBlank())
-            return CommandResult.fail("i dont know what you mean $usageText")
-
-        val topText = full.substring(1).replace("\n", "").split("|")[0]
+        val topText = full.substring(1).replace("\n", "").split("/")[0]
         var bottomText: String? = null
-        if (full.substring(1).replace("\n", "").split("|").size > 1)
-            bottomText = full.substring(1).replace("\n", "").split("|")[1]
+        if (full.substring(1).replace("\n", "").split("/").size > 1)
+            bottomText = full.substring(1).replace("\n", "").split("/")[1]
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
         val history = message.channel.getMessageHistory(10).toMutableList()
@@ -46,10 +44,10 @@ object Meme : Command {
 
         val url = ImageHelper.getFirstImage(history)
         val file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}")
         else
             ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                    ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+                    ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
 
         val convert = ImageMagickCmd("convert")
         val operation = IMOperation()

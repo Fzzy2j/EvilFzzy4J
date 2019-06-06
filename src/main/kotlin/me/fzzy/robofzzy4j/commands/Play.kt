@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j.commands
 
+import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.CommandCost
@@ -10,12 +11,12 @@ import sx.blah.discord.handle.obj.IVoiceChannel
 import java.io.File
 
 
-object Play : Command {
+object Play : Command("play") {
 
     override val cooldownMillis: Long = 1000 * 60 * 10
     override val votes: Boolean = true
     override val description = "Plays audio in the voice channel"
-    override val usageText: String = "play <videoUrl>"
+    override val args: ArrayList<String> = arrayListOf("url")
     override val allowDM: Boolean = true
     override val price: Int = 4
     override val cost: CommandCost = CommandCost.CURRENCY
@@ -23,8 +24,7 @@ object Play : Command {
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 
         val userVoiceChannel = message.author.getVoiceStateForGuild(message.guild).channel
-                ?: return CommandResult.fail("i cant do that unless youre in a voice channel")
-        if (args.isEmpty()) return CommandResult.fail("thats not how you use that command $usageText")
+                ?: return CommandResult.fail("i cant do that unless youre in a voice channel ${Bot.HAPPY_EMOJI}")
 
         return play(userVoiceChannel, args[0], message.longID)
     }
@@ -35,16 +35,15 @@ object Play : Command {
 
         Discord4J.LOGGER.info("attempting to get media from $url")
 
-        Thread {
-            val rt = Runtime.getRuntime()
-            val process = rt.exec("youtube-dl -x --audio-format mp3 --no-playlist $url -o \"cache${File.separator}$currentTime.%(ext)s\"")
-            process.waitFor()
+        val rt = Runtime.getRuntime()
+        val process = rt.exec("youtube-dl -x --audio-format mp3 --no-playlist $url -o \"cache${File.separator}$currentTime.%(ext)s\"")
+        process.waitFor()
 
-            val file = File("cache${File.separator}$currentTime.mp3")
+        val file = File("cache${File.separator}$currentTime.mp3")
 
-            if (file.exists())
-                VoiceListener.playTempAudio(channel, file, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
-        }.start()
+        if (!file.exists())
+            return CommandResult.fail("i couldnt get media from that url ${Bot.SURPRISED_EMOJI}")
+            VoiceListener.playTempAudio(channel, file, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
 
         return CommandResult.success()
     }

@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j.commands
 
+import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
 import me.fzzy.robofzzy4j.util.CommandCost
@@ -12,12 +13,12 @@ import sx.blah.discord.util.RequestBuffer
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
-object Deepfry : Command {
+object Deepfry : Command("deepfry") {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Deep fries an image"
-    override val usageText: String = "deepfry"
+    override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
@@ -28,10 +29,10 @@ object Deepfry : Command {
 
         val url = ImageHelper.getFirstImage(history)
         val file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SAD_EMOJI}")
         else
             ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                    ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+                    ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
 
         val sizeHelper = ImageIO.read(file)
         val width = sizeHelper.width

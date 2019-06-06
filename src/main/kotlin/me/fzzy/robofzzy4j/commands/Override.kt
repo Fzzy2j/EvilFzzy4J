@@ -7,18 +7,19 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
 
-object Override : Command {
+object Override : Command("override") {
 
     override val cooldownMillis = 0L
     override val description = "Only for bot owner, for modifying values in the bot"
     override val votes = false
-    override val usageText = "override <command>"
+    override val args: ArrayList<String> = arrayListOf("command")
     override val allowDM = true
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
-        if (message.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail("sorry, but i only take override commands from ${Bot.client.applicationOwner.name}")
+        val failText = "sorry, but i only take override commands from ${Bot.client.applicationOwner.name} ${Bot.COMPLACENT_EMOJI}"
+        if (message.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail(failText)
 
         when (args[0].toLowerCase()) {
             "volume" -> {
@@ -55,9 +56,9 @@ object Override : Command {
                 }
 
                 val messages = listOf(
-                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""}!",
-                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""}",
-                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset"
+                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.COMPLACENT_EMOJI}",
+                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.HAPPY_EMOJI}",
+                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset ${Bot.COMPLACENT_EMOJI}"
                 )
 
                 RequestBuffer.request {

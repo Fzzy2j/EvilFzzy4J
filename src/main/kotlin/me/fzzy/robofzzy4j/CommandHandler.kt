@@ -95,47 +95,45 @@ object CommandHandler {
     }
 
     fun runCommand(user: User, command: Command, message: IMessage, argsList: List<String>) {
-        if (!user.runningCommand) {
-            user.runningCommand = true
-            if (!command.votes) delete(message)
-            Thread {
-                try {
-                    val result = try {
-                        command.runCommand(message, argsList)
-                    } catch (e: java.lang.Exception) {
-                        e.printStackTrace()
-                        CommandResult.fail(e.message!!)
-                    }
-                    if (result.isSuccess()) {
-                        when (command.cost) {
-                            CommandCost.COOLDOWN -> {
-                                user.cooldown.triggerCooldown(command.cooldownMillis)
-                            }
-                            CommandCost.CURRENCY -> {
+        if (!command.votes) delete(message)
+        Thread {
+            try {
+                val result = try {
+                    command.runCommand(message, argsList)
+                } catch (e: java.lang.Exception) {
+                    e.printStackTrace()
+                    CommandResult.fail(e.message!!)
+                }
+                if (result.isSuccess()) {
+                    when (command.cost) {
+                        CommandCost.COOLDOWN -> {
+                            user.cooldown.triggerCooldown(command.cooldownMillis)
+                        }
+                        CommandCost.CURRENCY -> {
+                            if (command.price != 0) {
                                 val guild = Guild.getGuild(message.guild)
                                 guild.addCurrency(user, Math.max(-command.price, -guild.getCurrency(user)))
                             }
                         }
-                        if (command.votes && message.guild != null)
-                            Guild.getGuild(message.guild).allowVotes(message)
-                    } else {
-                        Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
-                        RequestBuffer.request {
-                            MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, result.getFailMessage())
-                        }
-                        delete(message)
                     }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+                    if (command.votes && message.guild != null)
+                        Guild.getGuild(message.guild).allowVotes(message)
+                } else {
+                    Discord4J.LOGGER.info("Command failed with message: ${result.getFailMessage()}")
+                    RequestBuffer.request {
+                        MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, result.getFailMessage())
+                    }
+                    delete(message)
                 }
-                user.runningCommand = false
-            }.start()
-        }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
     }
 
 
     private fun delete(msg: IMessage) {
-        if (msg.attachments.count() == 0) {
+        if (msg.attachments.count() == 0 && msg.guild != null) {
             RequestBuffer.request {
                 try {
                     msg.delete()

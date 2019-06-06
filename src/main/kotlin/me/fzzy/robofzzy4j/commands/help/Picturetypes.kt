@@ -10,12 +10,12 @@ import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 
-object Picturetypes : Command {
+object Picturetypes : Command("picturetypes") {
 
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description: String = "Shows all the picturess the bot can insert an image into using the -picture command"
-    override val usageText: String = "picturetypes"
+    override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY

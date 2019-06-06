@@ -10,12 +10,12 @@ import sx.blah.discord.util.EmbedBuilder
 import sx.blah.discord.util.RequestBuffer
 import java.util.*
 
-object LeaderboardCommand : Command {
+object LeaderboardCommand : Command("leaderboard") {
 
     override val cooldownMillis: Long = 10 * 1000
     override val votes: Boolean = false
     override val description = "shows the vote leaderboard"
-    override val usageText: String = "leaderboard"
+    override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = false
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN

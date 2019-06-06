@@ -1,6 +1,5 @@
 package me.fzzy.robofzzy4j
 
-import com.google.common.reflect.TypeToken
 import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 import me.fzzy.robofzzy4j.commands.*
@@ -11,7 +10,6 @@ import me.fzzy.robofzzy4j.commands.help.Sounds
 import me.fzzy.robofzzy4j.listeners.MessageListener
 import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.listeners.VoteListener
-import me.fzzy.robofzzy4j.thread.Authentication
 import me.fzzy.robofzzy4j.thread.Scheduler
 import me.fzzy.robofzzy4j.util.MediaType
 import org.im4java.process.ProcessStarter
@@ -35,15 +33,19 @@ import java.io.File
 import java.io.FileWriter
 import java.io.InputStreamReader
 import java.net.URL
-import java.nio.file.Files
 import java.util.*
 import java.util.regex.Pattern
 
 class BotData {
+    val DISCORD_TOKEN = ""
     val BOT_PREFIX = "-"
     val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
     val IMAGE_MAGICK_DIRECTORY = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
     val CURRENCY_EMOJI = "❤"
+    val SAD_EMOJI = "\uD83D\uDE22"
+    val HAPPY_EMOJI = "\uD83D\uDE04"
+    val SURPRISED_EMOJI = "\uD83D\uDE2F"
+    val COMPLACENT_EMOJI = "\uD83D\uDE0B"
 }
 
 object Bot {
@@ -51,35 +53,52 @@ object Bot {
 
     val gson = Gson()
 
-    var speechApiToken: String? = null
+    //var speechApiToken: String? = null
 
     lateinit var data: BotData
 
     lateinit var CURRENCY_EMOJI: ReactionEmoji
+    lateinit var SAD_EMOJI: ReactionEmoji
+    lateinit var HAPPY_EMOJI: ReactionEmoji
+    lateinit var SURPRISED_EMOJI: ReactionEmoji
+    lateinit var COMPLACENT_EMOJI: ReactionEmoji
 
     val URL_PATTERN: Pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
             + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
 
     // Threads
-    var azureAuth: Authentication? = null
+    //var azureAuth: Authentication? = null
 
     val random = Random()
 
-    val DATA_DIR: String = "data${File.separator}"
+    val DATA_FILE = File("data")
+    val TTS_AUTH_FILE = File("google-tts.json")
 
     @EventSubscriber
     fun onReady(event: ReadyEvent) {
         Discord4J.LOGGER.info("RoboFzzy v${Bot::class.java.`package`.implementationVersion} online.")
         RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
 
-        try {
-            val emojiSplit = data.CURRENCY_EMOJI.substring(1, data.CURRENCY_EMOJI.length - 1).split(":")
-            CURRENCY_EMOJI = ReactionEmoji.of(emojiSplit[1], emojiSplit[2].toLong(), emojiSplit[0].isNotBlank())
-        } catch(e: Exception) {
-            ReactionEmoji.of(data.CURRENCY_EMOJI)
+        fun parseEmoji(s: String): ReactionEmoji {
+            return try {
+                val emojiSplit = s.substring(1, s.length - 1).split(":")
+                ReactionEmoji.of(emojiSplit[1], emojiSplit[2].toLong(), emojiSplit[0].isNotBlank())
+            } catch(e: Exception) {
+                ReactionEmoji.of(s)
+            }
         }
+
+        CURRENCY_EMOJI = parseEmoji(data.CURRENCY_EMOJI)
+        SAD_EMOJI = parseEmoji(data.SAD_EMOJI)
+        HAPPY_EMOJI = parseEmoji(data.HAPPY_EMOJI)
+        SURPRISED_EMOJI = parseEmoji(data.SURPRISED_EMOJI)
+        COMPLACENT_EMOJI = parseEmoji(data.COMPLACENT_EMOJI)
         Discord4J.LOGGER.info("Currency emoji set to: $CURRENCY_EMOJI")
+        Discord4J.LOGGER.info("Sad emoji set to: $SAD_EMOJI")
+        Discord4J.LOGGER.info("Happy emoji set to: $HAPPY_EMOJI")
+        Discord4J.LOGGER.info("Surprised emoji set to: $SURPRISED_EMOJI")
+        Discord4J.LOGGER.info("Complacent emoji set to: $COMPLACENT_EMOJI")
     }
 
     @EventSubscriber
@@ -134,18 +153,10 @@ object Bot {
 }
 
 fun main(args: Array<String>) {
-    File(Bot.DATA_DIR).mkdirs()
-    val keysFile = File("${Bot.DATA_DIR}keys.json")
-    if (!keysFile.exists()) {
-        Discord4J.LOGGER.warn("Generating new keys.json file... you must enter a discord token for the bot to function")
-        Files.copy(Bot::class.java.classLoader.getResourceAsStream("${File.separator}keys.json"), keysFile.toPath())
-        System.exit(0)
-    }
-    val type = object : TypeToken<HashMap<String, String>>() {}.type
-    val keys: HashMap<String, String> = Bot.gson.fromJson(JsonReader(InputStreamReader(keysFile.inputStream())), type)
+    Bot.DATA_FILE.mkdirs()
 
     Discord4J.LOGGER.info("Loading data.")
-    val dataFile = File("${Bot.DATA_DIR}config.json")
+    val dataFile = File("config.json")
     if (dataFile.exists()) Bot.data = Bot.gson.fromJson(JsonReader(InputStreamReader(dataFile.inputStream())), BotData::class.java)
     else {
         Bot.data = BotData()
@@ -155,17 +166,22 @@ fun main(args: Array<String>) {
         bufferWriter.close()
     }
 
-    Bot.speechApiToken = keys["speechApiToken"]
+    if (Bot.data.DISCORD_TOKEN.isBlank()) {
+        Discord4J.LOGGER.error("You must set your discord token in config.json so that the bot can log in.")
+        System.exit(0)
+    }
+
+    if (!Bot.TTS_AUTH_FILE.exists()) {
+        Discord4J.LOGGER.error("Could not find ${Bot.TTS_AUTH_FILE.name}, -tts will not work")
+    }
 
     Discord4J.LOGGER.info("Bot Starting.")
 
-    if (Bot.speechApiToken != null) Bot.azureAuth = Authentication(Bot.speechApiToken!!)
     ProcessStarter.setGlobalSearchPath(Bot.data.IMAGE_MAGICK_DIRECTORY)
 
     Discord4J.LOGGER.info("Registering commands.")
 
     CommandHandler.registerCommand("fzzy", Fzzy)
-    //CommandHandler.registerCommand("eyes", Eyes)
     CommandHandler.registerCommand("picture", Picture)
     CommandHandler.registerCommand("deepfry", Deepfry)
     CommandHandler.registerCommand("mc", Mc)
@@ -173,7 +189,6 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("meme", Meme)
     CommandHandler.registerCommand("play", Play)
     CommandHandler.registerCommand("tts", Tts)
-    CommandHandler.registerCommand("vote", Vote)
 
     CommandHandler.registerCommand("repost", Repost)
 
@@ -182,7 +197,6 @@ fun main(args: Array<String>) {
     CommandHandler.registerCommand("help", Help)
     CommandHandler.registerCommand("invite", Invite)
     CommandHandler.registerCommand("sounds", Sounds)
-    //CommandHandler.registerCommand("eyetypes", Eyetypes)
     CommandHandler.registerCommand("picturetypes", Picturetypes)
     CommandHandler.registerCommand("override", Override)
 
@@ -207,13 +221,12 @@ fun main(args: Array<String>) {
 
     Discord4J.LOGGER.info("Registering events.")
 
-    Bot.client = ClientBuilder().withToken(keys["discordToken"]!!).build()
+    Bot.client = ClientBuilder().withToken(Bot.data.DISCORD_TOKEN).build()
     Bot.client.dispatcher.registerListener(VoteListener)
     Bot.client.dispatcher.registerListener(MessageListener)
     Bot.client.dispatcher.registerListener(VoiceListener)
     Bot.client.dispatcher.registerListener(Sounds)
     Bot.client.dispatcher.registerListener(CommandHandler)
-    Bot.client.dispatcher.registerListener(Vote)
     Bot.client.dispatcher.registerListener(Bot)
 
     Discord4J.LOGGER.info("Logging in.")

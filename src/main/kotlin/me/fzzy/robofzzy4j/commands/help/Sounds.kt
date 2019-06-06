@@ -17,14 +17,14 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-object Sounds : Command {
+object Sounds : Command("sounds") {
 
     private const val SOUND_COOLDOWN: Long = 30 * 1000
 
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description: String = "Shows all the sounds the bot can play in the voice channel"
-    override val usageText: String = "sounds"
+    override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY

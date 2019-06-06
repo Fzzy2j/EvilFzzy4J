@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j.commands
 
+import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.Guild
 import me.fzzy.robofzzy4j.util.CommandCost
@@ -10,19 +11,17 @@ import sx.blah.discord.util.RequestBuffer
 import java.net.URL
 import java.util.*
 
-object Mc : Command {
+object Mc : Command("mc") {
 
     override val cooldownMillis: Long = 60 * 1000
     override val votes: Boolean = false
     override val description = "Generates a minecraft achievement"
-    override val usageText: String = "mc <text>"
+    override val args: ArrayList<String> = arrayListOf("text")
     override val allowDM: Boolean = true
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
-        if (args.isEmpty())
-            return CommandResult.fail("hello? $usageText")
 
         var achieve = ""
         for (text in args) {
@@ -30,7 +29,7 @@ object Mc : Command {
         }
         achieve = achieve.substring(1)
         val url = getMinecraftAchievement(achieve)
-        val file = ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("the api didnt like that")
+        val file = ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("the api didnt like that ${Bot.SURPRISED_EMOJI}")
 
         RequestBuffer.request {
             Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)

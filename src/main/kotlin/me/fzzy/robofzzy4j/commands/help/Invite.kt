@@ -8,12 +8,12 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.MissingPermissionsException
 import sx.blah.discord.util.RequestBuffer
 
-object Invite : Command {
+object Invite : Command("invite") {
 
     override val cooldownMillis: Long = 4 * 1000
     override val votes: Boolean = false
     override val description = "Gives you the invite link for the bot to add it to servers"
-    override val usageText: String = "invite"
+    override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY

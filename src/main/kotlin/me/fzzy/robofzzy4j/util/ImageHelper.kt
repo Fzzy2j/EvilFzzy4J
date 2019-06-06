@@ -13,7 +13,8 @@ object ImageHelper {
 
     fun downloadTempFile(url: URL): File? {
         val suffixFinder = url.toString().split(".")
-        val suffix = ".${suffixFinder[suffixFinder.size - 1]}"
+        var suffix = ".${suffixFinder[suffixFinder.size - 1]}"
+        if (suffix.length > 4) suffix = ".png"
 
         val fileName = "cache/${System.currentTimeMillis()}.$suffix"
         try {

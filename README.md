@@ -10,4 +10,4 @@ RoboFzzy4J is a discord bot that uses the Discord4J library. The bot adds all so
 
 If you would like to run the bot yourself you must have ImageMagick installed (https://www.imagemagick.org/script/download.php#windows). Make sure you check "Install Legacy Utilities" and have "imageMagickDirectory" point to the install directory in config.json
 
-The speech api token in keys.json is for azure text to speech for -tts, without it the command will not function.
+To make -tts work you must include a json credentials file from the google cloud text to speech api https://cloud.google.com/text-to-speech/

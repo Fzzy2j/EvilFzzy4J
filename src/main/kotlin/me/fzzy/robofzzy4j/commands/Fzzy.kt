@@ -18,12 +18,12 @@ import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
-object Fzzy : Command {
+object Fzzy : Command("fzzy") {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Downsizes the last image sent in the channel using a seam carving algorithm"
-    override val usageText: String = "fzzy"
+    override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
@@ -36,9 +36,9 @@ object Fzzy : Command {
 
         val url = ImageHelper.getFirstImage(history)
         val file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}")
         else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
 
         var tempFile: File? = null
         if (file.extension == "gif") {

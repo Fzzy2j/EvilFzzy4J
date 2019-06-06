@@ -15,12 +15,12 @@ import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
 
-object Picture : Command {
+object Picture : Command("picture") {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
     override val votes: Boolean = false
     override val description = "Inserts an image into another, use -picturetypes to see all the picture types"
-    override val usageText: String = "picture <pictureType>"
+    override val args: ArrayList<String> = arrayListOf("pictureType")
     override val allowDM: Boolean = true
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
@@ -39,7 +39,7 @@ object Picture : Command {
             }
         } else picture = pictureFile.listFiles()[Bot.random.nextInt(pictureFile.listFiles().count())]
         if (picture == null)
-            return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes")
+            return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes ${Bot.COMPLACENT_EMOJI}")
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
         val history = message.channel.getMessageHistory(10).toMutableList()
@@ -47,9 +47,9 @@ object Picture : Command {
 
         val url = ImageHelper.getFirstImage(history)
         val file = if (url == null || (args.count() == 1 && args[0].toLowerCase() == "random"))
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
         else
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}")
 
         val bufferedImage = ImageIO.read(picture)
 

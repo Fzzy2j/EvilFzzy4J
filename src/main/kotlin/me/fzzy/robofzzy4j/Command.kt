@@ -4,16 +4,16 @@ import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 
-interface Command {
+abstract class Command constructor(val name: String) {
 
-    val description: String
-    val votes: Boolean
-    val usageText: String
-    val allowDM: Boolean
-    val cooldownMillis: Long
-    val price: Int
-    val cost: CommandCost
+    abstract val description: String
+    abstract val votes: Boolean
+    abstract val args: ArrayList<String>
+    abstract val allowDM: Boolean
+    abstract val cooldownMillis: Long
+    abstract val price: Int
+    abstract val cost: CommandCost
 
-    fun runCommand(message: IMessage, args: List<String>): CommandResult
+    abstract fun runCommand(message: IMessage, args: List<String>): CommandResult
 
 }

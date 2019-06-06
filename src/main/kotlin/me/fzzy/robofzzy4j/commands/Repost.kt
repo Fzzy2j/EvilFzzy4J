@@ -10,19 +10,19 @@ import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import java.io.File
 
-object Repost : Command {
+object Repost : Command("repost") {
 
     override val cooldownMillis: Long = 60 * 1000 * 5
     override val votes: Boolean = false
     override val description = "Shows you upvoted posts from the server"
-    override val usageText: String = "repost"
+    override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = false
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
     override fun runCommand(message: IMessage, args: List<String>): CommandResult {
 
-        val repost = getRepost(message.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry")
+        val repost = getRepost(message.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry ${Bot.SURPRISED_EMOJI}")
 
         RequestBuffer.request {
             Guild.getGuild(message.guild).sendVoteAttachment(repost, message.channel, message.author)

@@ -19,12 +19,12 @@ import java.util.concurrent.Future
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
-object Explode : Command {
+object Explode : Command("explode") {
 
     override val cooldownMillis: Long = 60 * 1000 * 5
     override val votes: Boolean = false
     override val description = "Scales an image repeatedly, turning it into a gif"
-    override val usageText: String = "explode"
+    override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true
     override val price: Int = 3
     override val cost: CommandCost = CommandCost.CURRENCY
@@ -37,9 +37,9 @@ object Explode : Command {
 
         val url = ImageHelper.getFirstImage(history)
         var file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}")
         else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
 
         var tempFile: File? = null
         val finalSize = 0.3
@@ -52,7 +52,8 @@ object Explode : Command {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "this image has no framerate to it, i cant work with it") }
+                val text = "this image has no framerate to it, i cant work with it ${Bot.SURPRISED_EMOJI}"
+                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, text) }
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
@@ -165,7 +166,7 @@ object Explode : Command {
             try {
                 Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
             } catch (e: Exception) {
-                message.channel.sendMessage("i couldnt send the file, sorry")
+                message.channel.sendMessage("i couldnt send the file, sorry ${Bot.SAD_EMOJI}")
             }
             file.delete()
             tempFile?.deleteRecursively()

@@ -24,7 +24,7 @@ class Guild private constructor(private var guildId: Long) {
                 if (guild.longId == guildId)
                     return guild
             }
-            val guildFile = File("${Bot.DATA_DIR}guilds${File.separator}$guildId.json")
+            val guildFile = File(Bot.DATA_FILE, "$guildId.json")
             val guild = if (guildFile.exists()) {
                 Bot.gson.fromJson<Guild>(JsonReader(InputStreamReader(guildFile.inputStream())), Guild::class.java)
             } else Guild(guildId)
@@ -148,8 +148,7 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     fun save() {
-        File("${Bot.DATA_DIR}guilds").mkdirs()
-        val guildFile = File("${Bot.DATA_DIR}guilds${File.separator}$guildId.json")
+        val guildFile = File(Bot.DATA_FILE, "$guildId.json")
         val bufferWriter = BufferedWriter(FileWriter(guildFile.absoluteFile, false))
         val save = Bot.gson.toJson(this)
         bufferWriter.write(save)
