@@ -1,13 +1,11 @@
 package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.*
-import me.fzzy.robofzzy4j.listeners.VoiceListener
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IMessage
 import sx.blah.discord.util.RequestBuffer
 import sx.blah.discord.util.audio.AudioPlayer
-import java.util.regex.Pattern
 
 object Override : Command {
 
@@ -26,22 +24,11 @@ object Override : Command {
             "volume" -> {
                 AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
             }
-            "currency" -> {
-                Guild.getGuild(message.guild).addCurrency(message.author, 10)
-                RequestBuffer.request { message.channel.sendMessage("${message.author.name} has ${Guild.getGuild(message.guild).getCurrency(message.author)} diamonds") }
-            }
             "play" -> {
-                val matcher = Pattern.compile("#(?<=v=)[a-zA-Z0-9-]+(?=&)|(?<=v/)[^&\\n]+|(?<=v=)[^&\\n]+|(?<=youtu.be/)[^&\\n]+#").matcher(args[1])
-
-                val id = try {
-                    if (matcher.find()) matcher.group(0) else args[1].split(".be/")[1]
-                } catch (e: Exception) {
-                    return CommandResult.fail("i couldnt get that videos id")
-                }
-                Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), id)
+                Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), args[1])
             }
             "fullplay" -> {
-                VoiceListener.overrides.add(args[1].toLong())
+                AudioPlayer.getAudioPlayerForGuild(message.guild).currentTrack.metadata["fzzyTimeSeconds"] = 60 * 60 * 24
             }
             "skip" -> {
                 AudioPlayer.getAudioPlayerForGuild(message.guild).skip()

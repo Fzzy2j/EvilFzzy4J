@@ -46,10 +46,10 @@ object Picture : Command {
         history.add(0, message)
 
         val url = ImageHelper.getFirstImage(history)
-        val file = if (url != null && args.count() == 0)
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
-        else
+        val file = if (url == null || (args.count() == 1 && args[0].toLowerCase() == "random"))
             ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on :(")
+        else
+            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image")
 
         val bufferedImage = ImageIO.read(picture)
 
