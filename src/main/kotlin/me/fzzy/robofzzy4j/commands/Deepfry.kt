@@ -1,15 +1,16 @@
 package me.fzzy.robofzzy4j.commands
 
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.FzzyGuild
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
 import org.im4java.core.IMOperation
 import org.im4java.core.ImageMagickCmd
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
+import java.io.File
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
@@ -23,50 +24,48 @@ object Deepfry : Command("deepfry") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
-        val history = message.channel.getMessageHistory(10).toMutableList()
-        history.add(0, message)
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
+        return Bot.getRecentImage(message).flatMap { url ->
+            Mono.just(if (url != null)
+                ImageHelper.downloadTempFile(url) ?: CommandResult.fail("i couldnt download the image ${Bot.SAD_EMOJI}")
+            else
+                ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
+                        ?: CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}"))
+        }.flatMap { file ->
+            if (file is File) {
+                val sizeHelper = ImageIO.read(file)
+                val width = sizeHelper.width
+                val height = sizeHelper.height
+                var op = IMOperation()
+                val convert = ImageMagickCmd("convert")
 
-        val url = ImageHelper.getFirstImage(history)
-        val file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SAD_EMOJI}")
-        else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                    ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
+                op.addImage(file.absolutePath)
+                op.quality(6.0)
+                op.contrast()
+                op.addImage("noise.png")
+                op.compose("dissolve")
+                op.define("compose:args=\"20\"")
+                op.composite()
+                op.enhance()
+                op.resize((width / 1.6).roundToInt(), (height / 3.0).roundToInt(), '!')
+                op.addImage(file.absolutePath)
 
-        val sizeHelper = ImageIO.read(file)
-        val width = sizeHelper.width
-        val height = sizeHelper.height
-        var op = IMOperation()
-        val convert = ImageMagickCmd("convert")
+                convert.run(op)
 
-        op.addImage(file.absolutePath)
-        op.quality(6.0)
-        op.contrast()
-        op.addImage("noise.png")
-        op.compose("dissolve")
-        op.define("compose:args=\"20\"")
-        op.composite()
-        op.enhance()
-        op.resize((width / 1.6).roundToInt(), (height / 3.0).roundToInt(), '!')
-        op.addImage(file.absolutePath)
+                op = IMOperation()
 
-        convert.run(op)
+                op.addImage(file.absolutePath)
+                op.quality(5.0)
+                op.sharpen(10.0)
+                op.resize(width, height, '!')
+                op.addImage(file.absolutePath)
 
-        op = IMOperation()
-
-        op.addImage(file.absolutePath)
-        op.quality(5.0)
-        op.sharpen(10.0)
-        op.resize(width, height, '!')
-        op.addImage(file.absolutePath)
-
-        convert.run(op)
-
-        RequestBuffer.request {
-            Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
-            file.delete()
+                convert.run(op)
+            }
+            Mono.just(file)
+        }.flatMap {
+            if (it is File) FzzyGuild.getGuild(message.guild.block()!!).sendVoteAttachment(it, message.channel.block()!!, message.author.get())
+            Mono.just(CommandResult.success())
         }
-        return CommandResult.success()
     }
 }

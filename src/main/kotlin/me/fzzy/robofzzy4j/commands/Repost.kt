@@ -2,7 +2,7 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.FzzyGuild
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.handle.obj.IGuild
@@ -25,7 +25,7 @@ object Repost : Command("repost") {
         val repost = getRepost(message.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry ${Bot.SURPRISED_EMOJI}")
 
         RequestBuffer.request {
-            Guild.getGuild(message.guild).sendVoteAttachment(repost, message.channel, message.author)
+            FzzyGuild.getGuild(message.guild).sendVoteAttachment(repost, message.channel, message.author)
             repost.delete()
         }
         return CommandResult.success()

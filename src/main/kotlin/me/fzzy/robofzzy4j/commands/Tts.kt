@@ -4,7 +4,7 @@ import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials
 import com.google.cloud.texttospeech.v1.*
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.listeners.Voice
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import org.apache.commons.io.FileUtils
@@ -35,7 +35,7 @@ object Tts : Command("tts") {
             FileUtils.writeByteArrayToFile(sound, speech)
             val userVoiceChannel = message.author.getVoiceStateForGuild(message.guild).channel
             if (userVoiceChannel != null) {
-                if (VoiceListener.playTempAudio(userVoiceChannel, sound, true, 1F, 40, 20, message.longID) == null)
+                if (Voice.playTempAudio(userVoiceChannel, sound, true, 1F, 40, 20, message.longID) == null)
                     return CommandResult.fail("im sorry, something went wrong when i tried to do that ${Bot.SAD_EMOJI}")
             } else
                 return CommandResult.fail("i cant do that if youre not in a voice channel ${Bot.HAPPY_EMOJI}")

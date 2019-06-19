@@ -2,7 +2,7 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.FzzyGuild
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
@@ -115,7 +115,7 @@ object Picture : Command("picture") {
         composite.run(operation)
 
         RequestBuffer.request {
-            Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
+            FzzyGuild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
             file.delete()
         }
 

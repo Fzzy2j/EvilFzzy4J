@@ -1,12 +1,11 @@
 package me.fzzy.robofzzy4j.commands.help
 
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.MissingPermissionsException
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
 
 object Invite : Command("invite") {
 
@@ -18,19 +17,13 @@ object Invite : Command("invite") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
-        RequestBuffer.request {
-            try {
-                message.author.orCreatePMChannel.sendMessage(getInviteLink())
-            } catch (e: MissingPermissionsException) {
-                message.channel.sendMessage(getInviteLink())
-            }
-        }
-        return CommandResult.success()
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
+        return message.author.get().privateChannel.flatMap { channel -> getInviteLink().flatMap { invite -> channel.createMessage(invite) } }
+                .flatMap { Mono.just(CommandResult.success()) }
     }
 
-    fun getInviteLink(): String {
-        return "https://discordapp.com/oauth2/authorize?client_id=${Bot.client.ourUser.longID}&scope=bot&permissions=306240"
+    fun getInviteLink(): Mono<String> {
+        return Bot.client.applicationInfo.flatMap { Mono.just("https://discordapp.com/oauth2/authorize?client_id=${it.id}&scope=bot&permissions=306240") }
     }
 
 }

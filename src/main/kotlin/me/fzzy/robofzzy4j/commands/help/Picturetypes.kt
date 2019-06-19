@@ -1,13 +1,10 @@
 package me.fzzy.robofzzy4j.commands.help
 
-import me.fzzy.robofzzy4j.Bot
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.MissingPermissionsException
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
 import java.io.File
 
 object Picturetypes : Command("picturetypes") {
@@ -20,21 +17,14 @@ object Picturetypes : Command("picturetypes") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
         var all = "```"
         for (file in File("pictures").listFiles()) {
             all += "-picture ${file.nameWithoutExtension}\n"
         }
         all += "-picture random"
         all += "```"
-        RequestBuffer.request {
-            try {
-               message.author.orCreatePMChannel.sendMessage(all)
-            } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "${message.author.mention()} i dont have permission to tell you about what i can do :(")
-            }
-        }
-        return CommandResult.success()
+        return message.author.get().privateChannel.flatMap { channel -> channel.createMessage(all).flatMap { Mono.just(CommandResult.success()) } }
     }
 
 }

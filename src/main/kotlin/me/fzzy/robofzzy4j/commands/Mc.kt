@@ -1,13 +1,13 @@
 package me.fzzy.robofzzy4j.commands
 
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.FzzyGuild
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
 import java.net.URL
 import java.util.*
 
@@ -21,7 +21,7 @@ object Mc : Command("mc") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
 
         var achieve = ""
         for (text in args) {
@@ -29,13 +29,12 @@ object Mc : Command("mc") {
         }
         achieve = achieve.substring(1)
         val url = getMinecraftAchievement(achieve)
-        val file = ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("the api didnt like that ${Bot.SURPRISED_EMOJI}")
+        val file = ImageHelper.downloadTempFile(url) ?: return Mono.just(CommandResult.fail("the api didnt like that ${Bot.SURPRISED_EMOJI}"))
 
-        RequestBuffer.request {
-            Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
-            file.delete()
-        }
-        return CommandResult.success()
+
+        FzzyGuild.getGuild(message.guild.block()!!).sendVoteAttachment(file, message.channel.block()!!, message.author.get())
+        file.delete()
+        return Mono.just(CommandResult.success())
     }
 
     fun getMinecraftAchievement(text: String): URL {

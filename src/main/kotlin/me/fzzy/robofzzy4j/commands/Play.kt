@@ -2,7 +2,7 @@ package me.fzzy.robofzzy4j.commands
 
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.listeners.VoiceListener
+import me.fzzy.robofzzy4j.listeners.Voice
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import sx.blah.discord.Discord4J
@@ -43,7 +43,7 @@ object Play : Command("play") {
 
         if (!file.exists())
             return CommandResult.fail("i couldnt get media from that url ${Bot.SURPRISED_EMOJI}")
-            VoiceListener.playTempAudio(channel, file, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
+            Voice.playTempAudio(channel, file, true, 0.25F, playTimeSeconds, playTimeAdjustment, messageId)
 
         return CommandResult.success()
     }

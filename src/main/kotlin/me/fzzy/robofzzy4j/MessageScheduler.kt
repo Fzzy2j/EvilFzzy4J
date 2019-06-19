@@ -1,56 +1,44 @@
 package me.fzzy.robofzzy4j
 
-import me.fzzy.robofzzy4j.thread.Scheduler
-import sx.blah.discord.api.internal.json.objects.EmbedObject
-import sx.blah.discord.handle.obj.IChannel
-import sx.blah.discord.handle.obj.IMessage
+import discord4j.core.`object`.entity.Message
+import discord4j.core.`object`.entity.MessageChannel
+import reactor.core.publisher.Mono
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 object MessageScheduler {
 
-    private var tempMessages: HashMap<IMessage?, Long> = hashMapOf()
+    private var tempMessages: HashMap<Message, Long> = hashMapOf()
 
     init {
-        Scheduler.Builder(1).doAction {
+        Bot.scheduler.schedulePeriodically({
             val iter = tempMessages.iterator()
             while (iter.hasNext()) {
                 val i = iter.next()
                 if (System.currentTimeMillis() > i.value) {
-                    i.key?.delete()
+                    i.key.delete()
                     iter.remove()
                 }
             }
-        }.repeat().execute()
+        }, 1, 1, TimeUnit.SECONDS)
     }
 
-    fun clearTempMessage(message: IMessage) {
+    fun clearTempMessage(message: Message) {
         val iter = tempMessages.iterator()
         while (iter.hasNext()) {
             val i = iter.next()
-            if (i.key != null) {
-                if (message == i.key) {
-                    iter.remove()
-                    break
-                }
+            if (message == i.key) {
+                iter.remove()
+                break
             }
         }
     }
 
-    fun sendTempMessage(timeToStayMillis: Long, channel: IChannel, text: String): IMessage? {
-        val msg = Bot.sendMessage(channel, text)
-        if (msg != null) {
-            tempMessages[msg] = System.currentTimeMillis() + timeToStayMillis
-            return msg
-        }
-        return null
-    }
+    fun sendTempMessage(channel: MessageChannel, text: String, timeToStay: Long, unit: TimeUnit): Mono<Message> {
+        val mono = channel.createMessage(text)
 
-    fun sendTempEmbed(timeToStayMillis: Long, channel: IChannel, embed: EmbedObject): IMessage? {
-        val msg = Bot.sendEmbed(channel, embed)
-        if (msg != null) {
-            tempMessages[msg] = System.currentTimeMillis() + timeToStayMillis
-            return msg
-        }
-        return null
+        mono.doOnSuccess { tempMessages[it] = System.currentTimeMillis() + unit.convert(timeToStay, TimeUnit.MILLISECONDS) }
+
+        return mono
     }
 }

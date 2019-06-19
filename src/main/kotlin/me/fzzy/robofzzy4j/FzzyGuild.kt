@@ -2,38 +2,38 @@ package me.fzzy.robofzzy4j
 
 import com.google.gson.annotations.Expose
 import com.google.gson.stream.JsonReader
+import discord4j.core.`object`.entity.Guild
+import discord4j.core.`object`.entity.Message
+import discord4j.core.`object`.entity.MessageChannel
+import discord4j.core.`object`.entity.User
+import discord4j.core.`object`.util.Snowflake
 import me.fzzy.robofzzy4j.listeners.VoteListener
+import me.fzzy.robofzzy4j.util.LavaPlayerAudioProvider
 import me.fzzy.robofzzy4j.util.MediaType
-import sx.blah.discord.handle.obj.IChannel
-import sx.blah.discord.handle.obj.IGuild
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.handle.obj.IUser
-import sx.blah.discord.util.MissingPermissionsException
-import sx.blah.discord.util.RequestBuffer
 import java.io.*
 import java.util.*
 import kotlin.math.roundToInt
 
-class Guild private constructor(private var guildId: Long) {
+class FzzyGuild private constructor(private var guildId: Snowflake) {
 
     companion object {
-        private val guilds = arrayListOf<Guild>()
+        private val guilds = arrayListOf<FzzyGuild>()
 
-        fun getGuild(guildId: Long): Guild {
+        fun getGuild(guildId: Snowflake): FzzyGuild {
             for (guild in guilds) {
-                if (guild.longId == guildId)
+                if (guild.id == guildId)
                     return guild
             }
             val guildFile = File(Bot.DATA_FILE, "$guildId.json")
             val guild = if (guildFile.exists()) {
-                Bot.gson.fromJson<Guild>(JsonReader(InputStreamReader(guildFile.inputStream())), Guild::class.java)
-            } else Guild(guildId)
+                Bot.gson.fromJson(JsonReader(InputStreamReader(guildFile.inputStream())), FzzyGuild::class.java)
+            } else FzzyGuild(guildId)
             guilds.add(guild)
             return guild
         }
 
-        fun getGuild(guild: IGuild): Guild {
-            return getGuild(guild.longID)
+        fun getGuild(guild: Guild): FzzyGuild {
+            return getGuild(guild.id)
         }
 
         fun saveAll() {
@@ -44,50 +44,39 @@ class Guild private constructor(private var guildId: Long) {
     }
 
     @Expose
-    val longId: Long = this.guildId
+    val id: Snowflake = this.guildId
     @Expose
     private var posts = 0
     @Expose
     private var votes = 0
     @Expose
-    var currency: HashMap<Long, Int> = hashMapOf()
+    var currency: HashMap<Snowflake, Int> = hashMapOf()
     @Expose
-    val savedMessageIds = ArrayList<Long>()
+    val savedMessageIds = ArrayList<Snowflake>()
 
-    fun allowVotes(msg: IMessage) {
+    val player = LavaPlayerAudioProvider(Bot.playerManager.createPlayer())
+
+    fun allowVotes(msg: Message) {
         posts++
         votes++
-        RequestBuffer.request {
-            try {
-                msg.addReaction(Bot.CURRENCY_EMOJI)
-            } catch (e: Exception) {
-            }
-        }
+        msg.addReaction(Bot.CURRENCY_EMOJI).block()
     }
 
-    fun sendVoteAttachment(file: File, channel: IChannel, credit: IUser? = null): IMessage? {
+    fun sendVoteAttachment(file: File, channel: MessageChannel, credit: User? = null): Message? {
         val msg = if (credit != null) {
-            try {
-                channel.sendFile(credit.mention(), file)
-            } catch (e: MissingPermissionsException) {
-                null
-            }
+            channel.createMessage { spec -> spec.setContent(credit.mention).addFile(file.name, file.inputStream()) }.block()
         } else {
-            try {
-                channel.sendFile(file)
-            } catch (e: MissingPermissionsException) {
-                null
-            }
+            channel.createMessage { spec -> spec.addFile(file.name, file.inputStream()) }.block()
         }
         if (msg != null) allowVotes(msg)
         return msg
     }
 
-    fun saveMessage(message: IMessage): File? {
-        if (!savedMessageIds.contains(message.longID)) {
-            savedMessageIds.add(message.longID)
+    fun saveMessage(message: Message): File? {
+        if (!savedMessageIds.contains(message.id)) {
+            savedMessageIds.add(message.id)
 
-            val url = Bot.getMessageMediaUrl(message, MediaType.IMAGE_AND_VIDEO) ?: return null
+            val url = Bot.getMessageMediaUrl(message, MediaType.IMAGE_AND_VIDEO).block() ?: return null
             val suffixFinder = url.toString().split(".")
             val suffix = ".${suffixFinder[suffixFinder.size - 1]}"
 
@@ -114,15 +103,15 @@ class Guild private constructor(private var guildId: Long) {
         return null
     }
 
-    fun addCurrency(user: IUser, amount: Int, message: IMessage? = null) {
-        addCurrency(user.longID, amount, message)
-    }
-
-    fun addCurrency(user: User, amount: Int, message: IMessage? = null) {
+    fun addCurrency(user: User, amount: Int, message: Message? = null) {
         addCurrency(user.id, amount, message)
     }
 
-    fun addCurrency(id: Long, amount: Int, message: IMessage? = null) {
+    fun addCurrency(fzzyUser: FzzyUser, amount: Int, message: Message? = null) {
+        addCurrency(fzzyUser.id, amount, message)
+    }
+
+    fun addCurrency(id: Snowflake, amount: Int, message: Message? = null) {
         votes += amount
         currency[id] = currency.getOrDefault(id, 0) + amount
         if (message != null && VoteListener.getVotes(message) > getAverageVote()) {
@@ -130,11 +119,11 @@ class Guild private constructor(private var guildId: Long) {
         }
     }
 
-    fun getCurrency(user: IUser): Int {
-        return currency.getOrDefault(user.longID, 0)
+    fun getCurrency(user: User): Int {
+        return currency.getOrDefault(user.id, 0)
     }
 
-    fun getCurrency(user: User): Int {
+    fun getCurrency(user: FzzyUser): Int {
         return currency.getOrDefault(user.id, 0)
     }
 
@@ -143,8 +132,8 @@ class Guild private constructor(private var guildId: Long) {
         return (votes.toFloat() / posts.toFloat()).roundToInt()
     }
 
-    fun getDiscordGuild(): IGuild {
-        return Bot.client.getGuildByID(longId)
+    fun getDiscordGuild(): Guild {
+        return Bot.client.getGuildById(guildId).block()!!
     }
 
     fun save() {

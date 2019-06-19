@@ -36,14 +36,14 @@ object Override : Command("override") {
             }
             "give" -> {
                 for (mention in message.mentions) {
-                    Guild.getGuild(message.guild).addCurrency(mention, args[1].toInt())
+                    FzzyGuild.getGuild(message.guild).addCurrency(mention, args[1].toInt())
                 }
                 RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "done!") }
             }
             "cooldowns", "cooldown" -> {
                 val users = message.mentions
                 for (user in users) {
-                    User.getUser(user.longID).cooldown.clearCooldown()
+                    FzzyUser.getUser(user.longID).cooldown.clearCooldown()
                 }
 
                 val userNames = arrayListOf<String>()
@@ -70,7 +70,7 @@ object Override : Command("override") {
             "allowvotes" -> {
                 for (msg in message.channel.getMessageHistory(15)) {
                     if (msg.longID == args[1].toLong()) {
-                        Guild.getGuild(msg.guild).allowVotes(msg)
+                        FzzyGuild.getGuild(msg.guild).allowVotes(msg)
                         break
                     }
                 }

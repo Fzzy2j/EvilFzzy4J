@@ -1,7 +1,5 @@
 package me.fzzy.robofzzy4j.util
 
-import me.fzzy.robofzzy4j.Bot
-import sx.blah.discord.handle.obj.IMessage
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
@@ -41,13 +39,5 @@ object ImageHelper {
         val new = File("cache/${System.currentTimeMillis()}.${file.extension}")
         Files.copy(file.toPath(), new.toPath())
         return new
-    }
-
-    fun getFirstImage(list: MutableList<IMessage>): URL? {
-        for (message in list) {
-            val url = Bot.getMessageMediaUrl(message, MediaType.IMAGE)
-            if (url != null) return url
-        }
-        return null
     }
 }

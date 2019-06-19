@@ -1,12 +1,7 @@
 package me.fzzy.robofzzy4j.listeners
 
 import me.fzzy.robofzzy4j.Bot
-import me.fzzy.robofzzy4j.Guild
-import sx.blah.discord.api.events.EventSubscriber
-import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionAddEvent
-import sx.blah.discord.handle.impl.events.guild.channel.message.reaction.ReactionRemoveEvent
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.handle.obj.IUser
+import me.fzzy.robofzzy4j.FzzyGuild
 
 object VoteListener {
 
@@ -24,7 +19,7 @@ object VoteListener {
 
     @EventSubscriber
     fun onReactionAdd(event: ReactionAddEvent) {
-        val guild = Guild.getGuild(event.guild.longID)
+        val guild = FzzyGuild.getGuild(event.guild.longID)
         if (event.channel.getMessageHistory(10).contains(event.message)) {
             val users = try {
                 event.reaction.users
@@ -43,7 +38,7 @@ object VoteListener {
 
     @EventSubscriber
     fun onReactionRemove(event: ReactionRemoveEvent) {
-        val guild = Guild.getGuild(event.guild.longID)
+        val guild = FzzyGuild.getGuild(event.guild.longID)
         if (event.channel.getMessageHistory(10).contains(event.message)) {
             if (event.reaction.getUserReacted(Bot.client.ourUser) && event.user.longID != Bot.client.ourUser.longID) {
                 if (event.message.author.longID != event.user.longID) {

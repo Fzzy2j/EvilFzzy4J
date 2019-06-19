@@ -1,14 +1,12 @@
 package me.fzzy.robofzzy4j.commands.help
 
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.CommandHandler
-import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.MissingPermissionsException
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
 
 object Help : Command("help") {
 
@@ -20,12 +18,12 @@ object Help : Command("help") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
         var helpMsg = "```md\n"
         for ((_, command) in CommandHandler.getAllCommands()) {
             val cost = when {
                 command.cost == CommandCost.COOLDOWN -> "${command.cooldownMillis / 1000} second cooldown"
-                command.price > 0 -> "${command.price} ${Bot.CURRENCY_EMOJI.name}"
+                command.price > 0 -> "${command.price} ${Bot.CURRENCY_EMOJI}"
                 else -> "Free"
             }
             var a = command.args.joinToString(prefix = "[", postfix = "]", separator = "] [")
@@ -33,17 +31,9 @@ object Help : Command("help") {
             helpMsg += "# ${Bot.data.BOT_PREFIX}${command.name} $a\n${command.description} : $cost\n\n"
         }
         helpMsg += "```"
-        RequestBuffer.request {
-            try {
-                val channel = if (message.guild == null) message.channel else message.author.orCreatePMChannel
-                channel.sendMessage(helpMsg)
-            } catch (e: MissingPermissionsException) {
-                MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel,
-                        "${message.author.mention()} i dont have permission to tell you about what i can do ${Bot.SAD_EMOJI}")
-            }
-        }
+        message.channel.block()!!.createMessage(helpMsg).block()
 
-        return CommandResult.success()
+        return Mono.just(CommandResult.success())
     }
 
 }

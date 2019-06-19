@@ -1,19 +1,19 @@
 package me.fzzy.robofzzy4j.commands
 
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.Guild
-import me.fzzy.robofzzy4j.MessageScheduler
+import me.fzzy.robofzzy4j.FzzyGuild
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
-import org.apache.commons.io.FileUtils
 import org.im4java.core.IMOperation
 import org.im4java.core.ImageMagickCmd
 import org.im4java.core.Info
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import javax.imageio.ImageIO
@@ -29,149 +29,143 @@ object Explode : Command("explode") {
     override val price: Int = 3
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
 
-        // Find an image from the last 10 messages sent in this channel, include the one the user sent
-        val history = message.channel.getMessageHistory(10).toMutableList()
-        history.add(0, message)
+        return Bot.getRecentImage(message).flatMap { url ->
+            Mono.just(if (url != null)
+                ImageHelper.downloadTempFile(url) ?: CommandResult.fail("i couldnt download the image ${Bot.SAD_EMOJI}")
+            else
+                ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
+                        ?: CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}"))
+        }.flatMap {
+            var file = it
+            if (file is File) {
+                var tempFile: File? = null
+                val finalSize = 0.3
+                val convert = ImageMagickCmd("convert")
+                val executor = Executors.newFixedThreadPool(4)
 
-        val url = ImageHelper.getFirstImage(history)
-        var file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}")
-        else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
+                if (file.extension == "gif") {
+                    var op = IMOperation()
 
-        var tempFile: File? = null
-        val finalSize = 0.3
-        val convert = ImageMagickCmd("convert")
-        val executor = Executors.newFixedThreadPool(4)
+                    val info = Info(file.absolutePath, false)
+                    var delay = info.getProperty("Delay")
+                    if (delay == null) {
+                        val text = "this image has no framerate to it, i cant work with it ${Bot.SURPRISED_EMOJI}"
+                        //RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, text) }
+                    }
 
-        if (file.extension == "gif") {
-            var op = IMOperation()
+                    if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
+                        delay = "25x100"
+                    }
 
-            val info = Info(file.absolutePath, false)
-            var delay = info.getProperty("Delay")
-            if (delay == null) {
-                val text = "this image has no framerate to it, i cant work with it ${Bot.SURPRISED_EMOJI}"
-                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, text) }
+                    tempFile = File("cache/${file.nameWithoutExtension}")
+                    tempFile.mkdirs()
+
+                    op.coalesce()
+                    op.addImage(file.absolutePath)
+                    op.addImage("${tempFile.absolutePath}/temp%05d.png")
+
+                    convert.run(op)
+
+                    val fileList = tempFile.list()
+                    val futureList = arrayListOf<Future<*>>()
+                    val frames = hashMapOf<Int, String>()
+                    for (i in 0 until fileList.size) {
+                        futureList.add(executor.submit {
+                            val listFile = fileList[i]
+
+                            // https://www.desmos.com/calculator/gztrr4yh2w
+                            val initialSize = 1.0
+                            val sizeAmt = -(i / (fileList.size.toDouble() / (initialSize - finalSize))) + initialSize
+                            resize(File("${tempFile.absolutePath}/$listFile"), sizeAmt)
+                        })
+                    }
+                    var progress = 0
+                    futureList.forEach { future ->
+                        future.get()
+                        progress++
+                    }
+                    for (i in 0 until fileList.size)
+                        op.addImage(frames[i])
+
+                    op = IMOperation()
+
+                    //Trying to make the file smaller
+                    op.deconstruct()
+                    op.layers("optimize")
+                    op.type("Palette")
+                    op.depth(8)
+                    op.fuzz(6.0, true)
+                    op.dither("none")
+
+                    op.loop(0)
+                    op.dispose(2.toString())
+                    op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
+                    for (listFile in tempFile.list()) {
+                        op.addImage("${tempFile.absolutePath}/$listFile")
+                    }
+
+                    op.addImage(file.absolutePath)
+
+
+                    convert.run(op)
+                } else {
+
+                    // Construct a gif out of a single image
+                    val op = IMOperation()
+
+                    //Trying to make the file smaller
+                    op.deconstruct()
+                    op.layers("optimize")
+                    op.type("Palette")
+                    op.depth(8)
+                    op.fuzz(6.0, true)
+                    op.dither("none")
+
+                    op.loop(0)
+                    op.dispose(2.toString())
+                    op.delay(10, 100)
+                    val tempPath = File("cache/${file.nameWithoutExtension}")
+                    tempPath.mkdirs()
+                    val frameCount = 20
+                    val futureList = arrayListOf<Future<*>>()
+                    val frames = hashMapOf<Int, String>()
+                    for (i in 0..frameCount) {
+                        futureList.add(executor.submit {
+                            val child = "temp$i.${(file as File).extension}"
+                            val warpFile = File(tempPath, child)
+                            Files.copy((file as File).toPath(), warpFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+
+                            // https://www.desmos.com/calculator/gztrr4yh2w
+                            val initialSize = 1.0
+                            val sizeAmt = -(i / (frameCount.toDouble() / (initialSize - finalSize))) + initialSize
+                            resize(warpFile, sizeAmt)
+                            frames[i] = warpFile.absolutePath
+                        })
+                    }
+                    var progress = 0
+                    futureList.forEach { future ->
+                        future.get()
+                        progress++
+                    }
+                    for (i in 0..frameCount)
+                        op.addImage(frames[i])
+                    val result = File("cache/${file.nameWithoutExtension}.gif")
+                    op.addImage(result.absolutePath)
+
+                    file.delete()
+                    convert.run(op)
+                    tempPath.deleteRecursively()
+
+                    file = result
+                }
             }
-
-            if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
-                delay = "25x100"
-            }
-
-            tempFile = File("cache/${file.nameWithoutExtension}")
-            tempFile.mkdirs()
-
-            op.coalesce()
-            op.addImage(file.absolutePath)
-            op.addImage("${tempFile.absolutePath}/temp%05d.png")
-
-            convert.run(op)
-
-            val fileList = tempFile.list()
-            val futureList = arrayListOf<Future<*>>()
-            val frames = hashMapOf<Int, String>()
-            for (i in 0 until fileList.size) {
-                futureList.add(executor.submit {
-                    val listFile = fileList[i]
-
-                    // https://www.desmos.com/calculator/gztrr4yh2w
-                    val initialSize = 1.0
-                    val sizeAmt = -(i / (fileList.size.toDouble() / (initialSize - finalSize))) + initialSize
-                    resize(File("${tempFile.absolutePath}/$listFile"), sizeAmt)
-                })
-            }
-            var progress = 0
-            futureList.forEach { future ->
-                future.get()
-                progress++
-            }
-            for (i in 0 until fileList.size)
-                op.addImage(frames[i])
-
-            op = IMOperation()
-
-            //Trying to make the file smaller
-            op.deconstruct()
-            op.layers("optimize")
-            op.type("Palette")
-            op.depth(8)
-            op.fuzz(6.0, true)
-            op.dither("none")
-
-            op.loop(0)
-            op.dispose(2.toString())
-            op.delay(delay.split("x")[0].toInt(), delay.split("x")[1].toInt())
-            for (listFile in tempFile.list()) {
-                op.addImage("${tempFile.absolutePath}/$listFile")
-            }
-
-            op.addImage(file.absolutePath)
-
-
-            convert.run(op)
-        } else {
-
-            // Construct a gif out of a single image
-            val op = IMOperation()
-
-            //Trying to make the file smaller
-            op.deconstruct()
-            op.layers("optimize")
-            op.type("Palette")
-            op.depth(8)
-            op.fuzz(6.0, true)
-            op.dither("none")
-
-            op.loop(0)
-            op.dispose(2.toString())
-            op.delay(10, 100)
-            val tempPath = File("cache/${file.nameWithoutExtension}")
-            tempPath.mkdirs()
-            val frameCount = 20
-            val futureList = arrayListOf<Future<*>>()
-            val frames = hashMapOf<Int, String>()
-            for (i in 0..frameCount) {
-                futureList.add(executor.submit {
-                    val child = "temp$i.${file.extension}"
-                    val warpFile = File(tempPath, child)
-                    FileUtils.copyFile(file, warpFile)
-
-                    // https://www.desmos.com/calculator/gztrr4yh2w
-                    val initialSize = 1.0
-                    val sizeAmt = -(i / (frameCount.toDouble() / (initialSize - finalSize))) + initialSize
-                    resize(warpFile, sizeAmt)
-                    frames[i] = warpFile.absolutePath
-                })
-            }
-            var progress = 0
-            futureList.forEach { future ->
-                future.get()
-                progress++
-            }
-            for (i in 0..frameCount)
-                op.addImage(frames[i])
-            val result = File("cache/${file.nameWithoutExtension}.gif")
-            op.addImage(result.absolutePath)
-
-            file.delete()
-            convert.run(op)
-            tempPath.deleteRecursively()
-
-            file = result
+            Mono.just(file)
+        }.flatMap {
+            if (it is File) FzzyGuild.getGuild(message.guild.block()!!).sendVoteAttachment(it, message.channel.block()!!, message.author.get())
+            Mono.just(CommandResult.success())
         }
-
-        RequestBuffer.request {
-            try {
-                Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
-            } catch (e: Exception) {
-                message.channel.sendMessage("i couldnt send the file, sorry ${Bot.SAD_EMOJI}")
-            }
-            file.delete()
-            tempFile?.deleteRecursively()
-        }
-        return CommandResult.success()
     }
 
     fun resize(file: File, size: Double) {

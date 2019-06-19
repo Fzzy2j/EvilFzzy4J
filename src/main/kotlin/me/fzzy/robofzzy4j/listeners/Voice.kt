@@ -1,34 +1,34 @@
 package me.fzzy.robofzzy4j.listeners
 
+import com.sedmelluq.discord.lavaplayer.container.mp3.Mp3AudioTrack
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo
+import discord4j.core.`object`.entity.VoiceChannel
 import me.fzzy.robofzzy4j.Bot
-import me.fzzy.robofzzy4j.thread.Scheduler
-import sx.blah.discord.api.events.EventSubscriber
-import sx.blah.discord.handle.obj.IVoiceChannel
-import sx.blah.discord.util.MissingPermissionsException
-import sx.blah.discord.util.RequestBuffer
-import sx.blah.discord.util.audio.AudioPlayer
-import sx.blah.discord.util.audio.events.TrackFinishEvent
-import sx.blah.discord.util.audio.events.TrackSkipEvent
-import sx.blah.discord.util.audio.events.TrackStartEvent
+import me.fzzy.robofzzy4j.FzzyGuild
 import java.io.File
 import java.util.*
 
-object VoiceListener {
+object Voice {
 
     var interupt = false
 
     private const val MESSAGE_DELETE_DELAY_SECONDS = 60
 
-    fun playTempAudio(channel: IVoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
+    fun playTempAudio(channel: VoiceChannel, file: File, delete: Boolean, volume: Float = 1F, playTimeSeconds: Int = 0, playTimeAdjustment: Int = 0, messageId: Long = 0): UUID? {
         if (!interupt) {
-            val audioP = AudioPlayer.getAudioPlayerForGuild(channel.guild)
+
+
+            val ch = channel.guild.block()!!.getMemberById(Bot.client.selfId.get()).block()!!.voiceState.block()!!.channel.block()
+            val audioP = FzzyGuild.getGuild(channel.guild.block()!!).player
             if (!file.exists()) return null
-            if (!channel.connectedUsers.contains(Bot.client.ourUser) && audioP.currentTrack == null)
-                channel.join()
+            if (ch == null && audioP.player.playingTrack == null)
+                channel.join { spec -> spec.setProvider(audioP) }
+
 
             try {
                 val id = UUID.randomUUID()
-                val track = audioP.queue(file)
+                val track = audioP.player.playTrack(Mp3AudioTrack(AudioTrackInfo()))
                 track.metadata["fzzyChannel"] = channel.longID
                 track.metadata["fzzyVolume"] = volume
                 track.metadata["fzzyId"] = id
@@ -38,7 +38,7 @@ object VoiceListener {
                 return id
             } catch (e: Exception) {
                 e.printStackTrace()
-                Scheduler.Builder(2).doAction { channel.leave() }.execute()
+                Schedulerasdf.Builder(2).doAction { channel.leave() }.execute()
             }
             if (delete)
                 file.delete()
@@ -91,7 +91,7 @@ object VoiceListener {
     fun onTrackSkip(event: TrackSkipEvent) {
         val message = Bot.client.getMessageByID(event.track.metadata["fzzyMessageId"] as Long)
         try {
-            Scheduler.Builder(MESSAGE_DELETE_DELAY_SECONDS).doAction {
+            Schedulerasdf.Builder(MESSAGE_DELETE_DELAY_SECONDS).doAction {
                 RequestBuffer.request {
                     try {
                         message.delete()
@@ -110,7 +110,7 @@ object VoiceListener {
     fun onTrackEnd(event: TrackFinishEvent) {
         val message = Bot.client.getMessageByID(event.oldTrack.metadata["fzzyMessageId"] as Long)
         try {
-            Scheduler.Builder(MESSAGE_DELETE_DELAY_SECONDS).doAction {
+            Schedulerasdf.Builder(MESSAGE_DELETE_DELAY_SECONDS).doAction {
                 RequestBuffer.request {
                     try {
                         message.delete()

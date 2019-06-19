@@ -1,8 +1,9 @@
 package me.fzzy.robofzzy4j.commands
 
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.Guild
+import me.fzzy.robofzzy4j.FzzyGuild
 import me.fzzy.robofzzy4j.MessageScheduler
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
@@ -10,11 +11,11 @@ import me.fzzy.robofzzy4j.util.ImageHelper
 import org.im4java.core.IMOperation
 import org.im4java.core.ImageMagickCmd
 import org.im4java.core.Info
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
@@ -28,17 +29,15 @@ object Fzzy : Command("fzzy") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
 
-        // Find an image from the last 10 messages sent in this channel, include the one the user sent
-        val history = message.channel.getMessageHistory(10).toMutableList()
-        history.add(0, message)
-
-        val url = ImageHelper.getFirstImage(history)
+        val url = Bot.getRecentImage(message).block()
         val file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}")
+            ImageHelper.downloadTempFile(url)
+                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}"))
         else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
+                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}"))
 
         var tempFile: File? = null
         if (file.extension == "gif") {
@@ -47,7 +46,7 @@ object Fzzy : Command("fzzy") {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯") }
+                MessageScheduler.sendTempMessage(message.channel.block()!!, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯", Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, TimeUnit.SECONDS).block()
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
@@ -99,15 +98,15 @@ object Fzzy : Command("fzzy") {
         } else
             resize(file)
 
-        RequestBuffer.request {
-            try {
-                Guild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
-            } catch (e: Exception) {
-            }
-            file.delete()
-            tempFile?.deleteRecursively()
+
+
+        try {
+            FzzyGuild.getGuild(message.guild.block()!!).sendVoteAttachment(file, message.channel.block()!!, message.author.get())
+        } catch (e: Exception) {
         }
-        return CommandResult.success()
+        file.delete()
+        tempFile?.deleteRecursively()
+        return Mono.just(CommandResult.success())
     }
 
     fun resize(file: File) {

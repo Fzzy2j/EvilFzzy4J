@@ -2,44 +2,39 @@ package me.fzzy.robofzzy4j
 
 import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
+import discord4j.core.DiscordClient
+import discord4j.core.DiscordClientBuilder
+import discord4j.core.`object`.entity.Message
+import discord4j.core.`object`.presence.Activity
+import discord4j.core.`object`.presence.Presence
+import discord4j.core.`object`.reaction.ReactionEmoji
+import discord4j.core.event.domain.message.MessageCreateEvent
 import me.fzzy.robofzzy4j.commands.*
 import me.fzzy.robofzzy4j.commands.help.Help
 import me.fzzy.robofzzy4j.commands.help.Invite
 import me.fzzy.robofzzy4j.commands.help.Picturetypes
-import me.fzzy.robofzzy4j.commands.help.Sounds
-import me.fzzy.robofzzy4j.listeners.MessageListener
-import me.fzzy.robofzzy4j.listeners.VoiceListener
-import me.fzzy.robofzzy4j.listeners.VoteListener
-import me.fzzy.robofzzy4j.thread.Scheduler
 import me.fzzy.robofzzy4j.util.MediaType
 import org.im4java.process.ProcessStarter
 import org.json.JSONObject
-import sx.blah.discord.Discord4J
-import sx.blah.discord.api.ClientBuilder
-import sx.blah.discord.api.IDiscordClient
-import sx.blah.discord.api.events.EventSubscriber
-import sx.blah.discord.api.internal.json.objects.EmbedObject
-import sx.blah.discord.handle.impl.events.ReadyEvent
-import sx.blah.discord.handle.impl.events.guild.GuildCreateEvent
-import sx.blah.discord.handle.impl.obj.ReactionEmoji
-import sx.blah.discord.handle.obj.ActivityType
-import sx.blah.discord.handle.obj.IChannel
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.handle.obj.StatusType
-import sx.blah.discord.util.MissingPermissionsException
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
+import reactor.util.Loggers
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStreamReader
+import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
 
 class BotData {
     val DISCORD_TOKEN = ""
     val BOT_PREFIX = "-"
-    val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15 * 1000
+    val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15
     val IMAGE_MAGICK_DIRECTORY = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
     val CURRENCY_EMOJI = "❤"
     val SAD_EMOJI = "\uD83D\uDE22"
@@ -49,9 +44,15 @@ class BotData {
 }
 
 object Bot {
-    lateinit var client: IDiscordClient
+    lateinit var client: DiscordClient
+
+    val logger = Loggers.getLogger(Bot::class.java)
 
     val gson = Gson()
+
+    val scheduler = Schedulers.elastic()
+
+    val playerManager = DefaultAudioPlayerManager()
 
     //var speechApiToken: String? = null
 
@@ -75,61 +76,33 @@ object Bot {
     val DATA_FILE = File("data")
     val TTS_AUTH_FILE = File("google-tts.json")
 
-    @EventSubscriber
-    fun onReady(event: ReadyEvent) {
-        Discord4J.LOGGER.info("RoboFzzy v${Bot::class.java.`package`.implementationVersion} online.")
-        RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
-
-        fun parseEmoji(s: String): ReactionEmoji {
-            return try {
-                val emojiSplit = s.substring(1, s.length - 1).split(":")
-                ReactionEmoji.of(emojiSplit[1], emojiSplit[2].toLong(), emojiSplit[0].isNotBlank())
-            } catch(e: Exception) {
-                ReactionEmoji.of(s)
-            }
-        }
-
-        CURRENCY_EMOJI = parseEmoji(data.CURRENCY_EMOJI)
-        SAD_EMOJI = parseEmoji(data.SAD_EMOJI)
-        HAPPY_EMOJI = parseEmoji(data.HAPPY_EMOJI)
-        SURPRISED_EMOJI = parseEmoji(data.SURPRISED_EMOJI)
-        COMPLACENT_EMOJI = parseEmoji(data.COMPLACENT_EMOJI)
-        Discord4J.LOGGER.info("Currency emoji set to: $CURRENCY_EMOJI")
-        Discord4J.LOGGER.info("Sad emoji set to: $SAD_EMOJI")
-        Discord4J.LOGGER.info("Happy emoji set to: $HAPPY_EMOJI")
-        Discord4J.LOGGER.info("Surprised emoji set to: $SURPRISED_EMOJI")
-        Discord4J.LOGGER.info("Complacent emoji set to: $COMPLACENT_EMOJI")
+    fun getRecentImage(message: Message): Mono<URL?> {
+        return message.channel
+                .flatMap { channel ->
+                    channel.getMessagesBefore(message.id)
+                            .take(10)
+                            .takeUntil { isMedia(URL(it.content.get())) }
+                            .flatMap {
+                                Mono.just(URL(it.content.get()))
+                            }.next()
+                }
     }
 
-    @EventSubscriber
-    fun onJoin(event: GuildCreateEvent) {
-        Discord4J.LOGGER.info("guild created: ${event.guild.name}")
+    fun isMedia(url: URL): Boolean {
+        HttpURLConnection.setFollowRedirects(false)
+        val con = url.openConnection() as HttpURLConnection
+        con.requestMethod = "HEAD"
+        logger.info(con.responseMessage)
+        return con.responseCode == HttpURLConnection.HTTP_OK
     }
 
-    fun sendMessage(channel: IChannel, text: String): IMessage? {
-        if (text.isEmpty())
-            return null
-        return try {
-            channel.sendMessage(text)
-        } catch (e: MissingPermissionsException) {
-            null
-        }
-    }
-
-    fun sendEmbed(channel: IChannel, embed: EmbedObject): IMessage? {
-        return try {
-            channel.sendMessage(embed)
-        } catch (e: MissingPermissionsException) {
-            null
-        }
-    }
-
-    fun getMessageMediaUrl(message: IMessage, type: MediaType): URL? {
+    fun getMessageMediaUrl(message: Message, type: MediaType): Mono<URL> {
         var url: URL? = null
-        if (message.attachments.size > 0) {
-            url = URL(message.attachments[0].url)
+        if (message.attachments.size == 1) {
+            url = URL(message.attachments.single().url)
         } else {
-            for (split in message.content.split(" ")) {
+            if (!message.content.isPresent) return Mono.empty()
+            for (split in message.content.get().split(" ")) {
                 val matcher = Bot.URL_PATTERN.matcher(split)
                 if (matcher.find()) {
                     var urlString = split.toLowerCase().substring(matcher.start(1), matcher.end())
@@ -148,14 +121,15 @@ object Bot {
                 }
             }
         }
-        return url
+        return if (url != null) Mono.just(url)
+        else Mono.empty()
     }
 }
 
 fun main(args: Array<String>) {
     Bot.DATA_FILE.mkdirs()
 
-    Discord4J.LOGGER.info("Loading data.")
+    Bot.logger.info("Loading data.")
     val dataFile = File("config.json")
     if (dataFile.exists()) Bot.data = Bot.gson.fromJson(JsonReader(InputStreamReader(dataFile.inputStream())), BotData::class.java)
     else {
@@ -167,38 +141,37 @@ fun main(args: Array<String>) {
     }
 
     if (Bot.data.DISCORD_TOKEN.isBlank()) {
-        Discord4J.LOGGER.error("You must set your discord token in config.json so that the bot can log in.")
+        Bot.logger.error("You must set your discord token in config.json so that the bot can log in.")
         System.exit(0)
     }
 
     if (!Bot.TTS_AUTH_FILE.exists()) {
-        Discord4J.LOGGER.error("Could not find ${Bot.TTS_AUTH_FILE.name}, -tts will not work")
+        Bot.logger.error("Could not find ${Bot.TTS_AUTH_FILE.name}, -tts will not work")
     }
 
-    Discord4J.LOGGER.info("Bot Starting.")
+    Bot.logger.info("Bot Starting.")
 
     ProcessStarter.setGlobalSearchPath(Bot.data.IMAGE_MAGICK_DIRECTORY)
 
-    Discord4J.LOGGER.info("Registering commands.")
+    Bot.logger.info("Registering commands.")
 
-    CommandHandler.registerCommand("fzzy", Fzzy)
-    CommandHandler.registerCommand("picture", Picture)
-    CommandHandler.registerCommand("deepfry", Deepfry)
-    CommandHandler.registerCommand("mc", Mc)
-    CommandHandler.registerCommand("explode", Explode)
-    CommandHandler.registerCommand("meme", Meme)
-    CommandHandler.registerCommand("play", Play)
-    CommandHandler.registerCommand("tts", Tts)
+    Command.registerCommand("fzzy", Fzzy)
+    Command.registerCommand("picture", Picture)
+    Command.registerCommand("deepfry", Deepfry)
+    Command.registerCommand("mc", Mc)
+    Command.registerCommand("explode", Explode)
+    Command.registerCommand("meme", Meme)
+    Command.registerCommand("play", Play)
+    Command.registerCommand("tts", Tts)
 
-    CommandHandler.registerCommand("repost", Repost)
+    Command.registerCommand("repost", Repost)
 
-    CommandHandler.registerCommand("leaderboard", LeaderboardCommand)
+    Command.registerCommand("leaderboard", LeaderboardCommand)
 
-    CommandHandler.registerCommand("help", Help)
-    CommandHandler.registerCommand("invite", Invite)
-    CommandHandler.registerCommand("sounds", Sounds)
-    CommandHandler.registerCommand("picturetypes", Picturetypes)
-    CommandHandler.registerCommand("override", Override)
+    Command.registerCommand("help", Help)
+    Command.registerCommand("invite", Invite)
+    Command.registerCommand("picturetypes", Picturetypes)
+    Command.registerCommand("override", Override)
 
     val cacheFile = File("cache")
     if (cacheFile.exists()) {
@@ -207,29 +180,104 @@ fun main(args: Array<String>) {
         }
     }
 
-    Discord4J.LOGGER.info("Starting scheduler.")
-
-    Scheduler.start()
-
-    Discord4J.LOGGER.info("Starting auto-saver.")
+    Bot.logger.info("Starting auto-saver.")
 
     // Autosave
-    Scheduler.Builder(60).doAction {
-        Guild.saveAll()
-        RequestBuffer.request { Bot.client.changePresence(StatusType.ONLINE, ActivityType.LISTENING, "the rain ${Bot.data.BOT_PREFIX}help") }
-    }.repeat().execute()
+    Bot.scheduler.schedulePeriodically({
+        FzzyGuild.saveAll()
+    }, 10, 60, TimeUnit.SECONDS)
 
-    Discord4J.LOGGER.info("Registering events.")
+    Bot.logger.info("Registering events.")
 
-    Bot.client = ClientBuilder().withToken(Bot.data.DISCORD_TOKEN).build()
-    Bot.client.dispatcher.registerListener(VoteListener)
-    Bot.client.dispatcher.registerListener(MessageListener)
-    Bot.client.dispatcher.registerListener(VoiceListener)
-    Bot.client.dispatcher.registerListener(Sounds)
-    Bot.client.dispatcher.registerListener(CommandHandler)
-    Bot.client.dispatcher.registerListener(Bot)
+    Bot.client = DiscordClientBuilder(Bot.data.DISCORD_TOKEN).build()
 
-    Discord4J.LOGGER.info("Logging in.")
+    Bot.client.eventDispatcher.on(MessageCreateEvent::class.java)
+            .flatMap { event ->
+                Mono.justOrEmpty(event.message.content)
+                        .flatMap { content ->
+                            Flux.fromIterable(Command.commands.entries)
+                                    .filter { entry -> content.startsWith("${Bot.data.BOT_PREFIX}${entry.key}") }
+                                    .flatMap { entry ->
+                                        entry.value.handleCommand(event)
+                                                .flatMap { result ->
+                                                    if ((!entry.value.votes || !result.isSuccess()) && event.message.attachments.count() == 0)
+                                                        event.message.delete()
+                                                    Mono.just(result)
+                                                }
+                                                .filter { !it.isSuccess() }
+                                                .flatMap { result ->
+                                                    event.message.channel.flatMap {
+                                                        MessageScheduler.sendTempMessage(it, result.getFailMessage(), Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, TimeUnit.SECONDS)
+                                                    }
+                                                }
+                                    }
+                                    .next()
+                        }
+            }
+            .subscribe()
+
+    Bot.client.eventDispatcher.on(MessageCreateEvent::class.java).subscribe { event ->
+
+        val respongeMsgs = listOf(
+                "no problem %name%",
+                "np %name%",
+                ":D",
+                ":P"
+        )
+
+        fun mentionsByName(msg: Message): Boolean {
+            val check = msg.content.get().toLowerCase()
+            val self = msg.guild.block()!!.getMemberById(Bot.client.selfId.get()).block()!!
+            val checkAgainst = "${self.username} ${self.nickname}"
+            for (realCheck in check.split(" ")) {
+                if (check.contains("thank") && (checkAgainst.toLowerCase().replace(" ", "").contains(realCheck) || msg.userMentions.collectList().block()!!.contains(self)))
+                    return true
+            }
+            return false
+        }
+        /*if (mentionsByName(event.message)) {
+            for (msg in event.channel.getMessageHistory(7)) {
+                if (msg.author.longID == Bot.client.ourUser.longID) {
+                    RequestBuffer.request {
+                        MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, respongeMsgs[Bot.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild).toLowerCase()))
+                    }
+                    break
+                }
+            }
+        }
+        if (!event.author.isBot) {
+            val guild = FzzyGuild.getGuild(event.guild.longID)
+            val m: Matcher = Bot.URL_PATTERN.matcher(event.message.content)
+            if (m.find() || event.message.attachments.size > 0) {
+                guild.allowVotes(event.message)
+            }
+        }*/
+    }
+
+    Bot.logger.info("RoboFzzy v${Bot::class.java.`package`.implementationVersion} online.")
+    Bot.client.updatePresence(Presence.online(Activity.listening("the rain ${Bot.data.BOT_PREFIX}help")))
+
+    fun parseEmoji(s: String): ReactionEmoji {
+        return try {
+            val emojiSplit = s.substring(1, s.length - 1).split(":")
+            ReactionEmoji.of(emojiSplit[2].toLong(), emojiSplit[1], emojiSplit[0].isNotBlank())
+        } catch (e: Exception) {
+            ReactionEmoji.unicode(s)
+        }
+    }
+
+    Bot.CURRENCY_EMOJI = parseEmoji(Bot.data.CURRENCY_EMOJI)
+    Bot.SAD_EMOJI = parseEmoji(Bot.data.SAD_EMOJI)
+    Bot.HAPPY_EMOJI = parseEmoji(Bot.data.HAPPY_EMOJI)
+    Bot.SURPRISED_EMOJI = parseEmoji(Bot.data.SURPRISED_EMOJI)
+    Bot.COMPLACENT_EMOJI = parseEmoji(Bot.data.COMPLACENT_EMOJI)
+    Bot.logger.info("Currency emoji set to: ${Bot.CURRENCY_EMOJI}")
+    Bot.logger.info("Sad emoji set to: ${Bot.SAD_EMOJI}")
+    Bot.logger.info("Happy emoji set to: ${Bot.HAPPY_EMOJI}")
+    Bot.logger.info("Surprised emoji set to: ${Bot.SURPRISED_EMOJI}")
+    Bot.logger.info("Complacent emoji set to: ${Bot.COMPLACENT_EMOJI}")
+
+    Bot.logger.info("Logging in.")
 
     Bot.client.login()
 }
