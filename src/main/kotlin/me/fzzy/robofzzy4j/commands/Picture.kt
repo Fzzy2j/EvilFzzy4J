@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j.commands
 
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.FzzyGuild
@@ -8,12 +9,13 @@ import me.fzzy.robofzzy4j.util.CommandResult
 import me.fzzy.robofzzy4j.util.ImageHelper
 import org.im4java.core.IMOperation
 import org.im4java.core.ImageMagickCmd
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.imageio.ImageIO
+import kotlin.math.atan2
+import kotlin.math.max
 
 object Picture : Command("picture") {
 
@@ -25,31 +27,31 @@ object Picture : Command("picture") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
 
         // Find the specified picture from the pictures folder
         val pictureFile = File("pictures")
         var picture: File? = null
         if (args.isNotEmpty() && args[0].toLowerCase() != "random") {
-            for (files in pictureFile.listFiles()) {
+            for (files in pictureFile.listFiles()!!) {
                 if (files.nameWithoutExtension.toLowerCase() == args[0].toLowerCase()) {
                     picture = files
                     break
                 }
             }
-        } else picture = pictureFile.listFiles()[Bot.random.nextInt(pictureFile.listFiles().count())]
+        } else picture = pictureFile.listFiles()!![Bot.random.nextInt(pictureFile.listFiles()!!.count())]
         if (picture == null)
-            return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes ${Bot.COMPLACENT_EMOJI}")
+            return Mono.just(CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes ${Bot.toUsable(Bot.complacentEmoji)}"))
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
-        val history = message.channel.getMessageHistory(10).toMutableList()
-        history.add(0, message)
 
-        val url = ImageHelper.getFirstImage(history)
+        val url = Bot.getRecentImage(message).block()
         val file = if (url == null || (args.count() == 1 && args[0].toLowerCase() == "random"))
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild)) ?: return CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}")
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild.block()!!))
+                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.toUsable(Bot.sadEmoji)}"))
         else
-            ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}")
+            ImageHelper.downloadTempFile(url)
+                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.toUsable(Bot.surprisedEmoji)}"))
 
         val bufferedImage = ImageIO.read(picture)
 
@@ -63,15 +65,15 @@ object Picture : Command("picture") {
         val rightAverage = average(topRight, bottomRight)
         val topAverage = average(topLeft, topRight)
         val bottomAverage = average(bottomLeft, bottomRight)
-        val t = -Math.atan2(leftAverage.second - rightAverage.second.toDouble(), rightAverage.first - leftAverage.first.toDouble())
+        val t = -atan2(leftAverage.second - rightAverage.second.toDouble(), rightAverage.first - leftAverage.first.toDouble())
 
         // Detecting the proper width and height
-        val maxLength = Math.max(distance(topRight, topLeft), distance(bottomRight, bottomLeft))
-        val maxHeight = Math.max(distance(bottomRight, topRight), distance(bottomLeft, topLeft))
-        val widthCross = Math.max(angleAdjust(bottomRight, -t).first - angleAdjust(topLeft, -t).first, angleAdjust(topRight, -t).first - angleAdjust(bottomLeft, -t).first)
-        val heightCross = Math.max(angleAdjust(bottomLeft, -t).second - angleAdjust(topRight, -t).second, angleAdjust(bottomRight, -t).second - angleAdjust(topLeft, -t).second)
-        val width = Math.max(maxLength, widthCross)
-        val height = Math.max(maxHeight, heightCross)
+        val maxLength = max(distance(topRight, topLeft), distance(bottomRight, bottomLeft))
+        val maxHeight = max(distance(bottomRight, topRight), distance(bottomLeft, topLeft))
+        val widthCross = max(angleAdjust(bottomRight, -t).first - angleAdjust(topLeft, -t).first, angleAdjust(topRight, -t).first - angleAdjust(bottomLeft, -t).first)
+        val heightCross = max(angleAdjust(bottomLeft, -t).second - angleAdjust(topRight, -t).second, angleAdjust(bottomRight, -t).second - angleAdjust(topLeft, -t).second)
+        val width = max(maxLength, widthCross)
+        val height = max(maxHeight, heightCross)
 
         val composite = ImageMagickCmd("convert")
         val operation = IMOperation()
@@ -114,12 +116,10 @@ object Picture : Command("picture") {
 
         composite.run(operation)
 
-        RequestBuffer.request {
-            FzzyGuild.getGuild(message.guild).sendVoteAttachment(file, message.channel, message.author)
-            file.delete()
-        }
+        FzzyGuild.getGuild(message.guild.block()!!).sendVoteAttachment(file, message.channel.block()!!, message.author.get())
+        file.delete()
 
-        return CommandResult.success()
+        return Mono.just(CommandResult.success())
     }
 
     private fun detectTopRightCorner(img: BufferedImage): Pair<Int, Int> {

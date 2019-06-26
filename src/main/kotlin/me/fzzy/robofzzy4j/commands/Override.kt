@@ -1,11 +1,11 @@
 package me.fzzy.robofzzy4j.commands
 
+import discord4j.core.`object`.entity.Message
+import discord4j.core.`object`.util.Snowflake
 import me.fzzy.robofzzy4j.*
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.RequestBuffer
-import sx.blah.discord.util.audio.AudioPlayer
+import reactor.core.publisher.Mono
 
 object Override : Command("override") {
 
@@ -17,67 +17,63 @@ object Override : Command("override") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
-        val failText = "sorry, but i only take override commands from ${Bot.client.applicationOwner.name} ${Bot.COMPLACENT_EMOJI}"
-        if (message.author.longID != Bot.client.applicationOwner.longID) return CommandResult.fail(failText)
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
+        val owner = Bot.client.applicationInfo.block()!!.owner.block()!!
+        val failText = "sorry, but i only take override commands from ${owner.username} ${Bot.toUsable(Bot.complacentEmoji)}"
+        if (message.author.get().id != owner.id) return Mono.just(CommandResult.fail(failText))
 
         when (args[0].toLowerCase()) {
             "volume" -> {
-                AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
+                //AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
             }
             "play" -> {
-                Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), args[1])
+                //Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), args[1])
             }
             "fullplay" -> {
-                AudioPlayer.getAudioPlayerForGuild(message.guild).currentTrack.metadata["fzzyTimeSeconds"] = 60 * 60 * 24
+                //AudioPlayer.getAudioPlayerForGuild(message.guild).currentTrack.metadata["fzzyTimeSeconds"] = 60 * 60 * 24
             }
             "skip" -> {
-                AudioPlayer.getAudioPlayerForGuild(message.guild).skip()
+                //AudioPlayer.getAudioPlayerForGuild(message.guild).skip()
             }
             "give" -> {
-                for (mention in message.mentions) {
-                    FzzyGuild.getGuild(message.guild).addCurrency(mention, args[1].toInt())
+                for (mention in message.userMentions.collectList().block()!!) {
+                    FzzyGuild.getGuild(message.guild.block()!!).addCurrency(mention, args[1].toInt())
                 }
-                RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, "done!") }
+                MessageScheduler.sendTempMessage(message.channel.block()!!, "done!", Bot.data.DEFAULT_TEMP_MESSAGE_DURATION).block()
             }
             "cooldowns", "cooldown" -> {
-                val users = message.mentions
+                val users = message.userMentions.collectList().block() ?: return Mono.just(CommandResult.fail("theres no mentions in that ${Bot.toUsable(Bot.sadEmoji)}"))
                 for (user in users) {
-                    FzzyUser.getUser(user.longID).cooldown.clearCooldown()
+                    FzzyUser.getUser(user.id).cooldown.clearCooldown()
                 }
 
                 val userNames = arrayListOf<String>()
                 for (i in 0 until users.size) {
                     userNames.add(if (i != users.size - 1) {
-                        users[i].name.toLowerCase()
+                        users[i].username.toLowerCase()
                     } else {
-                        "and ${users[i].name.toLowerCase()}"
+                        "and ${users[i].username.toLowerCase()}"
                     })
                 }
 
                 val messages = listOf(
-                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.COMPLACENT_EMOJI}",
-                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.HAPPY_EMOJI}",
-                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset ${Bot.COMPLACENT_EMOJI}"
+                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.toUsable(Bot.complacentEmoji)}",
+                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.toUsable(Bot.happyEmoji)}",
+                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset ${Bot.toUsable(Bot.complacentEmoji)}"
                 )
 
-                RequestBuffer.request {
-                    MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, messages[Bot.random.nextInt(messages.size)]
-                            .replace("%target%", userNames.joinToString(", "))
-                            .replace("%author%", message.author.name.toLowerCase()))
-                }
+                MessageScheduler.sendTempMessage(message.channel.block()!!, messages[Bot.random.nextInt(messages.size)]
+                        .replace("%target%", userNames.joinToString(", "))
+                        .replace("%author%", message.author.get().username.toLowerCase()), Bot.data.DEFAULT_TEMP_MESSAGE_DURATION).block()
             }
             "allowvotes" -> {
-                for (msg in message.channel.getMessageHistory(15)) {
-                    if (msg.longID == args[1].toLong()) {
-                        FzzyGuild.getGuild(msg.guild).allowVotes(msg)
-                        break
-                    }
-                }
+                val msg = message.channel.block()!!.getMessageById(Snowflake.of(args[1].toLong())).block()
+                if (msg != null)
+                    FzzyGuild.getGuild(message.guild.block()!!).allowVotes(msg)
             }
         }
 
-        return CommandResult.success()
+        return Mono.just(CommandResult.success())
     }
 
 }

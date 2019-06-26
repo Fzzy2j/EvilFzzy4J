@@ -3,7 +3,6 @@ package me.fzzy.robofzzy4j.commands.help
 import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
-import me.fzzy.robofzzy4j.CommandHandler
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import reactor.core.publisher.Mono
@@ -19,11 +18,23 @@ object Help : Command("help") {
     override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
+
+        val matcher = Bot.URL_PATTERN.matcher(args.joinToString(" "))
+        if (matcher.find()) {
+            Bot.logger.info(args.joinToString(" ").substring(matcher.start(1), matcher.end()))
+        }
         var helpMsg = "```md\n"
-        for ((_, command) in CommandHandler.getAllCommands()) {
+        for ((_, command) in commands) {
             val cost = when {
                 command.cost == CommandCost.COOLDOWN -> "${command.cooldownMillis / 1000} second cooldown"
-                command.price > 0 -> "${command.price} ${Bot.CURRENCY_EMOJI}"
+                command.price > 0 -> {
+                    val custom = Bot.currencyEmoji.asCustomEmoji()
+                    val name = if (custom.isPresent)
+                        custom.get().name
+                    else
+                        Bot.currencyEmoji.asUnicodeEmoji().get().raw
+                    "${command.price} $name"
+                }
                 else -> "Free"
             }
             var a = command.args.joinToString(prefix = "[", postfix = "]", separator = "] [")

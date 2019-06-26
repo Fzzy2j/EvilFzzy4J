@@ -40,10 +40,10 @@ object Meme : Command("meme") {
 
         val url = Bot.getRecentImage(message).block()
         val file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}"))
+            ImageHelper.downloadTempFile(url) ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.toUsable(Bot.surprisedEmoji)}"))
         else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}"))
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild.block()!!))
+                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.toUsable(Bot.sadEmoji)}"))
 
         val convert = ImageMagickCmd("convert")
         val operation = IMOperation()

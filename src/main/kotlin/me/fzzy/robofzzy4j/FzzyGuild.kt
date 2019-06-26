@@ -1,5 +1,6 @@
 package me.fzzy.robofzzy4j
 
+import com.google.gson.GsonBuilder
 import com.google.gson.annotations.Expose
 import com.google.gson.stream.JsonReader
 import discord4j.core.`object`.entity.Guild
@@ -7,27 +8,27 @@ import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.MessageChannel
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.util.Snowflake
-import me.fzzy.robofzzy4j.listeners.VoteListener
-import me.fzzy.robofzzy4j.util.LavaPlayerAudioProvider
-import me.fzzy.robofzzy4j.util.MediaType
+import me.fzzy.robofzzy4j.listeners.Votes
+import org.json.JSONObject
 import java.io.*
 import java.util.*
 import kotlin.math.roundToInt
 
-class FzzyGuild private constructor(private var guildId: Snowflake) {
+class FzzyGuild private constructor() {
 
     companion object {
         private val guilds = arrayListOf<FzzyGuild>()
 
         fun getGuild(guildId: Snowflake): FzzyGuild {
             for (guild in guilds) {
-                if (guild.id == guildId)
+                if (guild.guildId == guildId)
                     return guild
             }
-            val guildFile = File(Bot.DATA_FILE, "$guildId.json")
+            val guildFile = File(Bot.DATA_FILE, "${guildId.asString()}.json")
             val guild = if (guildFile.exists()) {
-                Bot.gson.fromJson(JsonReader(InputStreamReader(guildFile.inputStream())), FzzyGuild::class.java)
-            } else FzzyGuild(guildId)
+                    Bot.gson.fromJson(JsonReader(InputStreamReader(guildFile.inputStream())), FzzyGuild::class.java)
+            } else FzzyGuild()
+            guild.guildId = guildId
             guilds.add(guild)
             return guild
         }
@@ -43,8 +44,8 @@ class FzzyGuild private constructor(private var guildId: Snowflake) {
         }
     }
 
-    @Expose
-    val id: Snowflake = this.guildId
+    private lateinit var guildId: Snowflake
+
     @Expose
     private var posts = 0
     @Expose
@@ -54,12 +55,12 @@ class FzzyGuild private constructor(private var guildId: Snowflake) {
     @Expose
     val savedMessageIds = ArrayList<Snowflake>()
 
-    val player = LavaPlayerAudioProvider(Bot.playerManager.createPlayer())
+    //val player = LavaPlayerAudioProvider(Bot.playerManager.createPlayer())
 
     fun allowVotes(msg: Message) {
         posts++
         votes++
-        msg.addReaction(Bot.CURRENCY_EMOJI).block()
+        msg.addReaction(Bot.currencyEmoji).block()
     }
 
     fun sendVoteAttachment(file: File, channel: MessageChannel, credit: User? = null): Message? {
@@ -76,11 +77,11 @@ class FzzyGuild private constructor(private var guildId: Snowflake) {
         if (!savedMessageIds.contains(message.id)) {
             savedMessageIds.add(message.id)
 
-            val url = Bot.getMessageMediaUrl(message, MediaType.IMAGE_AND_VIDEO).block() ?: return null
+            val url = Bot.getMessageMedia(message) ?: return null
             val suffixFinder = url.toString().split(".")
             val suffix = ".${suffixFinder[suffixFinder.size - 1]}"
 
-            File("memes", guildId.toString()).mkdirs()
+            File("memes", guildId.asString()).mkdirs()
             val fileName = "memes/$guildId/${System.currentTimeMillis()}.$suffix"
             try {
                 val openConnection = url.openConnection()
@@ -114,7 +115,7 @@ class FzzyGuild private constructor(private var guildId: Snowflake) {
     fun addCurrency(id: Snowflake, amount: Int, message: Message? = null) {
         votes += amount
         currency[id] = currency.getOrDefault(id, 0) + amount
-        if (message != null && VoteListener.getVotes(message) > getAverageVote()) {
+        if (message != null && Votes.getVotes(message) > getAverageVote()) {
             saveMessage(message)
         }
     }
@@ -137,10 +138,11 @@ class FzzyGuild private constructor(private var guildId: Snowflake) {
     }
 
     fun save() {
-        val guildFile = File(Bot.DATA_FILE, "$guildId.json")
+        val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
+        val guildFile = File(Bot.DATA_FILE, "${guildId.asString()}.json")
         val bufferWriter = BufferedWriter(FileWriter(guildFile.absoluteFile, false))
-        val save = Bot.gson.toJson(this)
-        bufferWriter.write(save)
+        val save = JSONObject(gson.toJson(this))
+        bufferWriter.write(save.toString(2))
         bufferWriter.close()
     }
 

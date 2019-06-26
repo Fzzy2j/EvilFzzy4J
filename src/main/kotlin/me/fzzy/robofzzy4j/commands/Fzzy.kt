@@ -15,7 +15,6 @@ import reactor.core.publisher.Mono
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import java.util.concurrent.TimeUnit
 import javax.imageio.ImageIO
 import kotlin.math.roundToInt
 
@@ -34,10 +33,10 @@ object Fzzy : Command("fzzy") {
         val url = Bot.getRecentImage(message).block()
         val file = if (url != null)
             ImageHelper.downloadTempFile(url)
-                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.SURPRISED_EMOJI}"))
+                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.toUsable(Bot.surprisedEmoji)}"))
         else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}"))
+            ImageHelper.createTempFile(Repost.getImageRepost(message.guild.block()!!))
+                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.toUsable(Bot.sadEmoji)}"))
 
         var tempFile: File? = null
         if (file.extension == "gif") {
@@ -46,7 +45,7 @@ object Fzzy : Command("fzzy") {
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
             if (delay == null) {
-                MessageScheduler.sendTempMessage(message.channel.block()!!, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯", Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, TimeUnit.SECONDS).block()
+                MessageScheduler.sendTempMessage(message.channel.block()!!, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯", Bot.data.DEFAULT_TEMP_MESSAGE_DURATION).block()
             }
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {

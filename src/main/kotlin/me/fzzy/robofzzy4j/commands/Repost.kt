@@ -1,13 +1,13 @@
 package me.fzzy.robofzzy4j.commands
 
+import discord4j.core.`object`.entity.Guild
+import discord4j.core.`object`.entity.Message
 import me.fzzy.robofzzy4j.Bot
 import me.fzzy.robofzzy4j.Command
 import me.fzzy.robofzzy4j.FzzyGuild
 import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
-import sx.blah.discord.handle.obj.IGuild
-import sx.blah.discord.handle.obj.IMessage
-import sx.blah.discord.util.RequestBuffer
+import reactor.core.publisher.Mono
 import java.io.File
 
 object Repost : Command("repost") {
@@ -20,26 +20,24 @@ object Repost : Command("repost") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: IMessage, args: List<String>): CommandResult {
+    override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
 
-        val repost = getRepost(message.guild)?: return CommandResult.fail("there havent been any worthy posts in this server, sorry ${Bot.SURPRISED_EMOJI}")
+        val repost = getRepost(message.guild.block()!!)?: return Mono.just(CommandResult.fail("there havent been any worthy posts in this server ${Bot.toUsable(Bot.surprisedEmoji)}"))
 
-        RequestBuffer.request {
-            FzzyGuild.getGuild(message.guild).sendVoteAttachment(repost, message.channel, message.author)
-            repost.delete()
-        }
-        return CommandResult.success()
+        FzzyGuild.getGuild(message.guild.block()!!).sendVoteAttachment(repost, message.channel.block()!!, message.author.get())
+        repost.delete()
+        return Mono.just(CommandResult.success())
     }
 
-    fun getRepost(guild: IGuild): File? {
-        val files = File("memes", guild.longID.toString()).listFiles()
+    fun getRepost(guild: Guild): File? {
+        val files = File("memes", guild.id.asString()).listFiles()
         if (files == null || files.isEmpty())
             return null
         return files[Bot.random.nextInt(files.size)]
     }
 
-    fun getImageRepost(guild: IGuild): File? {
-        val files = File("memes", guild.longID.toString()).listFiles()
+    fun getImageRepost(guild: Guild): File? {
+        val files = File("memes", guild.id.asString()).listFiles()
         if (files == null || files.isEmpty())
             return null
 

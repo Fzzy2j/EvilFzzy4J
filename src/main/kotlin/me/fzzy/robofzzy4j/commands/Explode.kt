@@ -33,10 +33,10 @@ object Explode : Command("explode") {
 
         return Bot.getRecentImage(message).flatMap { url ->
             Mono.just(if (url != null)
-                ImageHelper.downloadTempFile(url) ?: CommandResult.fail("i couldnt download the image ${Bot.SAD_EMOJI}")
+                ImageHelper.downloadTempFile(url) ?: CommandResult.fail("i couldnt download the image ${Bot.toUsable(Bot.sadEmoji)}")
             else
-                ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                        ?: CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}"))
+                ImageHelper.createTempFile(Repost.getImageRepost(message.guild.block()!!))
+                        ?: CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.toUsable(Bot.sadEmoji)}"))
         }.flatMap {
             var file = it
             if (file is File) {
@@ -51,7 +51,7 @@ object Explode : Command("explode") {
                     val info = Info(file.absolutePath, false)
                     var delay = info.getProperty("Delay")
                     if (delay == null) {
-                        val text = "this image has no framerate to it, i cant work with it ${Bot.SURPRISED_EMOJI}"
+                        val text = "this image has no framerate to it, i cant work with it ${Bot.toUsable(Bot.surprisedEmoji)}"
                         //RequestBuffer.request { MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, message.channel, text) }
                     }
 

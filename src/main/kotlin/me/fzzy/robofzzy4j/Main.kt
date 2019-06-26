@@ -14,7 +14,7 @@ import me.fzzy.robofzzy4j.commands.*
 import me.fzzy.robofzzy4j.commands.help.Help
 import me.fzzy.robofzzy4j.commands.help.Invite
 import me.fzzy.robofzzy4j.commands.help.Picturetypes
-import me.fzzy.robofzzy4j.util.MediaType
+import me.fzzy.robofzzy4j.listeners.Votes
 import org.im4java.process.ProcessStarter
 import org.json.JSONObject
 import reactor.core.publisher.Flux
@@ -30,6 +30,7 @@ import java.net.URL
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import kotlin.system.exitProcess
 
 class BotData {
     val DISCORD_TOKEN = ""
@@ -58,11 +59,11 @@ object Bot {
 
     lateinit var data: BotData
 
-    lateinit var CURRENCY_EMOJI: ReactionEmoji
-    lateinit var SAD_EMOJI: ReactionEmoji
-    lateinit var HAPPY_EMOJI: ReactionEmoji
-    lateinit var SURPRISED_EMOJI: ReactionEmoji
-    lateinit var COMPLACENT_EMOJI: ReactionEmoji
+    lateinit var currencyEmoji: ReactionEmoji
+    lateinit var sadEmoji: ReactionEmoji
+    lateinit var happyEmoji: ReactionEmoji
+    lateinit var surprisedEmoji: ReactionEmoji
+    lateinit var complacentEmoji: ReactionEmoji
 
     val URL_PATTERN: Pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
@@ -81,14 +82,25 @@ object Bot {
                 .flatMap { channel ->
                     channel.getMessagesBefore(message.id)
                             .take(10)
-                            .takeUntil { isMedia(URL(it.content.get())) }
+                            .takeUntil { isMessageMedia(it) }
                             .flatMap {
-                                Mono.just(URL(it.content.get()))
+                                Mono.just(getMessageMedia(it))
                             }.next()
                 }
     }
 
-    fun isMedia(url: URL): Boolean {
+    fun getFirstUrl(string: String): URL? {
+        val matcher = Bot.URL_PATTERN.matcher(string)
+
+        if (matcher.find()) {
+            val url = string.substring(matcher.start(1), matcher.end())
+            return URL(url)
+        }
+        return null
+    }
+
+    fun isMedia(url: URL?): Boolean {
+        if (url == null) return false
         HttpURLConnection.setFollowRedirects(false)
         val con = url.openConnection() as HttpURLConnection
         con.requestMethod = "HEAD"
@@ -96,33 +108,38 @@ object Bot {
         return con.responseCode == HttpURLConnection.HTTP_OK
     }
 
-    fun getMessageMediaUrl(message: Message, type: MediaType): Mono<URL> {
-        var url: URL? = null
-        if (message.attachments.size == 1) {
-            url = URL(message.attachments.single().url)
-        } else {
-            if (!message.content.isPresent) return Mono.empty()
-            for (split in message.content.get().split(" ")) {
-                val matcher = Bot.URL_PATTERN.matcher(split)
-                if (matcher.find()) {
-                    var urlString = split.toLowerCase().substring(matcher.start(1), matcher.end())
-                            .replace(".webp", ".png")
-                            .replace(".gifv", ".gif")
-                            .replace("//gyazo.com", "//i.gyazo.com")
-                    if (urlString.contains("i.gyazo.com") && !urlString.endsWith(".png")) {
-                        urlString += ".png"
-                    }
-                    for (t in type.formats) {
-                        if (urlString.endsWith(".$t")) {
-                            url = URL(urlString)
-                            break
-                        }
-                    }
-                }
-            }
+    fun isMessageMedia(message: Message): Boolean {
+        for (a in message.attachments) {
+            if (a.width.isPresent) return true
         }
-        return if (url != null) Mono.just(url)
-        else Mono.empty()
+        val content = message.content
+        if (content.isPresent) {
+            val url = getFirstUrl(content.get())
+            if (url != null) return isMedia(url)
+        }
+        return false
+    }
+
+    fun getMessageMedia(message: Message): URL? {
+        if (message.attachments.size == 1) {
+            val attach = message.attachments.single()
+            if (attach.width.isPresent) return URL(attach.url)
+        }
+        val content = message.content
+        if (content.isPresent) {
+            val url = getFirstUrl(content.get())
+            if (url != null) return url
+        }
+        return null
+    }
+
+    fun toUsable(emoji: ReactionEmoji): String {
+        return if (emoji is ReactionEmoji.Custom) {
+            val a = if (emoji.isAnimated) "a" else ""
+            "<$a:${emoji.name}:${emoji.id.asString()}>"
+        } else {
+            emoji.asUnicodeEmoji().get().raw
+        }
     }
 }
 
@@ -142,7 +159,7 @@ fun main(args: Array<String>) {
 
     if (Bot.data.DISCORD_TOKEN.isBlank()) {
         Bot.logger.error("You must set your discord token in config.json so that the bot can log in.")
-        System.exit(0)
+        exitProcess(0)
     }
 
     if (!Bot.TTS_AUTH_FILE.exists()) {
@@ -175,7 +192,7 @@ fun main(args: Array<String>) {
 
     val cacheFile = File("cache")
     if (cacheFile.exists()) {
-        for (file in cacheFile.listFiles()) {
+        for (file in cacheFile.listFiles()!!) {
             file.deleteRecursively()
         }
     }
@@ -191,6 +208,8 @@ fun main(args: Array<String>) {
 
     Bot.client = DiscordClientBuilder(Bot.data.DISCORD_TOKEN).build()
 
+    Votes.registerEvents(Bot.client.eventDispatcher)
+
     Bot.client.eventDispatcher.on(MessageCreateEvent::class.java)
             .flatMap { event ->
                 Mono.justOrEmpty(event.message.content)
@@ -201,13 +220,13 @@ fun main(args: Array<String>) {
                                         entry.value.handleCommand(event)
                                                 .flatMap { result ->
                                                     if ((!entry.value.votes || !result.isSuccess()) && event.message.attachments.count() == 0)
-                                                        event.message.delete()
+                                                        event.message.delete().block()
                                                     Mono.just(result)
                                                 }
-                                                .filter { !it.isSuccess() }
+                                                .filter { it.getMessage() != null }
                                                 .flatMap { result ->
                                                     event.message.channel.flatMap {
-                                                        MessageScheduler.sendTempMessage(it, result.getFailMessage(), Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, TimeUnit.SECONDS)
+                                                        MessageScheduler.sendTempMessage(it, result.getMessage()!!, Bot.data.DEFAULT_TEMP_MESSAGE_DURATION)
                                                     }
                                                 }
                                     }
@@ -217,6 +236,14 @@ fun main(args: Array<String>) {
             .subscribe()
 
     Bot.client.eventDispatcher.on(MessageCreateEvent::class.java).subscribe { event ->
+
+        if (!event.message.author.get().isBot) {
+            val guild = FzzyGuild.getGuild(event.guildId.get())
+            val msg = event.message.content
+            if ((msg.isPresent && Bot.URL_PATTERN.matcher(event.message.content.get()).find()) || event.message.attachments.size > 0) {
+                guild.allowVotes(event.message)
+            }
+        }
 
         val respongeMsgs = listOf(
                 "no problem %name%",
@@ -245,17 +272,11 @@ fun main(args: Array<String>) {
                 }
             }
         }
-        if (!event.author.isBot) {
-            val guild = FzzyGuild.getGuild(event.guild.longID)
-            val m: Matcher = Bot.URL_PATTERN.matcher(event.message.content)
-            if (m.find() || event.message.attachments.size > 0) {
-                guild.allowVotes(event.message)
-            }
-        }*/
+        */
     }
 
     Bot.logger.info("RoboFzzy v${Bot::class.java.`package`.implementationVersion} online.")
-    Bot.client.updatePresence(Presence.online(Activity.listening("the rain ${Bot.data.BOT_PREFIX}help")))
+    Bot.client.updatePresence(Presence.online(Activity.listening("the rain ${Bot.data.BOT_PREFIX}help"))).block()
 
     fun parseEmoji(s: String): ReactionEmoji {
         return try {
@@ -266,20 +287,20 @@ fun main(args: Array<String>) {
         }
     }
 
-    Bot.CURRENCY_EMOJI = parseEmoji(Bot.data.CURRENCY_EMOJI)
-    Bot.SAD_EMOJI = parseEmoji(Bot.data.SAD_EMOJI)
-    Bot.HAPPY_EMOJI = parseEmoji(Bot.data.HAPPY_EMOJI)
-    Bot.SURPRISED_EMOJI = parseEmoji(Bot.data.SURPRISED_EMOJI)
-    Bot.COMPLACENT_EMOJI = parseEmoji(Bot.data.COMPLACENT_EMOJI)
-    Bot.logger.info("Currency emoji set to: ${Bot.CURRENCY_EMOJI}")
-    Bot.logger.info("Sad emoji set to: ${Bot.SAD_EMOJI}")
-    Bot.logger.info("Happy emoji set to: ${Bot.HAPPY_EMOJI}")
-    Bot.logger.info("Surprised emoji set to: ${Bot.SURPRISED_EMOJI}")
-    Bot.logger.info("Complacent emoji set to: ${Bot.COMPLACENT_EMOJI}")
+    Bot.currencyEmoji = parseEmoji(Bot.data.CURRENCY_EMOJI)
+    Bot.sadEmoji = parseEmoji(Bot.data.SAD_EMOJI)
+    Bot.happyEmoji = parseEmoji(Bot.data.HAPPY_EMOJI)
+    Bot.surprisedEmoji = parseEmoji(Bot.data.SURPRISED_EMOJI)
+    Bot.complacentEmoji = parseEmoji(Bot.data.COMPLACENT_EMOJI)
+    Bot.logger.info("Currency emoji set to: ${Bot.currencyEmoji}")
+    Bot.logger.info("Sad emoji set to: ${Bot.sadEmoji}")
+    Bot.logger.info("Happy emoji set to: ${Bot.happyEmoji}")
+    Bot.logger.info("Surprised emoji set to: ${Bot.surprisedEmoji}")
+    Bot.logger.info("Complacent emoji set to: ${Bot.complacentEmoji}")
 
     Bot.logger.info("Logging in.")
 
-    Bot.client.login()
+    Bot.client.login().block()
 }
 
 

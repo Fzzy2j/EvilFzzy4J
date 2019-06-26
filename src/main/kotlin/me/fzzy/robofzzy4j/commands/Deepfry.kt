@@ -27,10 +27,10 @@ object Deepfry : Command("deepfry") {
     override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
         return Bot.getRecentImage(message).flatMap { url ->
             Mono.just(if (url != null)
-                ImageHelper.downloadTempFile(url) ?: CommandResult.fail("i couldnt download the image ${Bot.SAD_EMOJI}")
+                ImageHelper.downloadTempFile(url) ?: CommandResult.fail("i couldnt download the image ${Bot.toUsable(Bot.sadEmoji)}")
             else
-                ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                        ?: CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.SAD_EMOJI}"))
+                ImageHelper.createTempFile(Repost.getImageRepost(message.guild.block()!!))
+                        ?: CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.toUsable(Bot.sadEmoji)}"))
         }.flatMap { file ->
             if (file is File) {
                 val sizeHelper = ImageIO.read(file)

@@ -34,7 +34,7 @@ object LeaderboardCommand : Command("leaderboard") {
             for ((id, value) in sorted) {
 
                 val title = "#$i - ${guild.getDiscordGuild().getMemberById(id).block()!!.displayName}"
-                val description = "$value ${Bot.CURRENCY_EMOJI}"
+                val description = "$value ${Bot.toUsable(Bot.currencyEmoji)}"
                 spec.addField(title, description, false)
                 i++
             }

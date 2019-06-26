@@ -29,7 +29,7 @@ object Mc : Command("mc") {
         }
         achieve = achieve.substring(1)
         val url = getMinecraftAchievement(achieve)
-        val file = ImageHelper.downloadTempFile(url) ?: return Mono.just(CommandResult.fail("the api didnt like that ${Bot.SURPRISED_EMOJI}"))
+        val file = ImageHelper.downloadTempFile(url) ?: return Mono.just(CommandResult.fail("the api didnt like that ${Bot.toUsable(Bot.surprisedEmoji)}"))
 
 
         FzzyGuild.getGuild(message.guild.block()!!).sendVoteAttachment(file, message.channel.block()!!, message.author.get())

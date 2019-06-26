@@ -1,13 +1,13 @@
 package me.fzzy.robofzzy4j.util
 
-class CommandResult private constructor(private val success: Boolean, private val message: String) {
+class CommandResult private constructor(private val success: Boolean, private val message: String?) {
 
     companion object {
-        fun success(): CommandResult {
-            return CommandResult(true, "")
+        fun success(msg: String? = null): CommandResult {
+            return CommandResult(true, msg)
         }
 
-        fun fail(msg: String): CommandResult {
+        fun fail(msg: String? = null): CommandResult {
             return CommandResult(false, msg)
         }
     }
@@ -16,7 +16,7 @@ class CommandResult private constructor(private val success: Boolean, private va
         return success
     }
 
-    fun getFailMessage(): String {
+    fun getMessage(): String? {
         return message
     }
 

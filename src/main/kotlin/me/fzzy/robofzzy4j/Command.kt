@@ -6,6 +6,7 @@ import me.fzzy.robofzzy4j.util.CommandCost
 import me.fzzy.robofzzy4j.util.CommandResult
 import reactor.core.publisher.Mono
 import java.util.*
+import kotlin.math.max
 import kotlin.math.roundToInt
 
 abstract class Command constructor(val name: String) {
@@ -58,7 +59,7 @@ abstract class Command constructor(val name: String) {
             CommandCost.CURRENCY -> {
                 val currency = if (price > 0) FzzyGuild.getGuild(event.guild.block()!!).getCurrency(user) else 0
                 Bot.client.applicationInfo.flatMap {
-                    val currencyMsg = "${event.member.get().displayName.toLowerCase()} this command costs $price ${Bot.CURRENCY_EMOJI}, you only have $currency ${Bot.CURRENCY_EMOJI}"
+                    val currencyMsg = "${event.member.get().displayName.toLowerCase()} this command costs $price ${Bot.toUsable(Bot.currencyEmoji)}, you only have $currency ${Bot.toUsable(Bot.currencyEmoji)}"
                     if (user.id == it.ownerId || currency >= price) {
                         runCommand(user, event.message, argsList)
                     } else {
@@ -90,18 +91,14 @@ abstract class Command constructor(val name: String) {
                     CommandCost.CURRENCY -> {
                         if (price != 0) {
                             val guild = FzzyGuild.getGuild(message.guild.block()!!)
-                            guild.addCurrency(fzzyUser, Math.max(-price, -guild.getCurrency(fzzyUser)))
+                            guild.addCurrency(fzzyUser, max(-price, -guild.getCurrency(fzzyUser)))
                         }
                     }
                 }
                 if (votes)
                     FzzyGuild.getGuild(message.guild.block()!!).allowVotes(message)
-                Mono.just(result)
-            } else {
-                val msg = "Command failed with message: ${result.getFailMessage()}"
-                Bot.logger.info(msg)
-                Mono.just(CommandResult.fail(msg))
             }
+            Mono.just(result)
         }
     }
 

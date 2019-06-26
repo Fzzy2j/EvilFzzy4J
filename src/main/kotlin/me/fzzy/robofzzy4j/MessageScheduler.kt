@@ -34,10 +34,10 @@ object MessageScheduler {
         }
     }
 
-    fun sendTempMessage(channel: MessageChannel, text: String, timeToStay: Long, unit: TimeUnit): Mono<Message> {
+    fun sendTempMessage(channel: MessageChannel, text: String, timeToStaySeconds: Long): Mono<Message> {
         val mono = channel.createMessage(text)
 
-        mono.doOnSuccess { tempMessages[it] = System.currentTimeMillis() + unit.convert(timeToStay, TimeUnit.MILLISECONDS) }
+        mono.doOnSuccess { tempMessages[it] = System.currentTimeMillis() + TimeUnit.SECONDS.convert(timeToStaySeconds, TimeUnit.MILLISECONDS) }
 
         return mono
     }
