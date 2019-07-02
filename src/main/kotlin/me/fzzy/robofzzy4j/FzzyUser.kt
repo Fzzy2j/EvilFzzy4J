@@ -1,6 +1,7 @@
 package me.fzzy.robofzzy4j
 
 import discord4j.core.`object`.util.Snowflake
+import me.fzzy.robofzzy4j.command.Cooldown
 
 class FzzyUser private constructor(val id: Snowflake) {
 

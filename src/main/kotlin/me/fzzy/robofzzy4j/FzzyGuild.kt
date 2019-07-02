@@ -8,7 +8,8 @@ import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.MessageChannel
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.util.Snowflake
-import me.fzzy.robofzzy4j.listeners.Votes
+import me.fzzy.robofzzy4j.voice.FzzyPlayer
+import me.fzzy.robofzzy4j.voice.LavaPlayerAudioProvider
 import org.json.JSONObject
 import java.io.*
 import java.util.*
@@ -33,10 +34,6 @@ class FzzyGuild private constructor() {
             return guild
         }
 
-        fun getGuild(guild: Guild): FzzyGuild {
-            return getGuild(guild.id)
-        }
-
         fun saveAll() {
             for (guild in guilds) {
                 guild.save()
@@ -51,16 +48,20 @@ class FzzyGuild private constructor() {
     @Expose
     private var votes = 0
     @Expose
-    var currency: HashMap<Snowflake, Int> = hashMapOf()
+    private var currency: HashMap<Long, Int> = hashMapOf()
     @Expose
-    val savedMessageIds = ArrayList<Snowflake>()
+    private val savedMessageIds = ArrayList<Long>()
 
-    //val player = LavaPlayerAudioProvider(Bot.playerManager.createPlayer())
+    val player = FzzyPlayer(LavaPlayerAudioProvider(Bot.playerManager.createPlayer()))
 
     fun allowVotes(msg: Message) {
         posts++
         votes++
         msg.addReaction(Bot.currencyEmoji).block()
+    }
+
+    fun getSortedCurrency(): SortedMap<Long, Int> {
+        return currency.toSortedMap(compareBy { -currency[it]!! })
     }
 
     fun sendVoteAttachment(file: File, channel: MessageChannel, credit: User? = null): Message? {
@@ -74,15 +75,15 @@ class FzzyGuild private constructor() {
     }
 
     fun saveMessage(message: Message): File? {
-        if (!savedMessageIds.contains(message.id)) {
-            savedMessageIds.add(message.id)
+        if (!savedMessageIds.contains(message.id.asLong())) {
+            savedMessageIds.add(message.id.asLong())
 
             val url = Bot.getMessageMedia(message) ?: return null
             val suffixFinder = url.toString().split(".")
             val suffix = ".${suffixFinder[suffixFinder.size - 1]}"
 
             File("memes", guildId.asString()).mkdirs()
-            val fileName = "memes/$guildId/${System.currentTimeMillis()}.$suffix"
+            val fileName = "memes/${guildId.asString()}/${System.currentTimeMillis()}.$suffix"
             try {
                 val openConnection = url.openConnection()
                 openConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11")
@@ -114,18 +115,18 @@ class FzzyGuild private constructor() {
 
     fun addCurrency(id: Snowflake, amount: Int, message: Message? = null) {
         votes += amount
-        currency[id] = currency.getOrDefault(id, 0) + amount
-        if (message != null && Votes.getVotes(message) > getAverageVote()) {
+        currency[id.asLong()] = currency.getOrDefault(id.asLong(), 0) + amount
+        if (message != null && ReactionHandler.getVotes(message) > getAverageVote()) {
             saveMessage(message)
         }
     }
 
     fun getCurrency(user: User): Int {
-        return currency.getOrDefault(user.id, 0)
+        return currency.getOrDefault(user.id.asLong(), 0)
     }
 
     fun getCurrency(user: FzzyUser): Int {
-        return currency.getOrDefault(user.id, 0)
+        return currency.getOrDefault(user.id.asLong(), 0)
     }
 
     fun getAverageVote(): Int {

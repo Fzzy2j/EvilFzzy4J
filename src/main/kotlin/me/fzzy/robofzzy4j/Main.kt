@@ -3,6 +3,8 @@ package me.fzzy.robofzzy4j
 import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
+import com.sedmelluq.discord.lavaplayer.source.local.LocalAudioSourceManager
 import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.Message
@@ -10,11 +12,15 @@ import discord4j.core.`object`.presence.Activity
 import discord4j.core.`object`.presence.Presence
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.event.domain.message.MessageCreateEvent
-import me.fzzy.robofzzy4j.commands.*
-import me.fzzy.robofzzy4j.commands.help.Help
-import me.fzzy.robofzzy4j.commands.help.Invite
-import me.fzzy.robofzzy4j.commands.help.Picturetypes
-import me.fzzy.robofzzy4j.listeners.Votes
+import me.fzzy.robofzzy4j.command.Command
+import me.fzzy.robofzzy4j.command.admin.Override
+import me.fzzy.robofzzy4j.command.economy.LeaderboardCommand
+import me.fzzy.robofzzy4j.command.help.Help
+import me.fzzy.robofzzy4j.command.help.Invite
+import me.fzzy.robofzzy4j.command.help.Picturetypes
+import me.fzzy.robofzzy4j.command.image.*
+import me.fzzy.robofzzy4j.command.voice.Play
+import me.fzzy.robofzzy4j.command.voice.Tts
 import org.im4java.process.ProcessStarter
 import org.json.JSONObject
 import reactor.core.publisher.Flux
@@ -25,11 +31,11 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStreamReader
-import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.regex.Pattern
+import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 
 class BotData {
@@ -38,10 +44,9 @@ class BotData {
     val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15
     val IMAGE_MAGICK_DIRECTORY = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
     val CURRENCY_EMOJI = "❤"
-    val SAD_EMOJI = "\uD83D\uDE22"
-    val HAPPY_EMOJI = "\uD83D\uDE04"
-    val SURPRISED_EMOJI = "\uD83D\uDE2F"
-    val COMPLACENT_EMOJI = "\uD83D\uDE0B"
+    val SAD_EMOJIS = arrayListOf("\uD83D\uDE22")
+    val HAPPY_EMOJIS = arrayListOf("\uD83D\uDE04")
+    val SURPRISED_EMOJIS = arrayListOf("\uD83D\uDE2F")
 }
 
 object Bot {
@@ -60,10 +65,9 @@ object Bot {
     lateinit var data: BotData
 
     lateinit var currencyEmoji: ReactionEmoji
-    lateinit var sadEmoji: ReactionEmoji
-    lateinit var happyEmoji: ReactionEmoji
-    lateinit var surprisedEmoji: ReactionEmoji
-    lateinit var complacentEmoji: ReactionEmoji
+    lateinit var sadEmojis: List<ReactionEmoji>
+    lateinit var happyEmojis: List<ReactionEmoji>
+    lateinit var surprisedEmojis: List<ReactionEmoji>
 
     val URL_PATTERN: Pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
@@ -77,14 +81,18 @@ object Bot {
     val DATA_FILE = File("data")
     val TTS_AUTH_FILE = File("google-tts.json")
 
-    fun getRecentImage(message: Message): Mono<URL?> {
+    fun getRecentImage(message: Message): Mono<URL> {
         return message.channel
                 .flatMap { channel ->
                     channel.getMessagesBefore(message.id)
                             .take(10)
                             .takeUntil { isMessageMedia(it) }
                             .flatMap {
-                                Mono.just(getMessageMedia(it))
+                                val media = getMessageMedia(it)
+                                if (media != null)
+                                    Mono.just(media)
+                                else
+                                    Mono.empty()
                             }.next()
                 }
     }
@@ -100,12 +108,12 @@ object Bot {
     }
 
     fun isMedia(url: URL?): Boolean {
-        if (url == null) return false
-        HttpURLConnection.setFollowRedirects(false)
-        val con = url.openConnection() as HttpURLConnection
-        con.requestMethod = "HEAD"
-        logger.info(con.responseMessage)
-        return con.responseCode == HttpURLConnection.HTTP_OK
+        return try {
+            val image = ImageIO.read(url)
+            image != null
+        } catch (e: Exception) {
+            false
+        }
     }
 
     fun isMessageMedia(message: Message): Boolean {
@@ -133,6 +141,21 @@ object Bot {
         return null
     }
 
+    fun happyEmoji(): String {
+        val e = happyEmojis[Bot.random.nextInt(happyEmojis.count())]
+        return toUsable(e)
+    }
+
+    fun sadEmoji(): String {
+        val e = sadEmojis[Bot.random.nextInt(sadEmojis.count())]
+        return toUsable(e)
+    }
+
+    fun surprisedEmoji(): String {
+        val e = surprisedEmojis[Bot.random.nextInt(surprisedEmojis.count())]
+        return toUsable(e)
+    }
+
     fun toUsable(emoji: ReactionEmoji): String {
         return if (emoji is ReactionEmoji.Custom) {
             val a = if (emoji.isAnimated) "a" else ""
@@ -145,6 +168,9 @@ object Bot {
 
 fun main(args: Array<String>) {
     Bot.DATA_FILE.mkdirs()
+
+    Bot.playerManager.registerSourceManager(LocalAudioSourceManager())
+    AudioSourceManagers.registerLocalSource(Bot.playerManager)
 
     Bot.logger.info("Loading data.")
     val dataFile = File("config.json")
@@ -170,7 +196,7 @@ fun main(args: Array<String>) {
 
     ProcessStarter.setGlobalSearchPath(Bot.data.IMAGE_MAGICK_DIRECTORY)
 
-    Bot.logger.info("Registering commands.")
+    Bot.logger.info("Registering command.")
 
     Command.registerCommand("fzzy", Fzzy)
     Command.registerCommand("picture", Picture)
@@ -208,7 +234,7 @@ fun main(args: Array<String>) {
 
     Bot.client = DiscordClientBuilder(Bot.data.DISCORD_TOKEN).build()
 
-    Votes.registerEvents(Bot.client.eventDispatcher)
+    ReactionHandler.registerEvents(Bot.client.eventDispatcher)
 
     Bot.client.eventDispatcher.on(MessageCreateEvent::class.java)
             .flatMap { event ->
@@ -217,10 +243,9 @@ fun main(args: Array<String>) {
                             Flux.fromIterable(Command.commands.entries)
                                     .filter { entry -> content.startsWith("${Bot.data.BOT_PREFIX}${entry.key}") }
                                     .flatMap { entry ->
+                                        event.message.addReaction(Bot.happyEmojis[Bot.random.nextInt(Bot.happyEmojis.count())]).block()
                                         entry.value.handleCommand(event)
                                                 .flatMap { result ->
-                                                    if ((!entry.value.votes || !result.isSuccess()) && event.message.attachments.count() == 0)
-                                                        event.message.delete().block()
                                                     Mono.just(result)
                                                 }
                                                 .filter { it.getMessage() != null }
@@ -229,10 +254,15 @@ fun main(args: Array<String>) {
                                                         MessageScheduler.sendTempMessage(it, result.getMessage()!!, Bot.data.DEFAULT_TEMP_MESSAGE_DURATION)
                                                     }
                                                 }
+                                                .onErrorResume {
+                                                    Bot.logger.error(it.message!!)
+                                                    Mono.empty()
+                                                }
                                     }
                                     .next()
                         }
             }
+            .subscribeOn(Bot.scheduler)
             .subscribe()
 
     Bot.client.eventDispatcher.on(MessageCreateEvent::class.java).subscribe { event ->
@@ -287,16 +317,22 @@ fun main(args: Array<String>) {
         }
     }
 
+    fun parseEmojis(list: List<String>): List<ReactionEmoji> {
+        val l = arrayListOf<ReactionEmoji>()
+        for (s in list) {
+            l.add(parseEmoji(s))
+        }
+        return l
+    }
+
     Bot.currencyEmoji = parseEmoji(Bot.data.CURRENCY_EMOJI)
-    Bot.sadEmoji = parseEmoji(Bot.data.SAD_EMOJI)
-    Bot.happyEmoji = parseEmoji(Bot.data.HAPPY_EMOJI)
-    Bot.surprisedEmoji = parseEmoji(Bot.data.SURPRISED_EMOJI)
-    Bot.complacentEmoji = parseEmoji(Bot.data.COMPLACENT_EMOJI)
+    Bot.sadEmojis = parseEmojis(Bot.data.SAD_EMOJIS)
+    Bot.happyEmojis = parseEmojis(Bot.data.HAPPY_EMOJIS)
+    Bot.surprisedEmojis = parseEmojis(Bot.data.SURPRISED_EMOJIS)
     Bot.logger.info("Currency emoji set to: ${Bot.currencyEmoji}")
-    Bot.logger.info("Sad emoji set to: ${Bot.sadEmoji}")
-    Bot.logger.info("Happy emoji set to: ${Bot.happyEmoji}")
-    Bot.logger.info("Surprised emoji set to: ${Bot.surprisedEmoji}")
-    Bot.logger.info("Complacent emoji set to: ${Bot.complacentEmoji}")
+    Bot.logger.info("Sad emojis set to: ${Bot.sadEmojis}")
+    Bot.logger.info("Happy emojis set to: ${Bot.happyEmojis}")
+    Bot.logger.info("Surprised emojis set to: ${Bot.surprisedEmojis}")
 
     Bot.logger.info("Logging in.")
 
