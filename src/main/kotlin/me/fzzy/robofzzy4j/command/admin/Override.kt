@@ -10,7 +10,6 @@ import me.fzzy.robofzzy4j.command.Command
 import me.fzzy.robofzzy4j.command.CommandCost
 import me.fzzy.robofzzy4j.command.CommandResult
 import reactor.core.publisher.Mono
-import java.net.URL
 
 object Override : Command("override") {
 
@@ -33,8 +32,7 @@ object Override : Command("override") {
                 //AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
             }
             "test" -> {
-                val url = args[1]
-                println(Bot.isMedia(URL(url)))
+                println(Bot.getRecentImage(message).block())
             }
             "play" -> {
                 //Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), args[1])

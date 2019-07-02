@@ -31,6 +31,7 @@ object Fzzy : Command("fzzy") {
     override fun runCommand(message: Message, args: List<String>): Mono<CommandResult> {
 
         val url = Bot.getRecentImage(message).block()
+        println(url)
         val file = if (url != null)
             ImageHelper.downloadTempFile(url)
                     ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.surprisedEmoji()}"))

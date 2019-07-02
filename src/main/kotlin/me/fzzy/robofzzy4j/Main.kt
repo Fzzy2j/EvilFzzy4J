@@ -73,9 +73,6 @@ object Bot {
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
             + "[\\p{Alnum}.,%_=?&#\\-+()\\[\\]\\*$~@!:/{};']*)")
 
-    // Threads
-    //var azureAuth: Authentication? = null
-
     val random = Random()
 
     val DATA_FILE = File("data")
@@ -86,7 +83,7 @@ object Bot {
                 .flatMap { channel ->
                     channel.getMessagesBefore(message.id)
                             .take(10)
-                            .takeUntil { isMessageMedia(it) }
+                            .filter { isMessageMedia(it) }
                             .flatMap {
                                 val media = getMessageMedia(it)
                                 if (media != null)
@@ -117,6 +114,7 @@ object Bot {
     }
 
     fun isMessageMedia(message: Message): Boolean {
+        println(message.content.get())
         for (a in message.attachments) {
             if (a.width.isPresent) return true
         }
