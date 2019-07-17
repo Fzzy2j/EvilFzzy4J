@@ -80,7 +80,7 @@ class FzzyGuild private constructor() {
 
             val url = Bot.getMessageMedia(message) ?: return null
             val suffixFinder = url.toString().split(".")
-            val suffix = ".${suffixFinder[suffixFinder.size - 1]}"
+            val suffix = suffixFinder[suffixFinder.size - 1]
 
             File("memes", guildId.asString()).mkdirs()
             val fileName = "memes/${guildId.asString()}/${System.currentTimeMillis()}.$suffix"

@@ -114,7 +114,6 @@ object Bot {
     }
 
     fun isMessageMedia(message: Message): Boolean {
-        println(message.content.get())
         for (a in message.attachments) {
             if (a.width.isPresent) return true
         }
@@ -226,6 +225,7 @@ fun main(args: Array<String>) {
     // Autosave
     Bot.scheduler.schedulePeriodically({
         FzzyGuild.saveAll()
+        Bot.client.updatePresence(Presence.online(Activity.listening("the rain ${Bot.data.BOT_PREFIX}help"))).block()
     }, 10, 60, TimeUnit.SECONDS)
 
     Bot.logger.info("Registering events.")
