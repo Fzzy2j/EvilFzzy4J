@@ -4,7 +4,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.2.61'
 }
 
-group 'me.fzzy.robofzzy4j'
+group 'me.fzzy.evilfzzy4j'
 version '9.7-SNAPSHOT'
 
 repositories {
@@ -20,11 +20,11 @@ allprojects {
 
 shadowJar {
     manifest { 
-        attributes 'Main-Class': 'me.fzzy.robofzzy4j.MainKt'
+        attributes 'Main-Class': 'me.fzzy.evilfzzy4j.MainKt'
         attributes 'Implementation-Version': version
     }
     destinationDirectory = file("run")
-    archiveFileName = "RoboFzzy.jar"
+    archiveFileName = "EvilFzzy.jar"
 }
 
 dependencies {

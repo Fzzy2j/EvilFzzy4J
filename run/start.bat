@@ -1,2 +1,2 @@
-title RoboFzzy
-java -jar RoboFzzy.jar
+title EvilFzzy
+java -jar EvilFzzy.jar
