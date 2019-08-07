@@ -12,7 +12,9 @@ import discord4j.core.`object`.entity.MessageChannel
 import discord4j.core.`object`.presence.Activity
 import discord4j.core.`object`.presence.Presence
 import discord4j.core.`object`.reaction.ReactionEmoji
+import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.domain.message.MessageCreateEvent
+import me.fzzy.evilfzzy4j.carbonationwars.battleship.BattleshipChannel
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.admin.Override
 import me.fzzy.evilfzzy4j.command.economy.LeaderboardCommand
@@ -61,6 +63,8 @@ object Bot {
 
     val playerManager = DefaultAudioPlayerManager()
 
+    lateinit var ranch: BattleshipChannel
+
     //var speechApiToken: String? = null
 
     lateinit var data: BotData
@@ -81,15 +85,15 @@ object Bot {
 
     fun getRecentImage(channel: MessageChannel): Mono<URL> {
         return channel.getMessagesBefore(channel.lastMessageId.get())
-                            .take(10)
-                            .filter { isMessageMedia(it) }
-                            .flatMap {
-                                val media = getMessageMedia(it)
-                                if (media != null)
-                                    Mono.just(media)
-                                else
-                                    Mono.empty()
-                            }.next()
+                .take(10)
+                .filter { isMessageMedia(it) }
+                .flatMap {
+                    val media = getMessageMedia(it)
+                    if (media != null)
+                        Mono.just(media)
+                    else
+                        Mono.empty()
+                }.next()
     }
 
     fun getFirstUrl(string: String): URL? {
@@ -249,9 +253,8 @@ fun main(args: Array<String>) {
                                                         MessageScheduler.sendTempMessage(it, result.getMessage()!!, Bot.data.DEFAULT_TEMP_MESSAGE_DURATION)
                                                     }
                                                 }
-                                                .onErrorResume {
+                                                .doOnError {
                                                     Bot.logger.error(it.message!!)
-                                                    Mono.empty()
                                                 }
                                     }
                                     .next()
@@ -260,7 +263,9 @@ fun main(args: Array<String>) {
             .subscribeOn(Bot.scheduler)
             .subscribe()
 
-    Bot.client.eventDispatcher.on(MessageCreateEvent::class.java).subscribe { event ->
+    Bot.client.eventDispatcher.on(MessageCreateEvent::class.java).doOnError {
+        Bot.logger.error(it.message!!)
+    }.subscribe { event ->
 
         if (!event.message.author.get().isBot) {
             val guild = FzzyGuild.getGuild(event.guildId.get())
@@ -273,11 +278,11 @@ fun main(args: Array<String>) {
         val respongeMsgs = listOf(
                 "no problem %name%",
                 "np %name%",
-                ":D",
                 ":P"
         )
 
         fun mentionsByName(msg: Message): Boolean {
+            if (!msg.content.isPresent) return false
             val check = msg.content.get().toLowerCase()
             val self = msg.guild.block()!!.getMemberById(Bot.client.selfId.get()).block()!!
             val checkAgainst = "${self.username} ${self.nickname}"
@@ -287,18 +292,24 @@ fun main(args: Array<String>) {
             }
             return false
         }
-        /*if (mentionsByName(event.message)) {
-            for (msg in event.channel.getMessageHistory(7)) {
-                if (msg.author.longID == Bot.client.ourUser.longID) {
-                    RequestBuffer.request {
-                        MessageScheduler.sendTempMessage(Bot.data.DEFAULT_TEMP_MESSAGE_DURATION, event.channel, respongeMsgs[Bot.random.nextInt(respongeMsgs.size)].replace("%name%", event.author.getDisplayName(event.guild).toLowerCase()))
+        if (mentionsByName(event.message)) {
+            event.message.channel.subscribe { channel ->
+                channel.getMessagesBefore(channel.lastMessageId.get()).take(5).subscribe({
+                    Bot.logger.info(event.message.timestamp.minusMillis(it.timestamp.toEpochMilli()).epochSecond.toString())
+                    if (it.author.get().id == Bot.client.selfId.get()) {
+                        val msg = respongeMsgs[Bot.random.nextInt(respongeMsgs.size)].replace("%name%", event.member.get().displayName.toLowerCase())
+                        event.message.channel.block()!!.createMessage(msg).block()
+                        throw RuntimeException("Found recent message from bot")
                     }
-                    break
-                }
+                }, {})
             }
         }
-        */
     }
+
+
+    val ranchFile = File("ranch.json")
+    if (ranchFile.exists()) Bot.ranch = Bot.gson.fromJson(JsonReader(InputStreamReader(ranchFile.inputStream())), BattleshipChannel::class.java)
+    else Bot.ranch = BattleshipChannel(Snowflake.of(608427341240205348))
 
     Bot.logger.info("EvilFzzy v${Bot::class.java.`package`.implementationVersion} online.")
     Bot.client.updatePresence(Presence.online(Activity.listening("the rain ${Bot.data.BOT_PREFIX}help"))).block()

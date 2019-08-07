@@ -31,7 +31,6 @@ object Override : Command("override") {
                 //AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
             }
             "test" -> {
-                println(Bot.getRecentImage(message.channel).block())
             }
             "play" -> {
                 //Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), args[1])
