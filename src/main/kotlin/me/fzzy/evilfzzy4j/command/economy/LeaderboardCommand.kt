@@ -33,10 +33,14 @@ object LeaderboardCommand : Command("leaderboard") {
             var i = 1
             for ((id, value) in sorted) {
 
-                val title = "#$i - ${guild.getDiscordGuild().getMemberById(Snowflake.of(id)).block()!!.displayName}"
-                val description = "$value ${Bot.toUsable(Bot.currencyEmoji)}"
-                spec.addField(title, description, false)
-                i++
+                if (id == 0L) continue
+                val member = guild.getDiscordGuild().getMemberById(Snowflake.of(id)).block()
+                if (member != null) {
+                    val title = "#$i - ${member.displayName}"
+                    val description = "$value ${Bot.toUsable(Bot.currencyEmoji)}"
+                    spec.addField(title, description, false)
+                    i++
+                }
             }
         }.block()
         return Mono.just(CommandResult.success())

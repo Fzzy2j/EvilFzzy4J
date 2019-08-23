@@ -15,6 +15,7 @@ import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.domain.message.MessageCreateEvent
 import me.fzzy.evilfzzy4j.carbonationwars.battleship.BattleshipChannel
+import me.fzzy.evilfzzy4j.carbonationwars.minesweeper.MinesweeperChannel
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.admin.Override
 import me.fzzy.evilfzzy4j.command.economy.LeaderboardCommand
@@ -253,6 +254,7 @@ fun main(args: Array<String>) {
                                                         MessageScheduler.sendTempMessage(it, result.getMessage()!!, Bot.data.DEFAULT_TEMP_MESSAGE_DURATION)
                                                     }
                                                 }
+                                                .onErrorResume { Mono.empty() }
                                                 .doOnError {
                                                     Bot.logger.error(it.message!!)
                                                 }
@@ -268,10 +270,12 @@ fun main(args: Array<String>) {
     }.subscribe { event ->
 
         if (!event.message.author.get().isBot) {
-            val guild = FzzyGuild.getGuild(event.guildId.get())
-            val msg = event.message.content
-            if ((msg.isPresent && Bot.URL_PATTERN.matcher(event.message.content.get()).find()) || event.message.attachments.size > 0) {
-                guild.allowVotes(event.message)
+            if (event.guildId.isPresent) {
+                val guild = FzzyGuild.getGuild(event.guildId.get())
+                val msg = event.message.content
+                if ((msg.isPresent && Bot.URL_PATTERN.matcher(event.message.content.get()).find()) || event.message.attachments.size > 0) {
+                    guild.allowVotes(event.message)
+                }
             }
         }
 
@@ -306,10 +310,8 @@ fun main(args: Array<String>) {
         }
     }
 
-
-    val ranchFile = File("ranch.json")
-    if (ranchFile.exists()) Bot.ranch = Bot.gson.fromJson(JsonReader(InputStreamReader(ranchFile.inputStream())), BattleshipChannel::class.java)
-    else Bot.ranch = BattleshipChannel(Snowflake.of(608427341240205348))
+    BattleshipChannel(Snowflake.of(608427341240205348))
+    MinesweeperChannel(Snowflake.of(608780391083671586))
 
     Bot.logger.info("EvilFzzy v${Bot::class.java.`package`.implementationVersion} online.")
     Bot.client.updatePresence(Presence.online(Activity.listening("the rain ${Bot.data.BOT_PREFIX}help"))).block()

@@ -11,6 +11,7 @@ import discord4j.core.`object`.util.Snowflake
 import me.fzzy.evilfzzy4j.voice.FzzyPlayer
 import me.fzzy.evilfzzy4j.voice.LavaPlayerAudioProvider
 import org.json.JSONObject
+import reactor.core.publisher.Mono
 import java.io.*
 import java.util.*
 import kotlin.math.roundToInt
@@ -57,7 +58,7 @@ class FzzyGuild private constructor() {
     fun allowVotes(msg: Message) {
         posts++
         votes++
-        msg.addReaction(Bot.currencyEmoji).block()
+        msg.addReaction(Bot.currencyEmoji).onErrorResume { Mono.empty() }.block()
     }
 
     fun getSortedCurrency(): SortedMap<Long, Int> {

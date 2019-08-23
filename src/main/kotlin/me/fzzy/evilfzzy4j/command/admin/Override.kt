@@ -1,5 +1,6 @@
 package me.fzzy.evilfzzy4j.command.admin
 
+import discord4j.core.`object`.entity.TextChannel
 import discord4j.core.`object`.util.Snowflake
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
@@ -31,6 +32,14 @@ object Override : Command("override") {
                 //AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
             }
             "test" -> {
+                val channel = Bot.client.getChannelById(Snowflake.of(526327079856242693)).block()!! as TextChannel
+                var does = false
+                channel.getMessagesBefore(channel.lastMessageId.get()).take(10).doOnComplete { println(does) }.subscribe {
+                    if (it.content.isPresent) {
+                        println(it.content.get())
+                        if (it.content.get().toLowerCase().contains("nicetrge")) does = true
+                    }
+                }
             }
             "play" -> {
                 //Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), args[1])
@@ -48,7 +57,8 @@ object Override : Command("override") {
                 MessageScheduler.sendTempMessage(message.channel, "done!", Bot.data.DEFAULT_TEMP_MESSAGE_DURATION).block()
             }
             "cooldowns", "cooldown" -> {
-                val users = message.userMentions ?: return Mono.just(CommandResult.fail("theres no mentions in that ${Bot.sadEmoji()}"))
+                val users = message.userMentions
+                        ?: return Mono.just(CommandResult.fail("theres no mentions in that ${Bot.sadEmoji()}"))
                 for (user in users) {
                     FzzyUser.getUser(user.id).cooldown.clearCooldown()
                 }
