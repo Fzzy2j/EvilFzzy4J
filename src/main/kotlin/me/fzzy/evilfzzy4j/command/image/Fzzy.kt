@@ -2,15 +2,14 @@ package me.fzzy.evilfzzy4j.command.image
 
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
-import me.fzzy.evilfzzy4j.MessageScheduler
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import me.fzzy.evilfzzy4j.util.ImageHelper
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import org.im4java.core.IMOperation
 import org.im4java.core.ImageMagickCmd
 import org.im4java.core.Info
-import reactor.core.publisher.Mono
 import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
@@ -27,16 +26,9 @@ object Fzzy : Command("fzzy") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
-
-        val url = Bot.getRecentImage(message.channel).block()
-        println(url)
-        val file = if (url != null)
-            ImageHelper.downloadTempFile(url)
-                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.surprisedEmoji()}"))
-        else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.sadEmoji()}"))
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+        val file = Bot.getRecentImage(event.channel)
+                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
 
         var tempFile: File? = null
         if (file.extension == "gif") {
@@ -44,9 +36,7 @@ object Fzzy : Command("fzzy") {
 
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
-            if (delay == null) {
-                MessageScheduler.sendTempMessage(message.channel, "i guess that picture doesnt have a framerate ¯\\_(ツ)_/¯", Bot.data.DEFAULT_TEMP_MESSAGE_DURATION).block()
-            }
+                    ?: return CommandResult.fail("i cant find a framerate for this file ${Bot.sadEmoji.asMention}")
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
                 delay = "25x100"
@@ -65,7 +55,7 @@ object Fzzy : Command("fzzy") {
 
             val executor = Executors.newFixedThreadPool(4)
             val futureList = arrayListOf<Future<*>>()
-            for (listFile in tempFile.list()) {
+            for (listFile in tempFile.list() ?: return CommandResult.fail("an unknown error occured")) {
                 futureList.add(executor.submit {
                     resize(File("cache/${tempFile.nameWithoutExtension}/$listFile"))
                 })
@@ -99,13 +89,10 @@ object Fzzy : Command("fzzy") {
 
 
 
-        try {
-            FzzyGuild.getGuild(message.guild.id).sendVoteAttachment(file, message.channel, message.author)
-        } catch (e: Exception) {
-        }
+        FzzyGuild.getGuild(event.guild.id).sendVoteAttachment(file, event.channel as TextChannel, event.author)
         file.delete()
         tempFile?.deleteRecursively()
-        return Mono.just(CommandResult.success())
+        return CommandResult.success()
     }
 
     fun resize(file: File) {

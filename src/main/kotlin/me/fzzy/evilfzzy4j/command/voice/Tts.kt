@@ -3,12 +3,11 @@ package me.fzzy.evilfzzy4j.command.voice
 import com.google.auth.oauth2.ServiceAccountJwtAccessCredentials
 import com.google.cloud.texttospeech.v1.*
 import me.fzzy.evilfzzy4j.Bot
-import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import org.apache.commons.io.FileUtils
-import reactor.core.publisher.Mono
 import java.io.File
 
 
@@ -22,7 +21,7 @@ object Tts : Command("tts") {
     override val price: Int = 4
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         if (args.isNotEmpty()) {
             var text = ""
             for (arg in args) {
@@ -30,15 +29,16 @@ object Tts : Command("tts") {
             }
             text = text.substring(1)
             val fileName = "cache/${System.currentTimeMillis()}.mp3"
-            val speech = getTextToSpeech(text) ?: return Mono.just(CommandResult.fail("the text to speech api didnt work ${Bot.sadEmoji()}"))
+            val speech = getTextToSpeech(text) ?: return CommandResult.fail("the text to speech api didnt work ${Bot.sadEmoji.asMention}")
             val sound = File(fileName)
             FileUtils.writeByteArrayToFile(sound, speech)
-            val guild = FzzyGuild.getGuild(message.guild.id)
-            guild.player.play(message.authorAsMember.voiceState.block()!!.channel.block()!!, sound, message.original!!.id)
+            val state = event.member!!.voiceState?: return CommandResult.fail("i cant get your voice state, this is my owners fault ${Bot.sadEmoji.asMention}")
+            val channel = state.channel?: return CommandResult.fail("i cant do that unless youre in a voice channel ${Bot.sadEmoji.asMention}")
+            Bot.getGuildAudioPlayer(event.guild).play(channel, sound)
 
-            return Mono.just(CommandResult.success())
+            return CommandResult.success()
         }
-        return Mono.just(CommandResult.fail("i dont know what you want ${Bot.sadEmoji()}"))
+        return CommandResult.fail("i dont know what you want ${Bot.sadEmoji.asMention}")
     }
 
     fun getTextToSpeech(text: String): ByteArray? {

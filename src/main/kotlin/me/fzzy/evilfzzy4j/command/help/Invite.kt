@@ -4,7 +4,8 @@ import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import reactor.core.publisher.Mono
+import net.dv8tion.jda.api.Permission
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
 object Invite : Command("invite") {
 
@@ -16,13 +17,19 @@ object Invite : Command("invite") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
-        return message.author.privateChannel.flatMap { channel -> getInviteLink().flatMap { invite -> channel.createMessage(invite) } }
-                .flatMap { Mono.just(CommandResult.success()) }
-    }
-
-    fun getInviteLink(): Mono<String> {
-        return Bot.client.applicationInfo.flatMap { Mono.just("https://discordapp.com/oauth2/authorize?client_id=${it.id}&scope=bot&permissions=306240") }
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+        event.author.openPrivateChannel().queue { private ->
+            run {
+                private.sendMessage(Bot.client.getInviteUrl(
+                        Permission.MESSAGE_MANAGE,
+                        Permission.MESSAGE_READ,
+                        Permission.MESSAGE_WRITE,
+                        Permission.MESSAGE_ATTACH_FILES,
+                        Permission.MESSAGE_ADD_REACTION,
+                        Permission.MESSAGE_EXT_EMOJI)).queue()
+            }
+        }
+        return CommandResult.success()
     }
 
 }

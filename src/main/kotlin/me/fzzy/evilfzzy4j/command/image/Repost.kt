@@ -1,12 +1,13 @@
 package me.fzzy.evilfzzy4j.command.image
 
-import discord4j.core.`object`.entity.Guild
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import reactor.core.publisher.Mono
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.io.File
 
 object Repost : Command("repost") {
@@ -19,24 +20,24 @@ object Repost : Command("repost") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
-        val repost = getRepost(message.guild) ?: return Mono.just(CommandResult.fail("there havent been any worthy posts in this server ${Bot.surprisedEmoji()}"))
+        val repost = getRepost(event.guild) ?: return CommandResult.fail("there havent been any worthy posts in this server ${Bot.surprisedEmoji.asMention}")
 
-        FzzyGuild.getGuild(message.guild.id).sendVoteAttachment(repost, message.channel, message.author)
+        FzzyGuild.getGuild(event.guild.id).sendVoteAttachment(repost, event.channel as TextChannel, event.author)
         repost.delete()
-        return Mono.just(CommandResult.success())
+        return CommandResult.success()
     }
 
     fun getRepost(guild: Guild): File? {
-        val files = File("memes", guild.id.asString()).listFiles()
+        val files = File("memes", guild.id).listFiles()
         if (files == null || files.isEmpty())
             return null
         return files[Bot.random.nextInt(files.size)]
     }
 
     fun getImageRepost(guild: Guild): File? {
-        val files = File("memes", guild.id.asString()).listFiles()
+        val files = File("memes", guild.id).listFiles()
         if (files == null || files.isEmpty())
             return null
 

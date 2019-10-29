@@ -3,7 +3,7 @@ package me.fzzy.evilfzzy4j.command.help
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import reactor.core.publisher.Mono
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.io.File
 
 object Picturetypes : Command("picturetypes") {
@@ -16,14 +16,19 @@ object Picturetypes : Command("picturetypes") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
         var all = "```"
         for (file in File("pictures").listFiles()!!) {
             all += "-picture ${file.nameWithoutExtension}\n"
         }
         all += "-picture random"
         all += "```"
-        return message.author.privateChannel.flatMap { channel -> channel.createMessage(all).flatMap { Mono.just(CommandResult.success()) } }
+        event.author.openPrivateChannel().queue { private ->
+            run {
+                private.sendMessage(all).queue()
+            }
+        }
+        return CommandResult.success()
     }
 
 }

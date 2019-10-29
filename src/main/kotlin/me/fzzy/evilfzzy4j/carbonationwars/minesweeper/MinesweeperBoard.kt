@@ -1,7 +1,6 @@
 package me.fzzy.evilfzzy4j.carbonationwars.minesweeper
 
 import com.google.gson.annotations.Expose
-import discord4j.core.`object`.util.Snowflake
 import java.util.*
 
 class MinesweeperBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, mineChance: Int = 10) {
@@ -60,7 +59,7 @@ class MinesweeperBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, min
         return true
     }
 
-    fun whoAttacked(x: Char, y: Int): Snowflake? {
+    fun whoAttacked(x: Char, y: Int): Long? {
         return try {
             board[x - 'a'][y].whoAttacked
         } catch (e: ArrayIndexOutOfBoundsException) {
@@ -68,7 +67,7 @@ class MinesweeperBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, min
         }
     }
 
-    fun attack(user: Snowflake, x: Char, y: Int): Boolean {
+    fun attack(user: Long, x: Char, y: Int): Boolean {
         val actualX = x - 'a'
         return try {
             val success = board[actualX][y].attack(user)
@@ -125,10 +124,10 @@ class MinesweeperBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, min
         var isAttacked = false
             private set
         @Expose
-        var whoAttacked: Snowflake? = null
+        var whoAttacked: Long? = null
             private set
 
-        fun attack(user: Snowflake): Boolean {
+        fun attack(user: Long): Boolean {
             isAttacked = true
             whoAttacked = user
             return isMine

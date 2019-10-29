@@ -1,14 +1,15 @@
 package me.fzzy.evilfzzy4j.command.economy
 
-import discord4j.core.`object`.util.Snowflake
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import reactor.core.publisher.Mono
+import net.dv8tion.jda.api.EmbedBuilder
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.awt.Color
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 object LeaderboardCommand : Command("leaderboard") {
 
@@ -22,28 +23,26 @@ object LeaderboardCommand : Command("leaderboard") {
 
     private const val title = "LEADERBOARD"
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
-        val guild = FzzyGuild.getGuild(message.guild.id)
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+        val guild = FzzyGuild.getGuild(event.guild.id)
         val sorted = guild.getSortedCurrency()
 
-        message.channel.createEmbed { spec ->
-            spec.setTitle(title)
-            spec.setColor(Color(0, 200, 255))
-            spec.setThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
-            var i = 1
-            for ((id, value) in sorted) {
+        val embedBuilder = EmbedBuilder()
+        embedBuilder.setTitle(title)
+        embedBuilder.setColor(Color(0, 200, 255))
+        embedBuilder.setThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
+        var i = 1
+        for ((id, value) in sorted) {
+            if (id == 0L || event.member == null) continue
+            val title = "#$i - ${event.member?.effectiveName}"
+            val description = "$value ${Bot.currencyEmoji.asMention}"
+            embedBuilder.addField(title, description, false)
+            i++
+        }
 
-                if (id == 0L) continue
-                val member = guild.getDiscordGuild().getMemberById(Snowflake.of(id)).block()
-                if (member != null) {
-                    val title = "#$i - ${member.displayName}"
-                    val description = "$value ${Bot.toUsable(Bot.currencyEmoji)}"
-                    spec.addField(title, description, false)
-                    i++
-                }
-            }
-        }.block()
-        return Mono.just(CommandResult.success())
+        event.channel.sendMessage(embedBuilder.build()).queue { msg -> msg.delete().queueAfter(5, TimeUnit.MINUTES) }
+
+        return CommandResult.success()
     }
 
 }

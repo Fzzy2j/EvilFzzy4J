@@ -1,15 +1,13 @@
 package me.fzzy.evilfzzy4j.command.admin
 
-import discord4j.core.`object`.entity.TextChannel
-import discord4j.core.`object`.util.Snowflake
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.FzzyUser
-import me.fzzy.evilfzzy4j.MessageScheduler
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import reactor.core.publisher.Mono
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import java.util.concurrent.TimeUnit
 
 object Override : Command("override") {
 
@@ -21,25 +19,15 @@ object Override : Command("override") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
-        val owner = Bot.client.applicationInfo.block()!!.owner.block()!!
-        val failText = "sorry, but i only take override command from ${owner.username} ${Bot.sadEmoji()}"
-        if (message.author.id != owner.id) return Mono.just(CommandResult.fail(failText))
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+        val owner = Bot.client.retrieveApplicationInfo().complete().owner
+        val failText = "sorry, but i only take override command from ${owner.name} ${Bot.sadEmoji.asMention}"
+        if (event.message.author.id != owner.id) return CommandResult.fail(failText)
 
         when (args[0].toLowerCase()) {
             "volume" -> {
-                FzzyGuild.getGuild(message.guild.id).player.provider.player.volume = args[1].toInt()
+                //FzzyGuild.getGuild(message.guild.id).player.provider.player.volume = args[1].toInt()
                 //AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
-            }
-            "test" -> {
-                val channel = Bot.client.getChannelById(Snowflake.of(526327079856242693)).block()!! as TextChannel
-                var does = false
-                channel.getMessagesBefore(channel.lastMessageId.get()).take(10).doOnComplete { println(does) }.subscribe {
-                    if (it.content.isPresent) {
-                        println(it.content.get())
-                        if (it.content.get().toLowerCase().contains("nicetrge")) does = true
-                    }
-                }
             }
             "play" -> {
                 //Play.play(message.guild.getVoiceChannelByID(args[2].toLong()), args[1])
@@ -51,45 +39,48 @@ object Override : Command("override") {
                 //AudioPlayer.getAudioPlayerForGuild(message.guild).skip()
             }
             "give" -> {
-                for (mention in message.userMentions!!) {
-                    FzzyGuild.getGuild(message.guild.id).addCurrency(mention, args[1].toInt())
+                for (mention in event.message.mentionedUsers) {
+                    FzzyGuild.getGuild(event.message.guild.id).addCurrency(mention, args[1].toInt())
                 }
-                MessageScheduler.sendTempMessage(message.channel, "done!", Bot.data.DEFAULT_TEMP_MESSAGE_DURATION).block()
+                event.channel.sendMessage("done!").queue { msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES) }
             }
             "cooldowns", "cooldown" -> {
-                val users = message.userMentions
-                        ?: return Mono.just(CommandResult.fail("theres no mentions in that ${Bot.sadEmoji()}"))
+                val users = event.message.mentionedUsers
                 for (user in users) {
-                    FzzyUser.getUser(user.id).cooldown.clearCooldown()
+                    FzzyUser.getUser(user.idLong).cooldown.clearCooldown()
                 }
 
                 val userNames = arrayListOf<String>()
                 for (i in 0 until users.size) {
                     userNames.add(if (i != users.size - 1) {
-                        users[i].username.toLowerCase()
+                        users[i].name.toLowerCase()
                     } else {
-                        "and ${users[i].username.toLowerCase()}"
+                        "and ${users[i].name.toLowerCase()}"
                     })
                 }
 
                 val messages = listOf(
-                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.happyEmoji()}",
-                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.happyEmoji()}",
-                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset ${Bot.happyEmoji()}"
+                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.happyEmoji.asMention}",
+                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.happyEmoji.asMention}",
+                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset ${Bot.happyEmoji.asMention}"
                 )
 
-                MessageScheduler.sendTempMessage(message.channel, messages[Bot.random.nextInt(messages.size)]
+                val text = messages[Bot.random.nextInt(messages.size)]
                         .replace("%target%", userNames.joinToString(", "))
-                        .replace("%author%", message.author.username.toLowerCase()), Bot.data.DEFAULT_TEMP_MESSAGE_DURATION).block()
+                        .replace("%author%", event.message.author.name.toLowerCase())
+
+                event.channel.sendMessage(text).queue { msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES) }
             }
             "allowvotes" -> {
-                val msg = message.channel.getMessageById(Snowflake.of(args[1].toLong())).block()
-                if (msg != null)
-                    FzzyGuild.getGuild(message.guild.id).allowVotes(msg)
+                event.channel.retrieveMessageById(args[1].toLong()).queue { msg ->
+                    run {
+                        FzzyGuild.getGuild(event.message.guild.id).allowVotes(msg)
+                    }
+                }
             }
         }
 
-        return Mono.just(CommandResult.success())
+        return CommandResult.success()
     }
 
 }

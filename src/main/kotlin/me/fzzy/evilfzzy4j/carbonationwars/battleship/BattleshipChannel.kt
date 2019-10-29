@@ -3,144 +3,142 @@ package me.fzzy.evilfzzy4j.carbonationwars.battleship
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.Expose
 import com.google.gson.stream.JsonReader
-import discord4j.core.`object`.entity.TextChannel
-import discord4j.core.`object`.util.Snowflake
-import discord4j.core.event.domain.guild.GuildCreateEvent
-import discord4j.core.event.domain.lifecycle.ReadyEvent
-import discord4j.core.event.domain.message.MessageCreateEvent
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
-import me.fzzy.evilfzzy4j.util.ProgressBar
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.events.ReadyEvent
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 import org.json.JSONObject
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.InputStreamReader
+import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.math.roundToInt
 
-class BattleshipChannel constructor(private val channelId: Snowflake, cooldown: Int = 1000 * 60 * 60, reward: Int = 2) {
+class BattleshipChannel constructor(private val channelId: Long, reward: Int = 5) : ListenerAdapter() {
 
-    lateinit var channel: TextChannel
+    var channel: TextChannel? = null
 
     private class Data constructor(
+            @Expose var reward: Int,
+            @Expose var dayOfWeek: Int,
             @Expose var boardMsg: Long = 0,
             @Expose var cdMsg: Long = 0,
-            @Expose val cooldowns: HashMap<Long, Long> = hashMapOf(),
-            @Expose var board: BattleshipBoard = BattleshipBoard(),
-            @Expose var reward: Int = 2,
-            @Expose var cooldown: Int = 1000 * 60 * 60
+            @Expose val cooldowns: ArrayList<Long> = arrayListOf(),
+            @Expose var board: BattleshipBoard = BattleshipBoard()
     )
 
-    private var data = Data(reward = reward, cooldown = cooldown)
+    private val cal = Calendar.getInstance()
+    private var data: Data
 
     init {
-        val gameFile = File("games${File.separator}battleship${channelId.asLong()}.json")
+        cal.time = Date()
+        data = Data(reward, cal.get(Calendar.DAY_OF_MONTH))
+        val gameFile = File("games${File.separator}battleship${channelId}.json")
         if (gameFile.exists()) data = Bot.gson.fromJson(JsonReader(InputStreamReader(gameFile.inputStream())), Data::class.java)
 
-        Bot.client.eventDispatcher.on(ReadyEvent::class.java)
-                .map { event -> event.guilds.size }
-                .flatMap { size ->
-                    Bot.client.eventDispatcher.on(GuildCreateEvent::class.java)
-                            .take(size.toLong())
-                            .collectList()
-                }.subscribe {
-                    channel = Bot.client.getChannelById(channelId).block()!! as TextChannel
-                    refreshGame()
-                    channel.getMessagesBefore(Snowflake.of(data.boardMsg)).subscribe { msg -> msg.delete().block() }
-                }
-
-        Bot.client.eventDispatcher.on(MessageCreateEvent::class.java).subscribe {
-            if (it.message.channelId == channelId && !it.message.author.get().isBot) {
-                if (it.message.content.get().length >= 2 && !isOnCooldown(it.member.get().id)) {
-                    try {
-                        if (data.board.attack(it.member.get(), it.message.content.get()[0].toLowerCase(), it.message.content.get().substring(1).toInt())) {
-                            val guild = FzzyGuild.getGuild(it.member.get().guildId)
-                            guild.addCurrency(it.member.get(), reward)
-                        }
-                        Bot.logger.info("[Battleship] ${it.member.get().displayName} attacking ${it.message.content.get()[0].toLowerCase()}${it.message.content.get().substring(1)}")
-                        data.cooldowns[it.member.get().id.asLong()] = System.currentTimeMillis()
-                        refreshGame()
-                        save()
-                    } catch (e: NumberFormatException) {
-                    }
-                }
-                it.message.delete().block()
-            }
-        }
-
         Bot.scheduler.schedulePeriodically({
-            refreshCooldowns()
-            if (data.board.allAttacked()) {
-                data.board = BattleshipBoard()
-                refreshGame()
+            if (channel != null) {
+                cal.time = Date()
+                if (data.dayOfWeek != cal.get(Calendar.DAY_OF_MONTH)) {
+                    data.dayOfWeek = cal.get(Calendar.DAY_OF_MONTH)
+                    data.cooldowns.clear()
+                    refreshCooldowns()
+                    save()
+                }
+                if (data.board.allAttacked()) {
+                    data.board = BattleshipBoard()
+                    refreshGame()
+                }
             }
         }, 5, 10, TimeUnit.SECONDS)
     }
 
-    fun isOnCooldown(id: Snowflake): Boolean {
-        if (data.cooldowns.containsKey(id.asLong())) {
-            if (System.currentTimeMillis() < data.cooldowns[id.asLong()]!! + data.cooldown)
-                return true
+    override fun onMessageReceived(event: MessageReceivedEvent) {
+        if (event.channel.idLong != channelId || event.author.isBot) return
+
+        event.message.delete().queue()
+
+        if (event.message.contentRaw.length >= 2 && !isOnCooldown(event.author.idLong)) {
+            try {
+                if (data.board.attack(event.author.idLong, event.message.contentRaw[0].toLowerCase(), event.message.contentRaw.substring(1).toInt())) {
+                    val guild = FzzyGuild.getGuild(event.guild.id)
+                    guild.addCurrency(event.author.idLong, data.reward)
+                }
+                Bot.logger.info("[Battleship] ${event.member?.effectiveName} attacking ${event.message.contentRaw[0].toLowerCase()}${event.message.contentRaw.substring(1)}")
+                data.cooldowns.add(event.author.idLong)
+                refreshGame()
+                refreshCooldowns()
+                save()
+            } catch (e: NumberFormatException) {
+            }
         }
-        return false
+    }
+
+    override fun onReady(event: ReadyEvent) {
+        channel = Bot.client.getTextChannelById(channelId)
+        channel?.iterableHistory?.forEach { m -> if (m.idLong != data.boardMsg && m.idLong != data.cdMsg) m.delete().queue() }
+        refreshGame()
+    }
+
+    fun isOnCooldown(id: Long): Boolean {
+        return data.cooldowns.contains(id)
     }
 
     fun getCooldownText(): String {
+        if (channel == null) return ""
         val builder = StringBuilder()
-        val iter = data.cooldowns.iterator()
-        while (iter.hasNext()) {
-            val e = iter.next()
-            val id = e.key
-            val time = e.value
-            val member = channel.guild.block()!!.getMemberById(Snowflake.of(id)).block()
-            if (member == null) {
-                iter.remove()
-                continue
-            }
-            if (System.currentTimeMillis() > time + data.cooldown) {
-                iter.remove()
-                continue
-            }
-
-            val percentage = (((time + data.cooldown) - System.currentTimeMillis()) / data.cooldown.toDouble()) * 100
-            builder.append(ProgressBar.getBar(percentage.roundToInt()))
-            builder.append(" ${member.displayName}\n")
+        for (id in data.cooldowns) {
+            builder.append("${channel!!.guild.getMemberById(id)!!.effectiveName}\n")
         }
         return builder.toString()
     }
 
     fun refreshGame() {
-        try {
-            channel.getMessageById(Snowflake.of(data.boardMsg)).block()!!.edit { spec -> spec.setContent(data.board.getBoardAsText()) }.block()
-        } catch (e: Exception) {
-            data.boardMsg = channel.createMessage(data.board.getBoardAsText()).block()!!.id.asLong()
-            save()
-        }
+        channel?.retrieveMessageById(data.boardMsg)?.queue({ msg ->
+            run {
+                msg?.editMessage(data.board.getBoardAsText())?.queue()
+            }
+        }, {
+            channel?.sendMessage(data.board.getBoardAsText())?.queue { newMsg ->
+                run {
+                    data.boardMsg = newMsg.idLong
+                    save()
+                }
+            }
+        })
     }
 
     fun refreshCooldowns() {
-        try {
-            val msg = channel.getMessageById(Snowflake.of(data.cdMsg)).block()!!
-            val cooldownText = getCooldownText()
-            if (!msg.content.get().equals(cooldownText)) {
-                if (cooldownText.isEmpty())
-                    msg.delete().block()
-                else
-                    msg.edit { spec -> spec.setContent(getCooldownText()) }.block()!!.id.asLong()
+        channel?.retrieveMessageById(data.cdMsg)?.queue({ msg ->
+            run {
+                val cooldownText = getCooldownText()
+
+                if (msg.contentRaw != cooldownText) {
+                    if (cooldownText.isEmpty())
+                        msg.delete().queue()
+                    else
+                        msg.editMessage(getCooldownText()).queue()
+                }
             }
-        } catch (e: Exception) {
+        }, {
             if (getCooldownText().isNotEmpty()) {
-                data.cdMsg = channel.createMessage(getCooldownText()).block()!!.id.asLong()
-                save()
+                channel?.sendMessage(getCooldownText())?.queue { msg ->
+                    run {
+                        data.cdMsg = msg.idLong
+                        save()
+                    }
+                }
             }
-        }
+        })
     }
 
     fun save() {
         File("games").mkdirs()
         val gson = GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()
-        val gameFile = File("games${File.separator}battleship${channelId.asLong()}.json")
+        val gameFile = File("games${File.separator}battleship${channelId}.json")
         val bufferWriter = BufferedWriter(FileWriter(gameFile.absoluteFile, false))
         val save = JSONObject(gson.toJson(data))
         bufferWriter.write(save.toString(2))

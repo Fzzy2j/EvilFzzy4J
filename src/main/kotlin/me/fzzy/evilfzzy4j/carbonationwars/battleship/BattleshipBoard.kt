@@ -1,7 +1,6 @@
 package me.fzzy.evilfzzy4j.carbonationwars.battleship
 
 import com.google.gson.annotations.Expose
-import discord4j.core.`object`.entity.User
 import java.util.*
 
 class BattleshipBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, numBoats: Int = 5) {
@@ -81,7 +80,7 @@ class BattleshipBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, numB
         return true
     }
 
-    fun whoAttacked(x: Char, y: Int): User? {
+    fun whoAttacked(x: Char, y: Int): Long? {
         return try {
             board[x - 'a'][y].whoAttacked
         } catch (e: ArrayIndexOutOfBoundsException) {
@@ -89,7 +88,7 @@ class BattleshipBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, numB
         }
     }
 
-    fun attack(user: User, x: Char, y: Int): Boolean {
+    fun attack(user: Long, x: Char, y: Int): Boolean {
         val actualX = x - 'a'
         return try {
             board[actualX][y].attack(user)
@@ -106,12 +105,12 @@ class BattleshipBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, numB
         var isAttacked = false
             private set
         @Expose
-        var whoAttacked: User? = null
+        var whoAttacked: Long? = null
             private set
 
-        fun attack(user: User): Boolean {
+        fun attack(userId: Long): Boolean {
             isAttacked = true
-            whoAttacked = user
+            whoAttacked = userId
             return isShip
         }
 

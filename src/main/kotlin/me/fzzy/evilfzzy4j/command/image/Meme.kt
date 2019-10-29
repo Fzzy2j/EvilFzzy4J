@@ -5,10 +5,10 @@ import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import me.fzzy.evilfzzy4j.util.ImageHelper
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import org.im4java.core.IMOperation
 import org.im4java.core.ImageMagickCmd
-import reactor.core.publisher.Mono
 import java.awt.Font
 import java.awt.font.FontRenderContext
 import java.awt.geom.AffineTransform
@@ -25,7 +25,7 @@ object Meme : Command("meme") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
         var full = ""
         for (text in args) {
@@ -37,12 +37,8 @@ object Meme : Command("meme") {
         if (full.substring(1).replace("\n", "").split("/").size > 1)
             bottomText = full.substring(1).replace("\n", "").split("/")[1]
 
-        val url = Bot.getRecentImage(message.channel).block()
-        val file = if (url != null)
-            ImageHelper.downloadTempFile(url) ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.surprisedEmoji()}"))
-        else
-            ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.sadEmoji()}"))
+        val file = Bot.getRecentImage(event.channel)
+                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
 
         val convert = ImageMagickCmd("convert")
         val operation = IMOperation()
@@ -65,9 +61,9 @@ object Meme : Command("meme") {
         convert.run(operation)
 
 
-        FzzyGuild.getGuild(message.guild.id).sendVoteAttachment(file, message.channel, message.author)
+        FzzyGuild.getGuild(event.guild.id).sendVoteAttachment(file, event.channel as TextChannel, event.author)
         file.delete()
-        return Mono.just(CommandResult.success())
+        return CommandResult.success()
     }
 
     fun annotateCenter(imgFile: File, operation: IMOperation, text: String, bottom: Boolean) {

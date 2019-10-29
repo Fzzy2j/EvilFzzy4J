@@ -1,10 +1,10 @@
 package me.fzzy.evilfzzy4j.command.voice
 
-import me.fzzy.evilfzzy4j.FzzyGuild
+import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import reactor.core.publisher.Mono
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.net.URL
 
 
@@ -18,10 +18,12 @@ object Play : Command("play") {
     override val price: Int = 4
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
-        FzzyGuild.getGuild(message.guild.id).player.play(message.authorAsMember.voiceState.block()!!.channel.block()!!, URL(args[0]), message.original!!.id)
+        val state = event.member!!.voiceState?: return CommandResult.fail("i cant get your voice state, this is my owners fault ${Bot.sadEmoji.asMention}")
+        val channel = state.channel?: return CommandResult.fail("i cant do that unless youre in a voice channel ${Bot.sadEmoji.asMention}")
+        Bot.getGuildAudioPlayer(event.guild).play(channel, URL(args[0]))
 
-        return Mono.just(CommandResult.success())
+        return CommandResult.success()
     }
 }

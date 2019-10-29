@@ -1,14 +1,8 @@
 package me.fzzy.evilfzzy4j.voice
 
-import com.sedmelluq.discord.lavaplayer.format.StandardAudioDataFormats
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayer
-import com.sedmelluq.discord.lavaplayer.track.playback.MutableAudioFrame
-import discord4j.voice.AudioProvider
-import java.nio.ByteBuffer
 
-
-class LavaPlayerAudioProvider(val player: AudioPlayer) : AudioProvider(ByteBuffer.allocate(StandardAudioDataFormats.DISCORD_OPUS.maximumChunkSize())) {
-    private val frame = MutableAudioFrame()
+class LavaPlayerAudioProvider {//(val player: AudioPlayer) : AudioProvider(ByteBuffer.allocate(StandardAudioDataFormats.DISCORD_OPUS.maximumChunkSize())) {
+    /*private val frame = MutableAudioFrame()
 
     init {
         // Set LavaPlayer's MutableAudioFrame to use the same buffer as the one we just allocated
@@ -23,5 +17,5 @@ class LavaPlayerAudioProvider(val player: AudioPlayer) : AudioProvider(ByteBuffe
             buffer.flip()
         }
         return didProvide
-    }
+    }*/
 }

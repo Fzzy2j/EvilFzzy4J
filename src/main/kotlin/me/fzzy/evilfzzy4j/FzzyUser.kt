@@ -1,15 +1,14 @@
 package me.fzzy.evilfzzy4j
 
-import discord4j.core.`object`.util.Snowflake
 import me.fzzy.evilfzzy4j.command.Cooldown
 
-class FzzyUser private constructor(val id: Snowflake) {
+class FzzyUser private constructor(val id: Long) {
 
     companion object {
 
         private val users: ArrayList<FzzyUser> = arrayListOf()
 
-        fun getUser(id: Snowflake): FzzyUser {
+        fun getUser(id: Long): FzzyUser {
             for (user in users) {
                 if (user.id == id)
                     return user

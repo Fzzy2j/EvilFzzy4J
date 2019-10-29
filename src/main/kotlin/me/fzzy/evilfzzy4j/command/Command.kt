@@ -1,12 +1,13 @@
 package me.fzzy.evilfzzy4j.command
 
-import discord4j.core.`object`.entity.Message
-import discord4j.core.event.domain.message.MessageCreateEvent
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.FzzyUser
-import reactor.core.publisher.Mono
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 import java.util.*
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -20,9 +21,9 @@ abstract class Command constructor(val name: String) {
     abstract val price: Int
     abstract val cost: CommandCost
 
-    abstract fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult>
+    abstract fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult
 
-    companion object {
+    companion object : ListenerAdapter() {
         val commands: HashMap<String, Command> = hashMapOf()
 
         fun registerCommand(string: String, command: Command) {
@@ -40,89 +41,72 @@ abstract class Command constructor(val name: String) {
             }
             return false
         }
+
+        override fun onMessageReceived(event: MessageReceivedEvent) {
+            if (!event.message.contentRaw.startsWith(Bot.data.BOT_PREFIX)) return
+            for ((cmdName, cmd) in commands) {
+                if (event.message.contentRaw.toLowerCase().substring(1).startsWith(cmdName)) {
+                    Bot.scheduler.schedule { cmd.handleCommand(event) }
+                    break
+                }
+            }
+        }
     }
 
-    fun handleCommand(event: MessageCreateEvent): Mono<CommandResult> {
-        val args = event.message.content.get().split(" ")
-        var argsList: List<String> = args.toMutableList()
-        argsList = argsList.drop(1)
+    fun handleCommand(event: MessageReceivedEvent) {
+        var args = event.message.contentRaw.split(" ")
+        args = args.drop(1)
 
-        val user = FzzyUser.getUser(event.member.get().id)
+        val user = FzzyUser.getUser(event.author.idLong)
 
-        if (!event.guildId.isPresent) {
-            if (!allowDM) {
-                return Mono.just(CommandResult.fail("this command is not allowed in DMs!"))
+        if (!event.isFromGuild) {
+            if (!allowDM || cost == CommandCost.CURRENCY) {
+                event.channel.sendMessage("this command is not allowed in DMs!").queue()
+                return
             }
         }
 
-        Bot.logger.info("${event.member.get().displayName}#${event.member.get().discriminator} running command: ${event.message.content.get()}")
-        return when (cost) {
+        Bot.logger.info("${event.author.name}#${event.author.discriminator} running command: ${event.message.contentRaw}")
+
+        if (!votes) delete(event.message)
+        else if (event.message.isFromGuild) FzzyGuild.getGuild(event.guild.id).allowVotes(event.message)
+
+        when (cost) {
             CommandCost.CURRENCY -> {
-                val currency = if (price > 0) FzzyGuild.getGuild(event.guildId.get()).getCurrency(user) else 0
-                Bot.client.applicationInfo.flatMap {
-                    val currencyMsg = "${event.member.get().displayName.toLowerCase()} this command costs $price ${Bot.toUsable(Bot.currencyEmoji)}, you only have $currency ${Bot.toUsable(Bot.currencyEmoji)}"
-                    if (user.id == it.ownerId || currency >= price) {
-                        runCommand(user, CachedMessage(event.message), argsList)
-                    } else {
-                        Mono.just(CommandResult.fail(currencyMsg))
+                val currency = if (price > 0) FzzyGuild.getGuild(event.guild.id).getCurrency(user) else 0
+                val name = (event.member!!.effectiveName).toLowerCase()
+                val currencyMsg = "$name this command costs $price ${Bot.currencyEmoji.asMention}, you only have $currency ${Bot.currencyEmoji.asMention}"
+                val info = Bot.client.retrieveApplicationInfo().complete()
+                if (user.id == info.owner.idLong || currency >= price) {
+                    val result = runCommand(event, args)
+                    if (result.isSuccess()) {
+                        if (price != 0) {
+                            val guild = FzzyGuild.getGuild(event.guild.id)
+                            guild.addCurrency(user, max(-price, -guild.getCurrency(user)))
+                        }
                     }
+                } else {
+                    event.channel.sendMessage(currencyMsg).queue()
                 }
             }
             CommandCost.COOLDOWN -> {
-                Bot.client.applicationInfo.flatMap {
-                    val timeLeftMinutes = Math.ceil((user.cooldown.timeLeft(1.0)) / 1000.0 / 60.0).roundToInt()
-                    val content = "${event.member.get().displayName.toLowerCase()} you are still on cooldown for $timeLeftMinutes minute${if (timeLeftMinutes != 1) "s" else ""}"
-                    if (user.id == it.ownerId || user.cooldown.isReady(1.0)) {
-                        runCommand(user, CachedMessage(event.message), argsList)
-                    } else {
-                        Mono.just(CommandResult.fail(content))
-                    }
+                val timeLeftMinutes = ceil((user.cooldown.timeLeft(1.0)) / 1000.0 / 60.0).roundToInt()
+                val content = "${event.author.name} you are still on cooldown for $timeLeftMinutes minute${if (timeLeftMinutes != 1) "s" else ""}"
+                val info = Bot.client.retrieveApplicationInfo().complete()
+                if (user.id == info.owner.idLong || user.cooldown.isReady(1.0)) {
+                    user.cooldown.triggerCooldown(cooldownMillis)
+                    runCommand(event, args)
+                } else {
+                    event.channel.sendMessage(content).queue()
                 }
             }
-        }
-    }
-
-    private fun runCommand(fzzyUser: FzzyUser, message: CachedMessage, argsList: List<String>): Mono<CommandResult> {
-        if (!votes) delete(message.original!!)
-        return runCommand(message, argsList).flatMap { result ->
-            if (result.isSuccess()) {
-                val guild = message.guild
-                val fzzyGuild = FzzyGuild.getGuild(guild.id)
-                when (cost) {
-                    CommandCost.COOLDOWN -> {
-                        fzzyUser.cooldown.triggerCooldown(cooldownMillis)
-                    }
-                    CommandCost.CURRENCY -> {
-                        if (price != 0) {
-                            fzzyGuild.addCurrency(fzzyUser, max(-price, -fzzyGuild.getCurrency(fzzyUser)))
-                        }
-                    }
-                }
-                if (votes)
-                    fzzyGuild.allowVotes(message.original!!)
-            }
-            Mono.just(result)
         }
     }
 
     private fun delete(msg: Message) {
-        if (msg.attachments.count() == 0 && msg.guild.block() != null) {
-            msg.delete().block()
+        if (msg.attachments.count() == 0 && msg.isFromGuild) {
+            msg.delete().queue()
         }
-    }
-
-    class CachedMessage(val original: Message?) {
-
-        val content: String = original!!.content.get()
-        val timestamp = original!!.timestamp
-        val author = original!!.author.get()
-        val authorAsMember = original!!.authorAsMember.block()!!
-        val attachments = original!!.attachments
-        val embeds = original!!.embeds
-        val guild = original!!.guild.block()!!
-        val channel = original!!.channel.block()!!
-        val userMentions = original!!.userMentions.collectList().block()
-
     }
 
 }

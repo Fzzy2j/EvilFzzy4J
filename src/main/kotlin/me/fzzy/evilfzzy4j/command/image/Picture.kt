@@ -5,10 +5,10 @@ import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
-import me.fzzy.evilfzzy4j.util.ImageHelper
+import net.dv8tion.jda.api.entities.TextChannel
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import org.im4java.core.IMOperation
 import org.im4java.core.ImageMagickCmd
-import reactor.core.publisher.Mono
 import java.awt.Color
 import java.awt.image.BufferedImage
 import java.io.File
@@ -26,7 +26,7 @@ object Picture : Command("picture") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(message: CachedMessage, args: List<String>): Mono<CommandResult> {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
 
         // Find the specified picture from the pictures folder
         val pictureFile = File("pictures")
@@ -39,18 +39,20 @@ object Picture : Command("picture") {
                 }
             }
         } else picture = pictureFile.listFiles()!![Bot.random.nextInt(pictureFile.listFiles()!!.count())]
-        if (picture == null)
-            return Mono.just(CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes ${Bot.happyEmoji()}"))
+        if (picture == null) return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes ${Bot.happyEmoji.asMention}")
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
 
-        val url = Bot.getRecentImage(message.channel).block()
+        /*val url = Bot.getRecentImage(message.channel).block()
         val file = if (url == null || (args.count() == 1 && args[0].toLowerCase() == "random"))
             ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
                     ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.sadEmoji()}"))
         else
             ImageHelper.downloadTempFile(url)
-                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.surprisedEmoji()}"))
+                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.surprisedEmoji()}"))*/
+
+        val file = Bot.getRecentImage(event.channel)
+                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
 
         val bufferedImage = ImageIO.read(picture)
 
@@ -115,10 +117,10 @@ object Picture : Command("picture") {
 
         composite.run(operation)
 
-        FzzyGuild.getGuild(message.guild.id).sendVoteAttachment(file, message.channel, message.author)
+        FzzyGuild.getGuild(event.guild.id).sendVoteAttachment(file, event.channel as TextChannel, event.author)
         file.delete()
 
-        return Mono.just(CommandResult.success())
+        return CommandResult.success()
     }
 
     private fun detectTopRightCorner(img: BufferedImage): Pair<Int, Int> {

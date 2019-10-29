@@ -1,12 +1,13 @@
 package me.fzzy.evilfzzy4j
 
-import discord4j.core.`object`.entity.Message
-import discord4j.core.`object`.entity.User
-import discord4j.core.event.EventDispatcher
-import discord4j.core.event.domain.message.ReactionAddEvent
-import discord4j.core.event.domain.message.ReactionRemoveEvent
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent
+import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionAddEvent
+import net.dv8tion.jda.api.events.message.guild.react.GuildMessageReactionRemoveEvent
+import net.dv8tion.jda.api.hooks.ListenerAdapter
 
-object ReactionHandler {
+object ReactionHandler : ListenerAdapter() {
 
     fun getVotes(message: Message): Int {
         return getUpvoters(message).size
@@ -15,44 +16,57 @@ object ReactionHandler {
     fun getUpvoters(message: Message): List<User> {
         val list = arrayListOf<User>()
 
-        for (user in message.getReactors(Bot.currencyEmoji).collectList().block()!!) {
-            if (user.id != message.author.get().id && user.id != Bot.client.self.block()!!.id) list.add(user)
+        val reaction = message.retrieveReactionUsers(Bot.currencyEmoji)
+        for (user in reaction.complete()) {
+            if (user.idLong != message.author.idLong && user.idLong != Bot.client.selfUser.idLong) list.add(user)
         }
         return list
     }
 
-    fun registerEvents(dispatch: EventDispatcher) {
-        dispatch.on(ReactionAddEvent::class.java).subscribe(ReactionHandler::onReactionAdd)
-        dispatch.on(ReactionRemoveEvent::class.java).subscribe(ReactionHandler::onReactionRemove)
-    }
-
-    fun onReactionAdd(event: ReactionAddEvent) {
-        if (event.userId == Bot.client.selfId.get()) return
-        if (event.userId == event.message.block()!!.author.get().id) return
-
-        val channel = event.channel.block()!!
-        val guild = FzzyGuild.getGuild(event.guild.block()!!.id)
-        val msg = channel.getMessagesBefore(channel.lastMessageId.get()).take(10).takeUntil { it.id == event.messageId }.next().block()
-                ?: return
-
-        val reaction = msg.getReactors(Bot.currencyEmoji).collectList().block() ?: return
-        if (reaction.contains(Bot.client.self.block()!!)) {
-            guild.addCurrency(msg.author.get(), 1, msg)
+    override fun onMessageReceived(event: MessageReceivedEvent) {
+        if (!event.author.isBot) {
+            if (event.isFromGuild) {
+                val guild = FzzyGuild.getGuild(event.guild.id)
+                if (Bot.URL_PATTERN.matcher(event.message.contentRaw).find() || event.message.attachments.size > 0) {
+                    guild.allowVotes(event.message)
+                }
+            }
         }
     }
 
-    fun onReactionRemove(event: ReactionRemoveEvent) {
-        if (event.userId == Bot.client.selfId.get()) return
-        if (event.userId == event.message.block()!!.author.get().id) return
+    override fun onGuildMessageReactionAdd(event: GuildMessageReactionAddEvent) {
+        if (event.user.idLong == Bot.client.selfUser.idLong) return
+        if (event.user.idLong == event.channel.retrieveMessageById(event.messageId).complete().author.idLong) return
 
-        val channel = event.channel.block()!!
-        val guild = FzzyGuild.getGuild(event.guild.block()!!.id)
-        val msg = channel.getMessagesBefore(channel.lastMessageId.get()).take(10).takeUntil { it.id == event.messageId }.next().block()
-                ?: return
+        val guild = FzzyGuild.getGuild(event.guild.id)
+        val msg = event.channel.getHistoryBefore(event.channel.latestMessageId, 10).complete().getMessageById(event.messageId) ?: return
 
-        val reaction = msg.getReactors(Bot.currencyEmoji).collectList().block() ?: return
-        if (reaction.contains(Bot.client.self.block()!!)) {
-            guild.addCurrency(msg.author.get(), -1)
+        val reaction = msg.retrieveReactionUsers(Bot.currencyEmoji)
+
+        reaction.takeUntilAsync { user ->
+            if (user.idLong == Bot.client.selfUser.idLong) {
+                guild.addCurrency(msg.author, 1, msg)
+                true
+            } else false
         }
     }
+
+    override fun onGuildMessageReactionRemove(event: GuildMessageReactionRemoveEvent) {
+        if (event.user.idLong == Bot.client.selfUser.idLong) return
+        if (event.user.idLong == event.channel.retrieveMessageById(event.messageId).complete().author.idLong) return
+
+        val guild = FzzyGuild.getGuild(event.guild.id)
+        val msg = event.channel.getHistoryBefore(event.channel.latestMessageId, 10).complete().getMessageById(event.messageId)
+                ?: return
+
+        val reaction = msg.retrieveReactionUsers(Bot.currencyEmoji)
+
+        reaction.takeUntilAsync { user ->
+            if (user.idLong == Bot.client.selfUser.idLong) {
+                guild.addCurrency(msg.author, -1, msg)
+                true
+            } else false
+        }
+    }
+
 }
