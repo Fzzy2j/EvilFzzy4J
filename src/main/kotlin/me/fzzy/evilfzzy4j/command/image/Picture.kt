@@ -26,7 +26,7 @@ object Picture : Command("picture") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 
         // Find the specified picture from the pictures folder
         val pictureFile = File("pictures")
@@ -51,7 +51,7 @@ object Picture : Command("picture") {
             ImageHelper.downloadTempFile(url)
                     ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.surprisedEmoji()}"))*/
 
-        val file = Bot.getRecentImage(event.channel)
+        val file = Bot.getRecentImage(event.channel, latestMessageId)
                 ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
 
         val bufferedImage = ImageIO.read(picture)

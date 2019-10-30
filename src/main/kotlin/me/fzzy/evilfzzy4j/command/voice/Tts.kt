@@ -21,7 +21,7 @@ object Tts : Command("tts") {
     override val price: Int = 4
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         if (args.isNotEmpty()) {
             var text = ""
             for (arg in args) {

@@ -21,7 +21,7 @@ object Mc : Command("mc") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 
         var achieve = ""
         for (text in args) {

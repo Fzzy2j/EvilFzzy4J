@@ -45,7 +45,7 @@ class FzzyGuild private constructor() {
     @Expose
     private var votes = 0
     @Expose
-    private var currency: HashMap<Long, Int> = hashMapOf()
+    var currency: HashMap<Long, Int> = hashMapOf()
     @Expose
     private val savedMessageIds = ArrayList<Long>()
 
@@ -57,8 +57,8 @@ class FzzyGuild private constructor() {
         msg.addReaction(Bot.currencyEmoji).queue()
     }
 
-    fun getSortedCurrency(): SortedMap<Long, Int> {
-        return currency.toSortedMap(compareBy { -currency[it]!! })
+    fun getSortedCurrency(): Map<Long, Int> {
+        return currency.toList().sortedBy { (key, value) -> -value }.toMap()
     }
 
     fun sendVoteAttachment(file: File, channel: TextChannel, credit: User? = null): Message? {

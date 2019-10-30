@@ -16,7 +16,7 @@ object Help : Command("help") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 
         val matcher = Bot.URL_PATTERN.matcher(args.joinToString(" "))
         if (matcher.find()) {

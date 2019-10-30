@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
 import java.util.*
+import java.util.concurrent.TimeUnit
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -21,7 +22,7 @@ abstract class Command constructor(val name: String) {
     abstract val price: Int
     abstract val cost: CommandCost
 
-    abstract fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult
+    abstract fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult
 
     companion object : ListenerAdapter() {
         val commands: HashMap<String, Command> = hashMapOf()
@@ -46,14 +47,14 @@ abstract class Command constructor(val name: String) {
             if (!event.message.contentRaw.startsWith(Bot.data.BOT_PREFIX)) return
             for ((cmdName, cmd) in commands) {
                 if (event.message.contentRaw.toLowerCase().substring(1).startsWith(cmdName)) {
-                    Bot.scheduler.schedule { cmd.handleCommand(event) }
+                    Bot.scheduler.schedule { cmd.handleCommand(event, event.channel.latestMessageIdLong) }
                     break
                 }
             }
         }
     }
 
-    fun handleCommand(event: MessageReceivedEvent) {
+    fun handleCommand(event: MessageReceivedEvent, latestMessageId: Long) {
         var args = event.message.contentRaw.split(" ")
         args = args.drop(1)
 
@@ -78,15 +79,17 @@ abstract class Command constructor(val name: String) {
                 val currencyMsg = "$name this command costs $price ${Bot.currencyEmoji.asMention}, you only have $currency ${Bot.currencyEmoji.asMention}"
                 val info = Bot.client.retrieveApplicationInfo().complete()
                 if (user.id == info.owner.idLong || currency >= price) {
-                    val result = runCommand(event, args)
+                    val result = runCommand(event, args, latestMessageId)
                     if (result.isSuccess()) {
                         if (price != 0) {
                             val guild = FzzyGuild.getGuild(event.guild.id)
                             guild.addCurrency(user, max(-price, -guild.getCurrency(user)))
+                        } else if (result.getMessage() != null) {
+                            event.channel.sendMessage(result.getMessage()!!).queue { msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES) }
                         }
                     }
                 } else {
-                    event.channel.sendMessage(currencyMsg).queue()
+                    event.channel.sendMessage(currencyMsg).queue { msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES) }
                 }
             }
             CommandCost.COOLDOWN -> {
@@ -95,9 +98,12 @@ abstract class Command constructor(val name: String) {
                 val info = Bot.client.retrieveApplicationInfo().complete()
                 if (user.id == info.owner.idLong || user.cooldown.isReady(1.0)) {
                     user.cooldown.triggerCooldown(cooldownMillis)
-                    runCommand(event, args)
+                    val result = runCommand(event, args, latestMessageId)
+                    if (!result.isSuccess() && result.getMessage() != null) {
+                        event.channel.sendMessage(result.getMessage()!!).queue { msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES) }
+                    }
                 } else {
-                    event.channel.sendMessage(content).queue()
+                    event.channel.sendMessage(content).queue { msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES) }
                 }
             }
         }

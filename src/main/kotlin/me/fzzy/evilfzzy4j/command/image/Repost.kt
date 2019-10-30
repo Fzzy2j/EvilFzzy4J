@@ -20,7 +20,7 @@ object Repost : Command("repost") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 
         val repost = getRepost(event.guild) ?: return CommandResult.fail("there havent been any worthy posts in this server ${Bot.surprisedEmoji.asMention}")
 

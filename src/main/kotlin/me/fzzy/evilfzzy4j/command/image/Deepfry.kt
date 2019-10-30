@@ -21,8 +21,8 @@ object Deepfry : Command("deepfry") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-        val file = Bot.getRecentImage(event.channel)
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
+        val file = Bot.getRecentImage(event.channel, latestMessageId)
                 ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
 
         val sizeHelper = ImageIO.read(file)

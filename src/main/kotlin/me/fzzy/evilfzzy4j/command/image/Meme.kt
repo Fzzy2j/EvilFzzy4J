@@ -25,19 +25,15 @@ object Meme : Command("meme") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.COOLDOWN
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 
-        var full = ""
-        for (text in args) {
-            full += " $text"
-        }
+        val full = args.joinToString(" ").replace("'", "").replace("\n", "").split("|")
 
-        val topText = full.substring(1).replace("\n", "").split("/")[0]
+        val topText = full[0]
         var bottomText: String? = null
-        if (full.substring(1).replace("\n", "").split("/").size > 1)
-            bottomText = full.substring(1).replace("\n", "").split("/")[1]
+        if (full.size > 1) bottomText = full[1]
 
-        val file = Bot.getRecentImage(event.channel)
+        val file = Bot.getRecentImage(event.channel, latestMessageId)
                 ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
 
         val convert = ImageMagickCmd("convert")

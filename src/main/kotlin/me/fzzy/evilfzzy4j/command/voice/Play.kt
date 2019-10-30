@@ -18,7 +18,7 @@ object Play : Command("play") {
     override val price: Int = 4
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 
         val state = event.member!!.voiceState?: return CommandResult.fail("i cant get your voice state, this is my owners fault ${Bot.sadEmoji.asMention}")
         val channel = state.channel?: return CommandResult.fail("i cant do that unless youre in a voice channel ${Bot.sadEmoji.asMention}")

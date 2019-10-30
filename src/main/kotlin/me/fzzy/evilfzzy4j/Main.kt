@@ -38,7 +38,6 @@ import kotlin.system.exitProcess
 class BotData {
     val DISCORD_TOKEN = ""
     val BOT_PREFIX = "-"
-    val DEFAULT_TEMP_MESSAGE_DURATION: Long = 15
     val IMAGE_MAGICK_DIRECTORY = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
     val CURRENCY_EMOJI = "❤"
     val SAD_EMOJIS = "\uD83D\uDE22"
@@ -57,8 +56,6 @@ object Bot {
 
     val playerManager = DefaultAudioPlayerManager()
     private val audioManagers = hashMapOf<Long, FzzyPlayer>()
-
-    //var speechApiToken: String? = null
 
     lateinit var data: BotData
 
@@ -85,9 +82,9 @@ object Bot {
         return manager
     }
 
-    fun getRecentImage(channel: MessageChannel): File? {
-        if (channel is TextChannel) return getRecentImage(channel)
-        for (msg in channel.getHistoryBefore(channel.latestMessageId, 10).complete().retrievedHistory) {
+    fun getRecentImage(channel: MessageChannel, latestMessageId: Long): File? {
+        if (channel is TextChannel) return getRecentImage(channel, latestMessageId)
+        for (msg in channel.getHistoryBefore(latestMessageId, 10).complete().retrievedHistory) {
             val media = getMessageMedia(msg)
             if (media != null) {
                 return ImageHelper.downloadTempFile(media)
@@ -96,8 +93,8 @@ object Bot {
         return null
     }
 
-    fun getRecentImage(channel: TextChannel): File? {
-        for (msg in channel.getHistoryBefore(channel.latestMessageId, 10).complete().retrievedHistory) {
+    fun getRecentImage(channel: TextChannel, latestMessageId: Long): File? {
+        for (msg in channel.getHistoryBefore(latestMessageId, 10).complete().retrievedHistory) {
             val media = getMessageMedia(msg)
             if (media != null) {
                 return ImageHelper.downloadTempFile(media)

@@ -19,7 +19,7 @@ object Override : Command("override") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         val owner = Bot.client.retrieveApplicationInfo().complete().owner
         val failText = "sorry, but i only take override command from ${owner.name} ${Bot.sadEmoji.asMention}"
         if (event.message.author.id != owner.id) return CommandResult.fail(failText)

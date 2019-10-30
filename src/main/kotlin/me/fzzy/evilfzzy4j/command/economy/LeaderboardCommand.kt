@@ -23,7 +23,7 @@ object LeaderboardCommand : Command("leaderboard") {
 
     private const val title = "LEADERBOARD"
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         val guild = FzzyGuild.getGuild(event.guild.id)
         val sorted = guild.getSortedCurrency()
 
@@ -33,14 +33,15 @@ object LeaderboardCommand : Command("leaderboard") {
         embedBuilder.setThumbnail("https://i.gyazo.com/5227ef31b9cdbc11d9f1e7313872f4af.gif")
         var i = 1
         for ((id, value) in sorted) {
-            if (id == 0L || event.member == null) continue
-            val title = "#$i - ${event.member?.effectiveName}"
+            val member = event.guild.getMemberById(id)
+            if (id == 0L || member == null || id == Bot.client.selfUser.idLong) continue
+            val title = "#$i - ${member.effectiveName}"
             val description = "$value ${Bot.currencyEmoji.asMention}"
             embedBuilder.addField(title, description, false)
             i++
         }
 
-        event.channel.sendMessage(embedBuilder.build()).queue { msg -> msg.delete().queueAfter(5, TimeUnit.MINUTES) }
+        event.channel.sendMessage(embedBuilder.build()).queue { msg -> msg.delete().queueAfter(2, TimeUnit.MINUTES) }
 
         return CommandResult.success()
     }

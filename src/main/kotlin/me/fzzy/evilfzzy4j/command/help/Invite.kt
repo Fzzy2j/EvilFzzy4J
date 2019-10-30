@@ -17,7 +17,7 @@ object Invite : Command("invite") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         event.author.openPrivateChannel().queue { private ->
             run {
                 private.sendMessage(Bot.client.getInviteUrl(

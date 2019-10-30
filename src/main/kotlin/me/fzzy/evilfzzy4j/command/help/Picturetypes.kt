@@ -16,7 +16,7 @@ object Picturetypes : Command("picturetypes") {
     override val price: Int = 0
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         var all = "```"
         for (file in File("pictures").listFiles()!!) {
             all += "-picture ${file.nameWithoutExtension}\n"

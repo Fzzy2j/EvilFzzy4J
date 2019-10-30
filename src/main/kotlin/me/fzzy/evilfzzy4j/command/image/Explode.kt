@@ -28,8 +28,8 @@ object Explode : Command("explode") {
     override val price: Int = 1
     override val cost: CommandCost = CommandCost.CURRENCY
 
-    override fun runCommand(event: MessageReceivedEvent, args: List<String>): CommandResult {
-        var file = Bot.getRecentImage(event.channel)?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
+    override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
+        var file = Bot.getRecentImage(event.channel, latestMessageId)?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
         val finalSize = 0.3
         val convert = ImageMagickCmd("convert")
         val executor = Executors.newFixedThreadPool(4)
