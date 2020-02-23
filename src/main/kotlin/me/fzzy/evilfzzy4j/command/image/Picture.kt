@@ -3,7 +3,6 @@ package me.fzzy.evilfzzy4j.command.image
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
-import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
@@ -19,12 +18,9 @@ import kotlin.math.max
 object Picture : Command("picture") {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
-    override val votes: Boolean = false
     override val description = "Inserts an image into another, use -picturetypes to see all the picture types"
     override val args: ArrayList<String> = arrayListOf("pictureType")
     override val allowDM: Boolean = true
-    override val price: Int = 1
-    override val cost: CommandCost = CommandCost.COOLDOWN
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 

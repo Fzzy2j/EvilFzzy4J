@@ -70,7 +70,7 @@ class MinesweeperBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, min
     fun attack(user: Long, x: Char, y: Int): Boolean {
         val actualX = x - 'a'
         return try {
-            val success = board[actualX][y].attack(user)
+            val isMine = board[actualX][y].attack(user)
             if (getAdjacentAmount(actualX, y) == 0) {
                 for (xDif in -1..1) {
                     for (yDif in -1..1) {
@@ -83,7 +83,7 @@ class MinesweeperBoard constructor(val sizeX: Int = 11, val sizeY: Int = 11, min
                     }
                 }
             }
-            success
+            !isMine
         } catch (e: ArrayIndexOutOfBoundsException) {
             false
         }

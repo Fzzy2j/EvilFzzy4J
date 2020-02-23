@@ -36,6 +36,14 @@ class FzzyGuild private constructor() {
                 guild.save()
             }
         }
+
+        fun lerpScores(amount: Float) {
+            for (guild in guilds) {
+                for ((id, score) in guild.currency) {
+                    guild.currency[id] = (score * amount).roundToInt()
+                }
+            }
+        }
     }
 
     private lateinit var guildId: String
@@ -116,6 +124,7 @@ class FzzyGuild private constructor() {
         if (message != null && ReactionHandler.getVotes(message) > getAverageVote()) {
             saveMessage(message)
         }
+
     }
 
     fun getCurrency(user: User): Int {

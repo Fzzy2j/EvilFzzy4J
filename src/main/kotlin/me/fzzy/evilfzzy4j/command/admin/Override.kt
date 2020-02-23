@@ -4,7 +4,6 @@ import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.FzzyUser
 import me.fzzy.evilfzzy4j.command.Command
-import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.util.concurrent.TimeUnit
@@ -13,11 +12,8 @@ object Override : Command("override") {
 
     override val cooldownMillis = 0L
     override val description = "Only for bot owner, for modifying values in the bot"
-    override val votes = false
     override val args: ArrayList<String> = arrayListOf("command")
     override val allowDM = true
-    override val price: Int = 0
-    override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         val owner = Bot.client.retrieveApplicationInfo().complete().owner

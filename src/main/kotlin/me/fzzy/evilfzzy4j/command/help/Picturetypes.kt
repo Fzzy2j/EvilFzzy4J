@@ -1,7 +1,6 @@
 package me.fzzy.evilfzzy4j.command.help
 
 import me.fzzy.evilfzzy4j.command.Command
-import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.io.File
@@ -9,12 +8,9 @@ import java.io.File
 object Picturetypes : Command("picturetypes") {
 
     override val cooldownMillis: Long = 4 * 1000
-    override val votes: Boolean = false
     override val description: String = "Shows all the picturess the bot can insert an image into using the -picture command"
     override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true
-    override val price: Int = 0
-    override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         var all = "```"

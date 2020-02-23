@@ -2,7 +2,6 @@ package me.fzzy.evilfzzy4j.command.voice
 
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.command.Command
-import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.net.URL
@@ -11,12 +10,9 @@ import java.net.URL
 object Play : Command("play") {
 
     override val cooldownMillis: Long = 1000 * 60 * 10
-    override val votes: Boolean = true
     override val description = "Plays audio in the voice channel"
     override val args: ArrayList<String> = arrayListOf("url")
     override val allowDM: Boolean = true
-    override val price: Int = 4
-    override val cost: CommandCost = CommandCost.CURRENCY
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 

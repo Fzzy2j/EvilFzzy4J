@@ -135,7 +135,6 @@ object Bot {
 fun main(args: Array<String>) {
     Bot.DATA_FILE.mkdirs()
 
-    //Bot.playerManager.registerSourceManager(LocalAudioSourceManager())
     AudioSourceManagers.registerLocalSource(Bot.playerManager)
 
     Bot.logger.info("Loading data.")
@@ -177,6 +176,7 @@ fun main(args: Array<String>) {
             .build()
 
     Bot.logger.info("Initializing game channels.")
+    // special ranch
     Bot.client.addEventListener(BattleshipChannel(608427341240205348L))
     Bot.client.addEventListener(MinesweeperChannel(608780391083671586L))
 
@@ -214,97 +214,15 @@ fun main(args: Array<String>) {
 
     Bot.logger.info("EvilFzzy v${Bot::class.java.`package`.implementationVersion} online.")
 
-    //ReactionHandler.registerEvents(Bot.client.eventDispatcher)
-
-    /*Bot.client.eventDispatcher.on(MessageCreateEvent::class.java)
-            .flatMap { event ->
-                Mono.justOrEmpty(event.message.content)
-                        .flatMap { content ->
-                            Flux.fromIterable(Command.commands.entries)
-                                    .filter { entry -> content.startsWith("${Bot.data.BOT_PREFIX}${entry.key}") }
-                                    .flatMap { entry ->
-                                        entry.value.handleCommand(event)
-                                                .flatMap { result ->
-                                                    Mono.just(result)
-                                                }
-                                                .filter { it.getMessage() != null }
-                                                .flatMap { result ->
-                                                    event.message.channel.flatMap {
-                                                        MessageScheduler.sendTempMessage(it, result.getMessage()!!, Bot.data.DEFAULT_TEMP_MESSAGE_DURATION)
-                                                    }
-                                                }
-                                                .onErrorResume { Mono.empty() }
-                                                .doOnError {
-                                                    Bot.logger.error(it.message!!)
-                                                }
-                                    }
-                                    .next()
-                        }
-            }
-            .subscribeOn(Bot.scheduler)
-            .subscribe()*/
-
-    /*Bot.client.eventDispatcher.on(MessageCreateEvent::class.java).doOnError {
-        Bot.logger.error(it.message!!)
-    }.subscribe { event ->
-
-        if (!event.message.author.get().isBot) {
-            if (event.guildId.isPresent) {
-                val guild = FzzyGuild.getGuild(event.guildId.get())
-                val msg = event.message.content
-                if ((msg.isPresent && Bot.URL_PATTERN.matcher(event.message.content.get()).find()) || event.message.attachments.size > 0) {
-                    guild.allowVotes(event.message)
-                }
-            }
+    val cal = Calendar.getInstance()
+    var day = cal.get(Calendar.DAY_OF_MONTH)
+    Bot.scheduler.schedulePeriodically({
+        cal.time = Date()
+        if (day != cal.get(Calendar.DAY_OF_MONTH)) {
+            day = cal.get(Calendar.DAY_OF_MONTH)
+            FzzyGuild.lerpScores(0.9f)
         }
-
-        val respongeMsgs = listOf(
-                "no problem %name%",
-                "np %name%",
-                ":P"
-        )
-
-        fun mentionsByName(msg: Message): Boolean {
-            if (!msg.content.isPresent) return false
-            val check = msg.content.get().toLowerCase()
-            val self = msg.guild.block()!!.getMemberById(Bot.client.selfId.get()).block()!!
-            val checkAgainst = "${self.username} ${self.nickname}"
-            for (realCheck in check.split(" ")) {
-                if (check.contains("thank") && (checkAgainst.toLowerCase().replace(" ", "").contains(realCheck) || msg.userMentions.collectList().block()!!.contains(self)))
-                    return true
-            }
-            return false
-        }
-        if (mentionsByName(event.message)) {
-            event.message.channel.subscribe { channel ->
-                channel.getMessagesBefore(channel.lastMessageId.get()).take(5).subscribe({
-                    Bot.logger.info(event.message.timestamp.minusMillis(it.timestamp.toEpochMilli()).epochSecond.toString())
-                    if (it.author.get().id == Bot.client.selfId.get()) {
-                        val msg = respongeMsgs[Bot.random.nextInt(respongeMsgs.size)].replace("%name%", event.member.get().displayName.toLowerCase())
-                        event.message.channel.block()!!.createMessage(msg).block()
-                        throw RuntimeException("Found recent message from bot")
-                    }
-                }, {})
-            }
-        }
-    }*/
-
-    /*fun parseEmoji(s: String): ReactionEmoji {
-        return try {
-            val emojiSplit = s.substring(1, s.length - 1).split(":")
-            ReactionEmoji.of(emojiSplit[2].toLong(), emojiSplit[1], emojiSplit[0].isNotBlank())
-        } catch (e: Exception) {
-            ReactionEmoji.unicode(s)
-        }
-    }
-
-    fun parseEmojis(list: List<String>): List<ReactionEmoji> {
-        val l = arrayListOf<ReactionEmoji>()
-        for (s in list) {
-            l.add(parseEmoji(s))
-        }
-        return l
-    }*/
+    }, 5, 10, TimeUnit.SECONDS)
 }
 
 

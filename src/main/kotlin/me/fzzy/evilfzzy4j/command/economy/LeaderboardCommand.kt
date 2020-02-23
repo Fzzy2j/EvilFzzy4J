@@ -3,7 +3,6 @@ package me.fzzy.evilfzzy4j.command.economy
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
-import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
@@ -14,12 +13,9 @@ import java.util.concurrent.TimeUnit
 object LeaderboardCommand : Command("leaderboard") {
 
     override val cooldownMillis: Long = 10 * 1000
-    override val votes: Boolean = false
     override val description = "shows the vote leaderboard"
     override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = false
-    override val price: Int = 1
-    override val cost: CommandCost = CommandCost.COOLDOWN
 
     private const val title = "LEADERBOARD"
 

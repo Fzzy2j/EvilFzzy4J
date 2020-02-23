@@ -3,7 +3,6 @@ package me.fzzy.evilfzzy4j.command.image
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
-import me.fzzy.evilfzzy4j.command.CommandCost
 import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import org.im4java.core.IMOperation
@@ -14,12 +13,9 @@ import kotlin.math.roundToInt
 object Deepfry : Command("deepfry") {
 
     override val cooldownMillis: Long = 60 * 1000 * 3
-    override val votes: Boolean = false
     override val description = "Deep fries an image"
     override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true
-    override val price: Int = 1
-    override val cost: CommandCost = CommandCost.COOLDOWN
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         val file = Bot.getRecentImage(event.channel, latestMessageId)
