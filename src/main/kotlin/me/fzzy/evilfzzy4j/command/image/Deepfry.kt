@@ -1,7 +1,6 @@
 package me.fzzy.evilfzzy4j.command.image
 
 import me.fzzy.evilfzzy4j.Bot
-import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
@@ -50,7 +49,7 @@ object Deepfry : Command("deepfry") {
 
         convert.run(op)
 
-        if (event.message.isFromGuild) FzzyGuild.getGuild(event.guild.id).sendVoteAttachment(file, event.guild.getTextChannelById(event.channel.id)!!, event.author)
+        event.textChannel.sendFile(file).queue()
 
         return CommandResult.success()
     }

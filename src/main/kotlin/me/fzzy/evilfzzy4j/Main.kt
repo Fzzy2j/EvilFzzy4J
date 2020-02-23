@@ -4,11 +4,8 @@ import com.google.gson.Gson
 import com.google.gson.stream.JsonReader
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
-import me.fzzy.evilfzzy4j.carbonationwars.battleship.BattleshipChannel
-import me.fzzy.evilfzzy4j.carbonationwars.minesweeper.MinesweeperChannel
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.admin.Override
-import me.fzzy.evilfzzy4j.command.economy.LeaderboardCommand
 import me.fzzy.evilfzzy4j.command.help.Help
 import me.fzzy.evilfzzy4j.command.help.Invite
 import me.fzzy.evilfzzy4j.command.help.Picturetypes
@@ -39,7 +36,6 @@ class BotData {
     val DISCORD_TOKEN = ""
     val BOT_PREFIX = "-"
     val IMAGE_MAGICK_DIRECTORY = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
-    val CURRENCY_EMOJI = "❤"
     val SAD_EMOJIS = "\uD83D\uDE22"
     val HAPPY_EMOJIS = "\uD83D\uDE04"
     val SURPRISED_EMOJIS = "\uD83D\uDE2F"
@@ -59,7 +55,6 @@ object Bot {
 
     lateinit var data: BotData
 
-    lateinit var currencyEmoji: Emote
     lateinit var sadEmoji: Emote
     lateinit var happyEmoji: Emote
     lateinit var surprisedEmoji: Emote
@@ -175,18 +170,11 @@ fun main(args: Array<String>) {
             .addEventListeners(Command, ReactionHandler)
             .build()
 
-    Bot.logger.info("Initializing game channels.")
-    // special ranch
-    Bot.client.addEventListener(BattleshipChannel(608427341240205348L))
-    Bot.client.addEventListener(MinesweeperChannel(608780391083671586L))
-
     Bot.client.awaitReady()
 
-    Bot.currencyEmoji = Bot.client.getEmoteById(571593175907434516L)!!
     Bot.sadEmoji = Bot.client.getEmoteById(627647150620278805L)!!
     Bot.happyEmoji = Bot.client.getEmoteById(627636612288741406L)!!
     Bot.surprisedEmoji = Bot.client.getEmoteById(593542628709105896L)!!
-    Bot.logger.info("Currency emoji set to: ${Bot.currencyEmoji}")
     Bot.logger.info("Sad emojis set to: ${Bot.sadEmoji}")
     Bot.logger.info("Happy emojis set to: ${Bot.happyEmoji}")
     Bot.logger.info("Surprised emojis set to: ${Bot.surprisedEmoji}")
@@ -201,7 +189,6 @@ fun main(args: Array<String>) {
     Command.registerCommand("play", Play)
     Command.registerCommand("tts", Tts)
     Command.registerCommand("repost", Repost)
-    Command.registerCommand("leaderboard", LeaderboardCommand)
     Command.registerCommand("help", Help)
     Command.registerCommand("invite", Invite)
     Command.registerCommand("picturetypes", Picturetypes)
@@ -213,16 +200,6 @@ fun main(args: Array<String>) {
     }, 10, 60, TimeUnit.SECONDS)
 
     Bot.logger.info("EvilFzzy v${Bot::class.java.`package`.implementationVersion} online.")
-
-    val cal = Calendar.getInstance()
-    var day = cal.get(Calendar.DAY_OF_MONTH)
-    Bot.scheduler.schedulePeriodically({
-        cal.time = Date()
-        if (day != cal.get(Calendar.DAY_OF_MONTH)) {
-            day = cal.get(Calendar.DAY_OF_MONTH)
-            FzzyGuild.lerpScores(0.9f)
-        }
-    }, 5, 10, TimeUnit.SECONDS)
 }
 
 

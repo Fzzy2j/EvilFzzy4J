@@ -5,12 +5,9 @@ import com.google.gson.annotations.Expose
 import com.google.gson.stream.JsonReader
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.TextChannel
-import net.dv8tion.jda.api.entities.User
 import org.json.JSONObject
 import java.io.*
 import java.util.*
-import kotlin.math.roundToInt
 
 class FzzyGuild private constructor() {
 
@@ -36,48 +33,12 @@ class FzzyGuild private constructor() {
                 guild.save()
             }
         }
-
-        fun lerpScores(amount: Float) {
-            for (guild in guilds) {
-                for ((id, score) in guild.currency) {
-                    guild.currency[id] = (score * amount).roundToInt()
-                }
-            }
-        }
     }
 
     private lateinit var guildId: String
 
     @Expose
-    private var posts = 0
-    @Expose
-    private var votes = 0
-    @Expose
-    var currency: HashMap<Long, Int> = hashMapOf()
-    @Expose
     private val savedMessageIds = ArrayList<Long>()
-
-    //val player = FzzyPlayer(LavaPlayerAudioProvider(Bot.playerManager.createPlayer()))
-
-    fun allowVotes(msg: Message) {
-        posts++
-        votes++
-        msg.addReaction(Bot.currencyEmoji).queue()
-    }
-
-    fun getSortedCurrency(): Map<Long, Int> {
-        return currency.toList().sortedBy { (key, value) -> -value }.toMap()
-    }
-
-    fun sendVoteAttachment(file: File, channel: TextChannel, credit: User? = null): Message? {
-        val msg = if (credit != null) {
-            channel.sendMessage(credit.asMention).addFile(file).complete()
-        } else {
-            channel.sendFile(file).complete()
-        }
-        if (msg != null) allowVotes(msg)
-        return msg
-    }
 
     fun saveMessage(message: Message): File? {
         if (!savedMessageIds.contains(message.idLong)) {
@@ -108,36 +69,6 @@ class FzzyGuild private constructor() {
             return File(fileName)
         }
         return null
-    }
-
-    fun addCurrency(user: User, amount: Int, message: Message? = null) {
-        addCurrency(user.idLong, amount, message)
-    }
-
-    fun addCurrency(fzzyUser: FzzyUser, amount: Int, message: Message? = null) {
-        addCurrency(fzzyUser.id, amount, message)
-    }
-
-    fun addCurrency(id: Long, amount: Int, message: Message? = null) {
-        votes += amount
-        currency[id] = currency.getOrDefault(id, 0) + amount
-        if (message != null && ReactionHandler.getVotes(message) > getAverageVote()) {
-            saveMessage(message)
-        }
-
-    }
-
-    fun getCurrency(user: User): Int {
-        return currency.getOrDefault(user.idLong, 0)
-    }
-
-    fun getCurrency(user: FzzyUser): Int {
-        return currency.getOrDefault(user.id, 0)
-    }
-
-    fun getAverageVote(): Int {
-        if (posts == 0) return 0
-        return (votes.toFloat() / posts.toFloat()).roundToInt()
     }
 
     fun getDiscordGuild(): Guild? {

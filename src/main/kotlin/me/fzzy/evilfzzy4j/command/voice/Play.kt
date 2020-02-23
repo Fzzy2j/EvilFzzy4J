@@ -6,7 +6,6 @@ import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.net.URL
 
-
 object Play : Command("play") {
 
     override val cooldownMillis: Long = 1000 * 60 * 10

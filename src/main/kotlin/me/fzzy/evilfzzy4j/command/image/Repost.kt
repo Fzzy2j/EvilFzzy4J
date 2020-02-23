@@ -1,11 +1,9 @@
 package me.fzzy.evilfzzy4j.command.image
 
 import me.fzzy.evilfzzy4j.Bot
-import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandResult
 import net.dv8tion.jda.api.entities.Guild
-import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.io.File
 
@@ -20,7 +18,7 @@ object Repost : Command("repost") {
 
         val repost = getRepost(event.guild) ?: return CommandResult.fail("there havent been any worthy posts in this server ${Bot.surprisedEmoji.asMention}")
 
-        FzzyGuild.getGuild(event.guild.id).sendVoteAttachment(repost, event.channel as TextChannel, event.author)
+        event.textChannel.sendFile(repost).queue()
         repost.delete()
         return CommandResult.success()
     }

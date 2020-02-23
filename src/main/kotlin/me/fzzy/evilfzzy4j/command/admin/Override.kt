@@ -1,7 +1,6 @@
 package me.fzzy.evilfzzy4j.command.admin
 
 import me.fzzy.evilfzzy4j.Bot
-import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.FzzyUser
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandResult
@@ -34,12 +33,6 @@ object Override : Command("override") {
             "skip" -> {
                 //AudioPlayer.getAudioPlayerForGuild(message.guild).skip()
             }
-            "give" -> {
-                for (mention in event.message.mentionedUsers) {
-                    FzzyGuild.getGuild(event.message.guild.id).addCurrency(mention, args[1].toInt())
-                }
-                event.channel.sendMessage("done!").queue { msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES) }
-            }
             "cooldowns", "cooldown" -> {
                 val users = event.message.mentionedUsers
                 for (user in users) {
@@ -66,13 +59,6 @@ object Override : Command("override") {
                         .replace("%author%", event.message.author.name.toLowerCase())
 
                 event.channel.sendMessage(text).queue { msg -> msg.delete().queueAfter(1, TimeUnit.MINUTES) }
-            }
-            "allowvotes" -> {
-                event.channel.retrieveMessageById(args[1].toLong()).queue { msg ->
-                    run {
-                        FzzyGuild.getGuild(event.message.guild.id).allowVotes(msg)
-                    }
-                }
             }
         }
 

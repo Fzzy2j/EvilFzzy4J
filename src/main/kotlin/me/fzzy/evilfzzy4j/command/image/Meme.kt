@@ -1,10 +1,8 @@
 package me.fzzy.evilfzzy4j.command.image
 
 import me.fzzy.evilfzzy4j.Bot
-import me.fzzy.evilfzzy4j.FzzyGuild
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandResult
-import net.dv8tion.jda.api.entities.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import org.im4java.core.IMOperation
 import org.im4java.core.ImageMagickCmd
@@ -52,8 +50,7 @@ object Meme : Command("meme") {
 
         convert.run(operation)
 
-
-        FzzyGuild.getGuild(event.guild.id).sendVoteAttachment(file, event.channel as TextChannel, event.author)
+        event.textChannel.sendFile(file).queue()
         file.delete()
         return CommandResult.success()
     }
