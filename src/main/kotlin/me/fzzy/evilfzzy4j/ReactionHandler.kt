@@ -7,10 +7,10 @@ object ReactionHandler : ListenerAdapter() {
 
     override fun onGuildMessageReactionAdd(event: GuildMessageReactionAddEvent) {
         if (event.user.idLong == Bot.client.selfUser.idLong) return
-        if (event.user.idLong == event.channel.retrieveMessageById(event.messageId).complete().author.idLong) return
+        val msg = event.channel.retrieveMessageById(event.messageId).complete() ?: return
+        if (event.user.idLong == msg.author.idLong) return
 
         val guild = FzzyGuild.getGuild(event.guild.id)
-        val msg = event.channel.getHistoryBefore(event.channel.latestMessageId, 10).complete().getMessageById(event.messageId) ?: return
 
         guild.saveMessage(msg)
     }
