@@ -12,7 +12,7 @@ object ReactionHandler : ListenerAdapter() {
         if (event.user.idLong == Bot.client.selfUser.idLong) return
         if (event.reactionEmote.idLong != Bot.upvoteEmote.idLong && event.reactionEmote.idLong != Bot.downvoteEmote.idLong) return
         val msg = event.channel.retrieveMessageById(event.messageId).complete() ?: return
-        //if (event.user.idLong == msg.author.idLong) return
+        if (event.user.idLong == msg.author.idLong) return
 
         val guild = FzzyGuild.getGuild(event.guild.id)
         if (event.reactionEmote.idLong == Bot.upvoteEmote.idLong) {
@@ -28,7 +28,7 @@ object ReactionHandler : ListenerAdapter() {
         if (event.user.idLong == Bot.client.selfUser.idLong) return
         if (event.reactionEmote.idLong != Bot.upvoteEmote.idLong && event.reactionEmote.idLong != Bot.downvoteEmote.idLong) return
         val msg = event.channel.retrieveMessageById(event.messageId).complete() ?: return
-        //if (event.user.idLong == msg.author.idLong) return
+        if (event.user.idLong == msg.author.idLong) return
 
         val guild = FzzyGuild.getGuild(event.guild.id)
         if (event.reactionEmote.idLong == Bot.upvoteEmote.idLong) {
