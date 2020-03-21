@@ -53,7 +53,7 @@ class FzzyPlayer constructor(val guild: Guild) : AudioEventAdapter() {
 
         val file = File("cache${File.separator}$currentTime.mp3")
 
-        if (!file.exists()) return CommandResult.fail("i couldnt get media from that url ${Bot.surprisedEmoji}")
+        if (!file.exists()) return CommandResult.fail("i couldnt get media from that url ${Bot.surprisedEmote}")
 
         play(channel, file)
 

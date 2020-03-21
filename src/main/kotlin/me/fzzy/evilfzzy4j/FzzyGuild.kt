@@ -21,7 +21,7 @@ class FzzyGuild private constructor() {
             }
             val guildFile = File(Bot.DATA_FILE, "${guildId}.json")
             val guild = if (guildFile.exists()) {
-                    Bot.gson.fromJson(JsonReader(InputStreamReader(guildFile.inputStream())), FzzyGuild::class.java)
+                Bot.gson.fromJson(JsonReader(InputStreamReader(guildFile.inputStream())), FzzyGuild::class.java)
             } else FzzyGuild()
             guild.guildId = guildId
             guilds.add(guild)
@@ -38,7 +38,13 @@ class FzzyGuild private constructor() {
     private lateinit var guildId: String
 
     @Expose
+    private val userScores = hashMapOf<Long, Int>()
+    @Expose
     private val savedMessageIds = ArrayList<Long>()
+
+    fun getSortedScores(): Map<Long, Int> {
+        return userScores.toList().sortedBy { (_, value) -> -value }.toMap()
+    }
 
     fun saveMessage(message: Message): File? {
         if (!savedMessageIds.contains(message.idLong)) {
@@ -73,6 +79,16 @@ class FzzyGuild private constructor() {
 
     fun getDiscordGuild(): Guild? {
         return Bot.client.getGuildById(guildId)
+    }
+
+    fun incrementScore(id: Long) {
+        val score = userScores.getOrDefault(id, 0)
+        userScores[id] = score + 1
+    }
+
+    fun decrementScore(id: Long) {
+        val score = userScores.getOrDefault(id, 0)
+        userScores[id] = score - 1
     }
 
     fun save() {

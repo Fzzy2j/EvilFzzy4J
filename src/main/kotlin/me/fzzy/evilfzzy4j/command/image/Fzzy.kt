@@ -22,7 +22,7 @@ object Fzzy : Command("fzzy") {
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         val file = Bot.getRecentImage(event.channel, latestMessageId)
-                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
+                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmote.asMention}")
 
         var tempFile: File? = null
         if (file.extension == "gif") {
@@ -30,7 +30,7 @@ object Fzzy : Command("fzzy") {
 
             val info = Info(file.absolutePath, false)
             var delay = info.getProperty("Delay")
-                    ?: return CommandResult.fail("i cant find a framerate for this file ${Bot.sadEmoji.asMention}")
+                    ?: return CommandResult.fail("i cant find a framerate for this file ${Bot.sadEmote.asMention}")
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
                 delay = "25x100"

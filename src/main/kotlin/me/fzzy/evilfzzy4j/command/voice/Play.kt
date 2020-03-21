@@ -15,8 +15,8 @@ object Play : Command("play") {
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 
-        val state = event.member!!.voiceState?: return CommandResult.fail("i cant get your voice state, this is my owners fault ${Bot.sadEmoji.asMention}")
-        val channel = state.channel?: return CommandResult.fail("i cant do that unless youre in a voice channel ${Bot.sadEmoji.asMention}")
+        val state = event.member!!.voiceState?: return CommandResult.fail("i cant get your voice state, this is my owners fault ${Bot.sadEmote.asMention}")
+        val channel = state.channel?: return CommandResult.fail("i cant do that unless youre in a voice channel ${Bot.sadEmote.asMention}")
         Bot.getGuildAudioPlayer(event.guild).play(channel, URL(args[0]))
 
         return CommandResult.success()

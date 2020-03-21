@@ -13,11 +13,6 @@ object Help : Command("help") {
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
-
-        val matcher = Bot.URL_PATTERN.matcher(args.joinToString(" "))
-        if (matcher.find()) {
-            Bot.logger.info(args.joinToString(" ").substring(matcher.start(1), matcher.end()))
-        }
         var helpMsg = "```md\n"
         for ((_, command) in commands) {
             val cost = "${command.cooldownMillis / 1000} second cooldown"

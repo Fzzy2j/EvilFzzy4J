@@ -28,7 +28,7 @@ object Meme : Command("meme") {
         if (full.size > 1) bottomText = full[1]
 
         val file = Bot.getRecentImage(event.channel, latestMessageId)
-                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
+                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmote.asMention}")
 
         val convert = ImageMagickCmd("convert")
         val operation = IMOperation()

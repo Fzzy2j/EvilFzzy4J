@@ -18,7 +18,7 @@ object Deepfry : Command("deepfry") {
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         val file = Bot.getRecentImage(event.channel, latestMessageId)
-                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
+                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmote.asMention}")
 
         val sizeHelper = ImageIO.read(file)
         val width = sizeHelper.width

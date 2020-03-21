@@ -23,7 +23,7 @@ object Mc : Command("mc") {
         }
         achieve = achieve.substring(1)
         val url = getMinecraftAchievement(achieve)
-        val file = ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("the api didnt like that ${Bot.surprisedEmoji.asMention}")
+        val file = ImageHelper.downloadTempFile(url) ?: return CommandResult.fail("the api didnt like that ${Bot.surprisedEmote.asMention}")
 
         event.textChannel.sendFile(file).queue()
         file.delete()

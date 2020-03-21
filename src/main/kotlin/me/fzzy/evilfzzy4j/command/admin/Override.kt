@@ -16,7 +16,7 @@ object Override : Command("override") {
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         val owner = Bot.client.retrieveApplicationInfo().complete().owner
-        val failText = "sorry, but i only take override command from ${owner.name} ${Bot.sadEmoji.asMention}"
+        val failText = "sorry, but i only take override command from ${owner.name} ${Bot.sadEmote.asMention}"
         if (event.message.author.id != owner.id) return CommandResult.fail(failText)
 
         when (args[0].toLowerCase()) {
@@ -49,9 +49,9 @@ object Override : Command("override") {
                 }
 
                 val messages = listOf(
-                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.happyEmoji.asMention}",
-                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.happyEmoji.asMention}",
-                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset ${Bot.happyEmoji.asMention}"
+                        "okay %author%! i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.happyEmote.asMention}",
+                        "i guess ill do that if you want me to. i reset %target%s cooldown${if (userNames.size > 1) "s" else ""} ${Bot.happyEmote.asMention}",
+                        "already done. %target%s cooldown${if (userNames.size > 1) "s are" else " is"} reset ${Bot.happyEmote.asMention}"
                 )
 
                 val text = messages[Bot.random.nextInt(messages.size)]

@@ -5,6 +5,7 @@ import com.google.gson.stream.JsonReader
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
 import me.fzzy.evilfzzy4j.command.Command
+import me.fzzy.evilfzzy4j.command.Leaderboard
 import me.fzzy.evilfzzy4j.command.admin.Override
 import me.fzzy.evilfzzy4j.command.help.Help
 import me.fzzy.evilfzzy4j.command.help.Invite
@@ -36,9 +37,11 @@ class BotData {
     val DISCORD_TOKEN = ""
     val BOT_PREFIX = "-"
     val IMAGE_MAGICK_DIRECTORY = "C:${File.separator}Program Files${File.separator}ImageMagick-7.0.8-Q16"
-    val SAD_EMOJIS = "\uD83D\uDE22"
-    val HAPPY_EMOJIS = "\uD83D\uDE04"
-    val SURPRISED_EMOJIS = "\uD83D\uDE2F"
+    val SAD_EMOTE_ID = 627647150620278805L
+    val HAPPY_EMOTE_ID = 627636612288741406L
+    val SURPRISED_EMOTE_ID = 593542628709105896L
+    val UPVOTE_EMOTE_ID = 690737360329244712L
+    val DOWNVOTE_EMOTE_ID = 690737419250565120L
 }
 
 object Bot {
@@ -55,9 +58,11 @@ object Bot {
 
     lateinit var data: BotData
 
-    lateinit var sadEmoji: Emote
-    lateinit var happyEmoji: Emote
-    lateinit var surprisedEmoji: Emote
+    lateinit var sadEmote: Emote
+    lateinit var happyEmote: Emote
+    lateinit var surprisedEmote: Emote
+    lateinit var upvoteEmote: Emote
+    lateinit var downvoteEmote: Emote
 
     val URL_PATTERN: Pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
@@ -165,19 +170,23 @@ fun main(args: Array<String>) {
 
     Bot.logger.info("Logging in.")
     Bot.client = JDABuilder()
-            .setActivity(Activity.listening("the rain"))
+            .setActivity(Activity.listening("the rain -help"))
             .setToken(Bot.data.DISCORD_TOKEN)
             .addEventListeners(Command, ReactionHandler)
             .build()
 
     Bot.client.awaitReady()
 
-    Bot.sadEmoji = Bot.client.getEmoteById(627647150620278805L)!!
-    Bot.happyEmoji = Bot.client.getEmoteById(627636612288741406L)!!
-    Bot.surprisedEmoji = Bot.client.getEmoteById(593542628709105896L)!!
-    Bot.logger.info("Sad emojis set to: ${Bot.sadEmoji}")
-    Bot.logger.info("Happy emojis set to: ${Bot.happyEmoji}")
-    Bot.logger.info("Surprised emojis set to: ${Bot.surprisedEmoji}")
+    Bot.sadEmote = Bot.client.getEmoteById(Bot.data.SAD_EMOTE_ID)!!
+    Bot.happyEmote = Bot.client.getEmoteById(Bot.data.HAPPY_EMOTE_ID)!!
+    Bot.surprisedEmote = Bot.client.getEmoteById(Bot.data.SURPRISED_EMOTE_ID)!!
+    Bot.upvoteEmote = Bot.client.getEmoteById(Bot.data.UPVOTE_EMOTE_ID)!!
+    Bot.downvoteEmote = Bot.client.getEmoteById(Bot.data.DOWNVOTE_EMOTE_ID)!!
+    Bot.logger.info("Sad emoji set to: ${Bot.sadEmote}")
+    Bot.logger.info("Happy emoji set to: ${Bot.happyEmote}")
+    Bot.logger.info("Surprised emoji set to: ${Bot.surprisedEmote}")
+    Bot.logger.info("Upvote emoji set to: ${Bot.upvoteEmote}")
+    Bot.logger.info("Downvote emoji set to: ${Bot.downvoteEmote}")
 
     Bot.logger.info("Registering commands.")
     Command.registerCommand("fzzy", Fzzy)
@@ -193,11 +202,12 @@ fun main(args: Array<String>) {
     Command.registerCommand("invite", Invite)
     Command.registerCommand("picturetypes", Picturetypes)
     Command.registerCommand("override", Override)
+    Command.registerCommand("leaderboard", Leaderboard)
 
     Bot.logger.info("Starting auto-saver.")
     Bot.scheduler.schedulePeriodically({
         FzzyGuild.saveAll()
-    }, 10, 60, TimeUnit.SECONDS)
+    }, 1, 10, TimeUnit.MINUTES)
 
     Bot.logger.info("EvilFzzy v${Bot::class.java.`package`.implementationVersion} online.")
 }

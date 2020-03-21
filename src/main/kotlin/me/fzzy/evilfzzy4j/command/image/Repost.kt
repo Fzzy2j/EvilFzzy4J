@@ -16,7 +16,7 @@ object Repost : Command("repost") {
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
 
-        val repost = getRepost(event.guild) ?: return CommandResult.fail("there havent been any worthy posts in this server ${Bot.surprisedEmoji.asMention}")
+        val repost = getRepost(event.guild) ?: return CommandResult.fail("there havent been any worthy posts in this server ${Bot.surprisedEmote.asMention}")
 
         event.textChannel.sendFile(repost).queue()
         repost.delete()

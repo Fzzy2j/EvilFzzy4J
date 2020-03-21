@@ -23,7 +23,7 @@ object Explode : Command("explode") {
     override val allowDM: Boolean = true
 
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
-        var file = Bot.getRecentImage(event.channel, latestMessageId)?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
+        var file = Bot.getRecentImage(event.channel, latestMessageId)?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmote.asMention}")
         val finalSize = 0.3
         val convert = ImageMagickCmd("convert")
         val executor = Executors.newFixedThreadPool(4)
@@ -32,7 +32,7 @@ object Explode : Command("explode") {
             var op = IMOperation()
 
             val info = Info(file.absolutePath, false)
-            var delay = info.getProperty("Delay")?: return CommandResult.fail("i cant find a framerate for this file ${Bot.sadEmoji.asMention}")
+            var delay = info.getProperty("Delay")?: return CommandResult.fail("i cant find a framerate for this file ${Bot.sadEmote.asMention}")
 
             if ((delay.split("x")[1].toDouble() / delay.split("x")[0].toDouble()) < 4) {
                 delay = "25x100"

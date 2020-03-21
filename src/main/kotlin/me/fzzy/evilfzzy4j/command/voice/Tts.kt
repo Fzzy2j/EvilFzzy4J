@@ -25,16 +25,16 @@ object Tts : Command("tts") {
             }
             text = text.substring(1)
             val fileName = "cache/${System.currentTimeMillis()}.mp3"
-            val speech = getTextToSpeech(text) ?: return CommandResult.fail("the text to speech api didnt work ${Bot.sadEmoji.asMention}")
+            val speech = getTextToSpeech(text) ?: return CommandResult.fail("the text to speech api didnt work ${Bot.sadEmote.asMention}")
             val sound = File(fileName)
             FileUtils.writeByteArrayToFile(sound, speech)
-            val state = event.member!!.voiceState?: return CommandResult.fail("i cant get your voice state, this is my owners fault ${Bot.sadEmoji.asMention}")
-            val channel = state.channel?: return CommandResult.fail("i cant do that unless youre in a voice channel ${Bot.sadEmoji.asMention}")
+            val state = event.member!!.voiceState?: return CommandResult.fail("i cant get your voice state, this is my owners fault ${Bot.sadEmote.asMention}")
+            val channel = state.channel?: return CommandResult.fail("i cant do that unless youre in a voice channel ${Bot.sadEmote.asMention}")
             Bot.getGuildAudioPlayer(event.guild).play(channel, sound)
 
             return CommandResult.success()
         }
-        return CommandResult.fail("i dont know what you want ${Bot.sadEmoji.asMention}")
+        return CommandResult.fail("i dont know what you want ${Bot.sadEmote.asMention}")
     }
 
     fun getTextToSpeech(text: String): ByteArray? {

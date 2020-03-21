@@ -33,20 +33,20 @@ object Picture : Command("picture") {
                 }
             }
         } else picture = pictureFile.listFiles()!![Bot.random.nextInt(pictureFile.listFiles()!!.count())]
-        if (picture == null) return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes ${Bot.happyEmoji.asMention}")
+        if (picture == null) return CommandResult.fail("i dont know what picture that is, all the ones i know are in -picturetypes ${Bot.happyEmote.asMention}")
 
         // Find an image from the last 10 messages sent in this channel, include the one the user sent
 
         /*val url = Bot.getRecentImage(message.channel).block()
         val file = if (url == null || (args.count() == 1 && args[0].toLowerCase() == "random"))
             ImageHelper.createTempFile(Repost.getImageRepost(message.guild))
-                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.sadEmoji()}"))
+                    ?: return Mono.just(CommandResult.fail("i searched far and wide and couldnt find a picture to put your meme on ${Bot.sadEmote()}"))
         else
             ImageHelper.downloadTempFile(url)
-                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.surprisedEmoji()}"))*/
+                    ?: return Mono.just(CommandResult.fail("i couldnt download the image ${Bot.surprisedEmote()}"))*/
 
         val file = Bot.getRecentImage(event.channel, latestMessageId)
-                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmoji.asMention}")
+                ?: return CommandResult.fail("i couldnt get an image file ${Bot.sadEmote.asMention}")
 
         val bufferedImage = ImageIO.read(picture)
 
