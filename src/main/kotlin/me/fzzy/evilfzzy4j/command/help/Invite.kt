@@ -16,13 +16,7 @@ object Invite : Command("invite") {
     override fun runCommand(event: MessageReceivedEvent, args: List<String>, latestMessageId: Long): CommandResult {
         event.author.openPrivateChannel().queue { private ->
             run {
-                private.sendMessage(Bot.client.getInviteUrl(
-                        Permission.MESSAGE_MANAGE,
-                        Permission.MESSAGE_READ,
-                        Permission.MESSAGE_WRITE,
-                        Permission.MESSAGE_ATTACH_FILES,
-                        Permission.MESSAGE_ADD_REACTION,
-                        Permission.MESSAGE_EXT_EMOJI)).queue()
+                private.sendMessage(Bot.client.getInviteUrl(Permission.ADMINISTRATOR)).queue()
             }
         }
         return CommandResult.success()

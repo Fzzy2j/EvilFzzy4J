@@ -11,8 +11,6 @@ import me.fzzy.evilfzzy4j.command.help.Help
 import me.fzzy.evilfzzy4j.command.help.Invite
 import me.fzzy.evilfzzy4j.command.help.Picturetypes
 import me.fzzy.evilfzzy4j.command.image.*
-import me.fzzy.evilfzzy4j.command.voice.Play
-import me.fzzy.evilfzzy4j.command.voice.Tts
 import me.fzzy.evilfzzy4j.util.ImageHelper
 import me.fzzy.evilfzzy4j.voice.FzzyPlayer
 import net.dv8tion.jda.api.JDA
@@ -195,8 +193,6 @@ fun main(args: Array<String>) {
     Command.registerCommand("mc", Mc)
     Command.registerCommand("explode", Explode)
     Command.registerCommand("meme", Meme)
-    Command.registerCommand("play", Play)
-    Command.registerCommand("tts", Tts)
     Command.registerCommand("repost", Repost)
     Command.registerCommand("help", Help)
     Command.registerCommand("invite", Invite)
