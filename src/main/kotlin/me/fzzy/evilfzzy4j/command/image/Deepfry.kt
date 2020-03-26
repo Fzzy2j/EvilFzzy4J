@@ -11,7 +11,7 @@ import kotlin.math.roundToInt
 
 object Deepfry : Command("deepfry") {
 
-    override val cooldownMillis: Long = 60 * 1000 * 3
+    override val cooldownMillis: Long = 60 * 1000
     override val description = "Deep fries an image"
     override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true

@@ -17,7 +17,7 @@ import kotlin.math.roundToInt
 
 object Explode : Command("explode") {
 
-    override val cooldownMillis: Long = 60 * 1000 * 5
+    override val cooldownMillis: Long = 60 * 1000
     override val description = "Scales an image repeatedly, turning it into a gif"
     override val args: ArrayList<String> = arrayListOf()
     override val allowDM: Boolean = true

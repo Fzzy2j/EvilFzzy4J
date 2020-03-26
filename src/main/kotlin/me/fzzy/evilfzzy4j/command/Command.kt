@@ -2,6 +2,7 @@ package me.fzzy.evilfzzy4j.command
 
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyUser
+import net.dv8tion.jda.api.Permission
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.hooks.ListenerAdapter
@@ -69,7 +70,7 @@ abstract class Command constructor(val name: String) {
         val timeLeftMinutes = ceil((user.cooldown.timeLeft(1.0)) / 1000.0 / 60.0).roundToInt()
         val content = "${event.author.name} you are still on cooldown for $timeLeftMinutes minute${if (timeLeftMinutes != 1) "s" else ""}"
         val info = Bot.client.retrieveApplicationInfo().complete()
-        if (user.id == info.owner.idLong || user.cooldown.isReady(1.0)) {
+        if (user.id == info.owner.idLong || user.cooldown.isReady(1.0) || event.member?.hasPermission(Permission.ADMINISTRATOR) == true) {
             user.cooldown.triggerCooldown(cooldownMillis)
             val result = runCommand(event, args, latestMessageId)
             if (!result.isSuccess() && result.getMessage() != null) {

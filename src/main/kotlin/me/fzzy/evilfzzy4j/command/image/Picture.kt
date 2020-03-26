@@ -15,7 +15,7 @@ import kotlin.math.max
 
 object Picture : Command("picture") {
 
-    override val cooldownMillis: Long = 60 * 1000 * 3
+    override val cooldownMillis: Long = 60 * 1000
     override val description = "Inserts an image into another, use -picturetypes to see all the picture types"
     override val args: ArrayList<String> = arrayListOf("pictureType")
     override val allowDM: Boolean = true
