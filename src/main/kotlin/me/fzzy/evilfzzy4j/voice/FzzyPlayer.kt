@@ -9,6 +9,7 @@ import com.sedmelluq.discord.lavaplayer.track.AudioTrack
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason
 import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.command.CommandResult
+import me.fzzy.evilfzzy4j.command.image.Fzzy
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.VoiceChannel
 import java.io.BufferedReader
@@ -17,7 +18,18 @@ import java.io.InputStreamReader
 import java.net.URL
 import java.util.concurrent.LinkedBlockingQueue
 
-class FzzyPlayer constructor(val guild: Guild) : AudioEventAdapter() {
+class FzzyPlayer private constructor(val guild: Guild) : AudioEventAdapter() {
+
+    companion object {
+        private val players = hashMapOf<String, FzzyPlayer>()
+
+        fun getPlayer(guild: Guild): FzzyPlayer {
+            if (players.containsKey(guild.id)) return players[guild.id]!!
+            val player = FzzyPlayer(guild)
+            players[guild.id] = player
+            return player
+        }
+    }
 
     val player: AudioPlayer = Bot.playerManager.createPlayer()
     val queue = LinkedBlockingQueue<AudioTrack>()
@@ -27,51 +39,18 @@ class FzzyPlayer constructor(val guild: Guild) : AudioEventAdapter() {
         player.addListener(this)
     }
 
-    fun play(channel: VoiceChannel, url: URL): CommandResult {
-        if (channel.guild.id != guild.id) return CommandResult.fail("trying to play audio in a different guild than the audio player?")
-
-        val currentTime = System.currentTimeMillis()
-
-        Bot.logger.info("attempting to get media from $url")
-
-        val rt = Runtime.getRuntime()
-        val process = rt.exec("youtube-dl -x --audio-format mp3 --no-playlist $url -o \"cache${File.separator}$currentTime.%(ext)s\"")
-        val stdInput = BufferedReader(InputStreamReader(process.inputStream))
-        val stdError = BufferedReader(InputStreamReader(process.errorStream))
-
-        var input = stdInput.readLine()
-        while (input != null) {
-            Bot.logger.info(input)
-            input = stdInput.readLine()
-        }
-
-        var error = stdError.readLine()
-        while (error != null) {
-            Bot.logger.info(error)
-            error = stdError.readLine()
-        }
-
-        val file = File("cache${File.separator}$currentTime.mp3")
-
-        if (!file.exists()) return CommandResult.fail("i couldnt get media from that url ${Bot.surprisedEmote}")
-
-        play(channel, file)
-
-        return CommandResult.success()
-    }
-
-    fun play(channel: VoiceChannel, file: File): CommandResult {
-        Bot.playerManager.loadItem(file.path, object : AudioLoadResultHandler {
+    fun play(channel: VoiceChannel, identifier: String) {
+        Bot.playerManager.loadItem(identifier, object : AudioLoadResultHandler {
             override fun loadFailed(exception: FriendlyException?) {
                 Bot.logger.error("load failed")
             }
 
             override fun trackLoaded(track: AudioTrack) {
                 Bot.logger.info("track loaded")
-                channel.guild.audioManager.openAudioConnection(channel)
                 queue.add(track)
 
                 if (player.playingTrack == null) {
+                    channel.guild.audioManager.openAudioConnection(channel)
                     player.playTrack(queue.poll())
                 }
             }
@@ -91,8 +70,6 @@ class FzzyPlayer constructor(val guild: Guild) : AudioEventAdapter() {
             }
 
         })
-
-        return CommandResult.success()
     }
 
     override fun onTrackStart(player: AudioPlayer?, track: AudioTrack?) {

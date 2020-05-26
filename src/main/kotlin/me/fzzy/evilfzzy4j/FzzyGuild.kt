@@ -3,6 +3,7 @@ package me.fzzy.evilfzzy4j
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.Expose
 import com.google.gson.stream.JsonReader
+import me.fzzy.evilfzzy4j.voice.FzzyPlayer
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Message
 import org.json.JSONObject
@@ -23,7 +24,6 @@ class FzzyGuild private constructor() {
             val guild = if (guildFile.exists()) {
                 Bot.gson.fromJson(JsonReader(InputStreamReader(guildFile.inputStream())), FzzyGuild::class.java)
             } else FzzyGuild()
-            guild.guildId = guildId
             guilds.add(guild)
             return guild
         }

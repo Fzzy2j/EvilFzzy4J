@@ -35,7 +35,7 @@ dependencies {
     compile 'net.dv8tion:JDA:4.0.0_52'
     implementation("net.dv8tion:JDA:4.0.0_52")
     implementation("club.minnced:jda-reactor:0.2.8")
-    compile 'com.sedmelluq:lavaplayer:1.3.22.pbjtest3'
+    compile 'com.sedmelluq:lavaplayer:1.3.49'
     compile group: 'org.json', name: 'json', version: '20180813'
     compile group: 'org.im4java', name: 'im4java', version: '1.4.0'
     compile group: 'ws.schild', name: 'jave-core', version: '2.4.3'

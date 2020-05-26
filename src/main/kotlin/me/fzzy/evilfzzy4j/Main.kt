@@ -6,13 +6,14 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.Leaderboard
+import me.fzzy.evilfzzy4j.command.voice.Play
 import me.fzzy.evilfzzy4j.command.admin.Override
 import me.fzzy.evilfzzy4j.command.help.Help
 import me.fzzy.evilfzzy4j.command.help.Invite
 import me.fzzy.evilfzzy4j.command.help.Picturetypes
 import me.fzzy.evilfzzy4j.command.image.*
+import me.fzzy.evilfzzy4j.command.voice.Stop
 import me.fzzy.evilfzzy4j.util.ImageHelper
-import me.fzzy.evilfzzy4j.voice.FzzyPlayer
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.*
@@ -52,7 +53,6 @@ object Bot {
     val scheduler = Schedulers.elastic()
 
     val playerManager = DefaultAudioPlayerManager()
-    private val audioManagers = hashMapOf<Long, FzzyPlayer>()
 
     lateinit var data: BotData
 
@@ -70,15 +70,6 @@ object Bot {
 
     val DATA_FILE = File("data")
     val TTS_AUTH_FILE = File("google-tts.json")
-
-    fun getGuildAudioPlayer(guild: Guild): FzzyPlayer {
-        var manager = audioManagers[guild.idLong]
-        if (manager == null) {
-            manager = FzzyPlayer(guild)
-            audioManagers[guild.idLong] = manager
-        }
-        return manager
-    }
 
     fun getRecentImage(channel: MessageChannel, latestMessageId: Long): File? {
         if (channel is TextChannel) return getRecentImage(channel, latestMessageId)
@@ -133,7 +124,7 @@ object Bot {
 fun main(args: Array<String>) {
     Bot.DATA_FILE.mkdirs()
 
-    AudioSourceManagers.registerLocalSource(Bot.playerManager)
+    AudioSourceManagers.registerRemoteSources(Bot.playerManager)
 
     Bot.logger.info("Loading data.")
     val dataFile = File("config.json")
@@ -199,6 +190,8 @@ fun main(args: Array<String>) {
     Command.registerCommand("picturetypes", Picturetypes)
     Command.registerCommand("override", Override)
     Command.registerCommand("leaderboard", Leaderboard)
+    Command.registerCommand("play", Play)
+    Command.registerCommand("stop", Stop)
 
     Bot.logger.info("Starting auto-saver.")
     Bot.scheduler.schedulePeriodically({

@@ -65,7 +65,8 @@ abstract class Command constructor(val name: String) {
 
         Bot.logger.info("${event.author.name}#${event.author.discriminator} running command: ${event.message.contentRaw}")
 
-        delete(event.message)
+        if (name != "play")
+            delete(event.message)
 
         val timeLeftMinutes = ceil((user.cooldown.timeLeft(1.0)) / 1000.0 / 60.0).roundToInt()
         val content = "${event.author.name} you are still on cooldown for $timeLeftMinutes minute${if (timeLeftMinutes != 1) "s" else ""}"

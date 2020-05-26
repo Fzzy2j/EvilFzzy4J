@@ -4,6 +4,7 @@ import me.fzzy.evilfzzy4j.Bot
 import me.fzzy.evilfzzy4j.FzzyUser
 import me.fzzy.evilfzzy4j.command.Command
 import me.fzzy.evilfzzy4j.command.CommandResult
+import me.fzzy.evilfzzy4j.voice.FzzyPlayer
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import java.util.concurrent.TimeUnit
 
@@ -21,6 +22,8 @@ object Override : Command("override") {
 
         when (args[0].toLowerCase()) {
             "volume" -> {
+                val player = FzzyPlayer.getPlayer(event.guild)
+                player.player.volume = args[1].toInt()
                 //FzzyGuild.getGuild(message.guild.id).player.provider.player.volume = args[1].toInt()
                 //AudioPlayer.getAudioPlayerForGuild(message.guild).volume = args[1].toFloat()
             }
