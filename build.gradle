@@ -40,7 +40,8 @@ dependencies {
     compile group: 'org.im4java', name: 'im4java', version: '1.4.0'
     compile group: 'ws.schild', name: 'jave-core', version: '2.4.3'
     compile 'com.google.code.gson:gson:2.8.5'
-    compile group: 'com.google.cloud', name: 'google-cloud-texttospeech', version: '0.94.0-beta'
+    compile 'com.google.api-client:google-api-client:1.30.9'
+    compile 'com.google.apis:google-api-services-youtube:v3-rev20200423-1.30.9'
 }
 
 compileKotlin {

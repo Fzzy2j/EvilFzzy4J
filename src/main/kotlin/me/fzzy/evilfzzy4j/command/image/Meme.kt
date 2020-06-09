@@ -14,7 +14,7 @@ import javax.imageio.ImageIO
 
 object Meme : Command("meme") {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 10 * 1000
     override val description = "Puts meme text onto an image"
     override val args: ArrayList<String> = arrayListOf("text")
     override val allowDM: Boolean = true

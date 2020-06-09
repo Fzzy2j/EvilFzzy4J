@@ -10,7 +10,7 @@ import java.util.*
 
 object Mc : Command("mc") {
 
-    override val cooldownMillis: Long = 60 * 1000
+    override val cooldownMillis: Long = 10 * 1000
     override val description = "Generates a minecraft achievement"
     override val args: ArrayList<String> = arrayListOf("text")
     override val allowDM: Boolean = true
