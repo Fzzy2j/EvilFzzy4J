@@ -59,8 +59,6 @@ object Bot {
     lateinit var sadEmote: Emote
     lateinit var happyEmote: Emote
     lateinit var surprisedEmote: Emote
-    lateinit var upvoteEmote: Emote
-    lateinit var downvoteEmote: Emote
 
     val URL_PATTERN: Pattern = Pattern.compile("(?:^|[\\W])((ht|f)tp(s?):\\/\\/)"
             + "(([\\w\\-]+\\.){1,}?([\\w\\-.~]+\\/?)*"
@@ -117,7 +115,7 @@ object Bot {
             if (attach.isImage) return URL(attach.url)
         }
         val url = getFirstUrl(message.contentRaw)
-        return if (url != null) if (isMedia(url)) url else null else null
+        return if (url != null && isMedia(url)) url else null
     }
 }
 
@@ -125,6 +123,7 @@ fun main(args: Array<String>) {
     Bot.DATA_FILE.mkdirs()
 
     AudioSourceManagers.registerRemoteSources(Bot.playerManager)
+    AudioSourceManagers.registerLocalSource(Bot.playerManager)
 
     Bot.logger.info("Loading data.")
     val dataFile = File("config.json")
@@ -169,13 +168,9 @@ fun main(args: Array<String>) {
     Bot.sadEmote = Bot.client.getEmoteById(Bot.data.SAD_EMOTE_ID)!!
     Bot.happyEmote = Bot.client.getEmoteById(Bot.data.HAPPY_EMOTE_ID)!!
     Bot.surprisedEmote = Bot.client.getEmoteById(Bot.data.SURPRISED_EMOTE_ID)!!
-    Bot.upvoteEmote = Bot.client.getEmoteById(Bot.data.UPVOTE_EMOTE_ID)!!
-    Bot.downvoteEmote = Bot.client.getEmoteById(Bot.data.DOWNVOTE_EMOTE_ID)!!
     Bot.logger.info("Sad emoji set to: ${Bot.sadEmote}")
     Bot.logger.info("Happy emoji set to: ${Bot.happyEmote}")
     Bot.logger.info("Surprised emoji set to: ${Bot.surprisedEmote}")
-    Bot.logger.info("Upvote emoji set to: ${Bot.upvoteEmote}")
-    Bot.logger.info("Downvote emoji set to: ${Bot.downvoteEmote}")
 
     Bot.logger.info("Registering commands.")
     Command.registerCommand("fzzy", Fzzy)

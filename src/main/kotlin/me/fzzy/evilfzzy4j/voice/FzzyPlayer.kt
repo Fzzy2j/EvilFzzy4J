@@ -39,7 +39,7 @@ class FzzyPlayer private constructor(val guild: Guild) : AudioEventAdapter() {
         player.addListener(this)
     }
 
-    fun play(channel: VoiceChannel, identifier: String) {
+    fun play(channel: VoiceChannel, identifier: String, volume: Int = 50) {
         Bot.playerManager.loadItem(identifier, object : AudioLoadResultHandler {
             override fun loadFailed(exception: FriendlyException?) {
                 Bot.logger.error("load failed")
@@ -47,6 +47,7 @@ class FzzyPlayer private constructor(val guild: Guild) : AudioEventAdapter() {
 
             override fun trackLoaded(track: AudioTrack) {
                 Bot.logger.info("track loaded")
+                track.userData = volume
                 queue.add(track)
 
                 if (player.playingTrack == null) {
@@ -73,7 +74,7 @@ class FzzyPlayer private constructor(val guild: Guild) : AudioEventAdapter() {
     }
 
     override fun onTrackStart(player: AudioPlayer?, track: AudioTrack?) {
-        player?.volume = 50
+        player?.volume = track!!.userData as Int
     }
 
     override fun onTrackEnd(player: AudioPlayer, track: AudioTrack?, endReason: AudioTrackEndReason?) {

@@ -24,6 +24,7 @@ class FzzyGuild private constructor() {
             val guild = if (guildFile.exists()) {
                 Bot.gson.fromJson(JsonReader(InputStreamReader(guildFile.inputStream())), FzzyGuild::class.java)
             } else FzzyGuild()
+            guild.guildId = guildId
             guilds.add(guild)
             return guild
         }
